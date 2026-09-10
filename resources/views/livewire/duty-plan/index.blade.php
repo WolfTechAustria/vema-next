@@ -1,0 +1,674 @@
+@if(session('success'))
+
+    <div class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
+        {{ session('success') }}
+    </div>
+
+@endif
+
+
+<div class="space-y-6">
+
+    {{-- Kopf --}}
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+        <div>
+            <h2 class="text-2xl font-bold tracking-tight">
+                Dienstplan
+            </h2>
+
+            <p class="mt-1 text-sm text-slate-500">
+                Dienste planen, Helfer einteilen und Verfügbarkeiten berücksichtigen.
+            </p>
+        </div>
+
+        <div class="flex gap-2">
+
+            <a
+                href="{{ route('duty-plan.volunteers') }}"
+                wire:navigate
+                class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+                Helfer verwalten
+            </a>
+
+            <a
+                href="{{ route('duty-plan.absences') }}"
+                wire:navigate
+                class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+                Abwesenheiten
+            </a>
+
+        </div>
+
+    </div>
+
+    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+        <div class="flex flex-col gap-4 p-6 lg:flex-row lg:items-end">
+
+            <div class="flex-1">
+
+                <label class="mb-1 block text-sm font-medium text-slate-700">
+                    Dienstplan
+                </label>
+
+                <select
+                    wire:change="selectPlan($event.target.value)"
+                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5"
+                >
+
+                    @foreach(
+                        \App\Models\DutyPlan::orderByDesc('date_from')->get()
+                        as $plan
+                    )
+
+                        <option
+                            value="{{ $plan->planID }}"
+                            @selected($plan->planID === $planId)
+                        >
+                            {{ $plan->name }}
+
+                            ({{ $plan->date_from->format('d.m.Y') }}
+                            –
+                            {{ $plan->date_to->format('d.m.Y') }})
+                        </option>
+
+                    @endforeach
+
+                </select>
+
+            </div>
+
+
+            <button
+                type="button"
+                wire:click="$set('showCreatePlan', true)"
+                class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white"
+            >
+                + Neuer Dienstplan
+            </button>
+
+            <div class="flex flex-wrap gap-2">
+
+                <button
+                    type="button"
+                    wire:click="savePlan"
+                    class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                    Speichern
+                </button>
+
+                <button
+                    type="button"
+                    wire:click="duplicatePlan"
+                    class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                    Duplizieren
+                </button>
+
+                <button
+                    type="button"
+                    wire:click="deletePlan"
+                    wire:confirm="Diesen Dienstplan wirklich löschen? Alle Termine und Einteilungen dieses Plans werden entfernt."
+                    class="rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                >
+                    Löschen
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    @if($showCreatePlan)
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+
+            <h3 class="mb-5 font-semibold">
+                Neuen Dienstplan erstellen
+            </h3>
+
+            <div class="grid gap-4 md:grid-cols-3">
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium">
+                        Name
+                    </label>
+
+                    <input
+                        wire:model="planName"
+                        type="text"
+                        placeholder="z. B. Saison 2027"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    >
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium">
+                        Von
+                    </label>
+
+                    <input
+                        wire:model="dateFrom"
+                        type="date"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    >
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium">
+                        Bis
+                    </label>
+
+                    <input
+                        wire:model="dateTo"
+                        type="date"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    >
+                </div>
+
+            </div>
+
+            <div class="mt-5 flex justify-end gap-2">
+
+                <button
+                    type="button"
+                    wire:click="$set('showCreatePlan', false)"
+                    class="rounded-lg border border-slate-300 px-4 py-2"
+                >
+                    Abbrechen
+                </button>
+
+                <button
+                    type="button"
+                    wire:click="createPlan"
+                    class="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white"
+                >
+                    Dienstplan erstellen
+                </button>
+
+            </div>
+
+        </section>
+    @endif
+
+
+    {{-- Zeitraum --}}
+    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+        <div class="border-b border-slate-200 px-6 py-4">
+            <h3 class="font-semibold text-slate-900">
+                Zeitraum
+            </h3>
+        </div>
+
+        <div class="grid gap-6 p-6 md:grid-cols-3">
+
+            <div>
+                <label class="mb-1 block text-sm font-medium text-slate-700">
+                    Von
+                </label>
+
+                <input
+                    type="date"
+                    wire:model.live="dateFrom"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                >
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-medium text-slate-700">
+                    Bis
+                </label>
+
+                <input
+                    type="date"
+                    wire:model.live="dateTo"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                >
+            </div>
+
+            <div class="flex items-end">
+
+                <label class="flex items-center gap-3 pb-2">
+
+                    <input
+                        type="checkbox"
+                        wire:model="excludeHolidays"
+                        class="rounded border-slate-300"
+                    >
+
+                    <span class="text-sm font-medium text-slate-700">
+                        Österreichische Feiertage auslassen
+                    </span>
+
+                </label>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    {{-- Wochentage --}}
+    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+        <div class="border-b border-slate-200 px-6 py-4">
+
+            <h3 class="font-semibold text-slate-900">
+                Wochentage
+            </h3>
+
+            <p class="mt-1 text-sm text-slate-500">
+                Lege fest, an welchen Tagen Dienste stattfinden und wie viele Helfer benötigt werden.
+            </p>
+
+        </div>
+
+        <div class="divide-y divide-slate-100">
+
+            @foreach($weekdayRules as $weekday => $rule)
+
+                <div
+                    wire:key="weekday-{{ $weekday }}"
+                    class="grid gap-4 p-4 md:grid-cols-[120px_180px_1fr_160px]"
+                >
+
+                    <div class="flex items-center">
+
+                        <label class="flex items-center gap-3">
+
+                            <input
+                                type="checkbox"
+                                wire:model="weekdayRules.{{ $weekday }}.active"
+                                class="rounded border-slate-300"
+                            >
+
+                            <span class="text-sm font-semibold text-slate-900">
+                                {{ $this->weekdayName($weekday) }}
+                            </span>
+
+                        </label>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="text-xs font-medium uppercase tracking-wide text-slate-400 md:hidden">
+                            Aktiv
+                        </div>
+
+                        @if($rule['active'])
+
+                            <span class="inline-flex rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+                                Dienst aktiv
+                            </span>
+
+                        @else
+
+                            <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
+                                Inaktiv
+                            </span>
+
+                        @endif
+
+                    </div>
+
+
+                    <div>
+
+                        <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">
+                            Bezeichnung
+                        </label>
+
+                        <input
+                            type="text"
+                            wire:model="weekdayRules.{{ $weekday }}.name"
+                            class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        >
+
+                    </div>
+
+
+                    <div>
+
+                        <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">
+                            Helfer
+                        </label>
+
+                        <input
+                            type="number"
+                            min="1"
+                            max="20"
+                            wire:model="weekdayRules.{{ $weekday }}.required_people"
+                            class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        >
+
+                    </div>
+
+                </div>
+
+            @endforeach
+
+        </div>
+
+    </section>
+
+    @error('weekdayRules')
+
+    <div class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+        {{ $message }}
+    </div>
+
+    @enderror
+
+
+
+    {{-- Aktionen --}}
+    <div class="flex flex-wrap gap-3">
+
+        <button
+            type="button"
+            wire:click="generateEvents"
+            wire:loading.attr="disabled"
+            wire:target="generateEvents"
+            class="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+        >
+            <span wire:loading.remove wire:target="generateEvents">
+                Termine erzeugen
+            </span>
+
+            <span wire:loading wire:target="generateEvents">
+        Termine werden erzeugt ...
+            </span>
+        </button>
+
+        <button
+            type="button"
+            wire:click="autoAssign"
+            wire:confirm="Bestehende Einteilungen im ausgewählten Zeitraum werden neu erstellt. Fortfahren?"
+            wire:loading.attr="disabled"
+            wire:target="autoAssign"
+            class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+    <span wire:loading.remove wire:target="autoAssign">
+        Automatisch einteilen
+    </span>
+
+            <span wire:loading wire:target="autoAssign">
+        Einteilung läuft ...
+    </span>
+        </button>
+
+    </div>
+
+
+    {{-- Plan --}}
+    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+
+            <div>
+                <h3 class="font-semibold text-slate-900">
+                    Diensttermine
+                </h3>
+
+                <p class="mt-1 text-sm text-slate-500">
+                    {{ $this->events->count() }} Termine im ausgewählten Zeitraum.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="flex flex-wrap items-end gap-3">
+
+            <br>
+            <div>
+                <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Export
+                </label>
+
+                <select
+                    wire:model="exportWeekday"
+                    class="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                >
+                    <option value="all">Alle Wochentage</option>
+
+                    @for($weekday = 1; $weekday <= 7; $weekday++)
+                        <option value="{{ $weekday }}">
+                            {{ $this->weekdayName($weekday) }}
+                        </option>
+                    @endfor
+                </select>
+            </div>
+
+            <button
+                type="button"
+                wire:click="exportExcel"
+                wire:loading.attr="disabled"
+                wire:target="exportExcel"
+                class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+                Excel exportieren
+            </button>
+
+            <button
+                type="button"
+                wire:click="exportPdf"
+                wire:loading.attr="disabled"
+                wire:target="exportPdf"
+                class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+                PDF exportieren
+            </button>
+
+        </div>
+        <br>
+        <div class="overflow-x-auto">
+
+            <table class="min-w-full divide-y divide-slate-200">
+
+                <thead class="bg-slate-50">
+
+                <tr>
+
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Datum
+                    </th>
+
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Dienst
+                    </th>
+
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Helfer
+                    </th>
+
+                    <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Status
+                    </th>
+
+                </tr>
+
+                </thead>
+
+
+                <tbody class="divide-y divide-slate-100">
+
+                @forelse($this->events as $event)
+
+                    <tr class="hover:bg-slate-50">
+
+                        <td class="whitespace-nowrap px-6 py-4">
+
+                            <div class="font-medium text-slate-900">
+                                {{ $event->duty_date->format('d.m.Y') }}
+                            </div>
+
+                            <div class="text-sm text-slate-500">
+                                {{ $event->duty_date
+                                    ->locale('de')
+                                    ->translatedFormat('l') }}
+                            </div>
+
+                            @if($holiday = $this->holidayName($event->duty_date))
+
+                                <div class="mt-1">
+                                    <span class="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
+                                        {{ $holiday }}
+                                    </span>
+                                </div>
+
+                            @endif
+
+                        </td>
+
+
+                        <td class="px-6 py-4">
+
+                            <div class="font-medium text-slate-900">
+                                {{ $event->duty_name }}
+                            </div>
+
+                            <div class="text-sm text-slate-500">
+                                {{ $event->required_helpers }} Helfer benötigt
+                            </div>
+
+                        </td>
+
+
+                        <td class="px-6 py-4">
+
+                            @if($event->assignments->isEmpty())
+
+                                <span class="text-sm text-slate-400">
+                                        Noch niemand eingeteilt
+                                    </span>
+
+                            @else
+
+                                <div class="flex flex-wrap gap-2">
+
+                                    <div class="space-y-2">
+
+                                        @for($slot = 1; $slot <= $event->required_helpers; $slot++)
+
+                                            @php
+                                                $assignment = $event->assignments
+                                                    ->firstWhere('slot_no', $slot);
+
+                                                $selectedMemberId = $assignment?->memberID;
+
+                                                $weekday = $event->duty_date->isoWeekday();
+                                            @endphp
+
+                                            <div class="flex items-center gap-2">
+
+                                                <div class="w-16 text-xs font-medium text-slate-400">
+                                                    Helfer {{ $slot }}
+                                                </div>
+
+                                                <select
+                                                    wire:change="updateAssignment(
+                    {{ $event->eventID }},
+                    {{ $slot }},
+                    $event.target.value || null
+                )"
+                                                    class="min-w-60 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                                                >
+                                                    <option value="">
+                                                        Nicht besetzt
+                                                    </option>
+
+                                                    @foreach($volunteers as $volunteer)
+
+                                                        @php
+                                                            $available =
+                                                                $volunteer->isAvailableOnWeekday($weekday)
+                                                                && $this->memberAvailableForEvent(
+                                                                    $volunteer->memberID,
+                                                                    $event->duty_date
+                                                                );
+                                                        @endphp
+
+                                                        @if($available)
+
+                                                            <option
+                                                                value="{{ $volunteer->memberID }}"
+                                                                @selected($selectedMemberId == $volunteer->memberID)
+                                                            >
+                                                                {{ $volunteer->member->surname }}
+                                                                {{ $volunteer->member->name }}
+                                                            </option>
+
+                                                        @endif
+
+                                                    @endforeach
+
+                                                </select>
+
+                                            </div>
+
+                                        @endfor
+
+                                    </div>
+
+                                </div>
+
+                            @endif
+
+                        </td>
+
+
+                        <td class="whitespace-nowrap px-6 py-4 text-right">
+
+                            @if($event->assignments->count() >= $event->required_helpers)
+
+                                <span class="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+                                        Vollständig
+                                    </span>
+
+                            @elseif($event->assignments->count() > 0)
+
+                                <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                                        Teilweise
+                                    </span>
+
+                            @else
+
+                                <span class="rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
+                                        Offen
+                                    </span>
+
+                            @endif
+
+                        </td>
+
+                    </tr>
+
+                @empty
+
+                    <tr>
+                        <td
+                            colspan="4"
+                            class="px-6 py-12 text-center text-sm text-slate-500"
+                        >
+                            Für diesen Zeitraum wurden noch keine Diensttermine angelegt.
+                        </td>
+                    </tr>
+
+                @endforelse
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</div>
