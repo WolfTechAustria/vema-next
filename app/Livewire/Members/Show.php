@@ -7,6 +7,11 @@ use Livewire\Component;
 
 class Show extends Component
 {
+
+    public bool $showCircularEmailModal = false;
+
+    public ?int $selectedCircularRecipientID = null;
+
     public Member $member;
 
     public function mount(Member $member): void
@@ -15,6 +20,13 @@ class Show extends Component
             'city',
             'emails',
             'phones',
+
+            'circularRecipients' => fn ($query) =>
+            $query
+                ->with([
+                    'circular.attachments',
+                ])
+                ->latest('sent_at'),
         ]);
     }
 
@@ -26,4 +38,11 @@ class Show extends Component
                 'heading' => 'Mitglied',
             ]);
     }
+
+    public function showCircularEmail(int $recipientID): void
+    {
+        $this->selectedCircularRecipientID = $recipientID;
+        $this->showCircularEmailModal = true;
+    }
+
 }

@@ -131,4 +131,46 @@ class TemplateRendererService
             $template->body_html
         );
     }
+
+    public function circular(
+        string $bodyHtml,
+        \App\Models\Member $member
+    ): string {
+        $member->loadMissing('city');
+
+        $gender = mb_strtolower(
+            trim((string) $member->gender)
+        );
+
+        $salutation = in_array(
+            $gender,
+            ['herr', 'm', 'male', 'männlich'],
+            true
+        )
+            ? 'lieber'
+            : 'liebe';
+
+        $replacements = [
+            '{{first_name}}' => $member->name ?? '',
+            '{{last_name}}' => $member->surname ?? '',
+
+            '{{full_name}}' => trim(
+                ($member->name ?? '')
+                . ' '
+                . ($member->surname ?? '')
+            ),
+
+            '{{street}}' => $member->street ?? '',
+            '{{zip}}' => $member->zip ?? '',
+            '{{city}}' => $member->city?->city ?? '',
+
+            '{{salutation}}' => $salutation,
+        ];
+
+        return str_replace(
+            array_keys($replacements),
+            array_values($replacements),
+            $bodyHtml
+        );
+    }
 }

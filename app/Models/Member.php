@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\MembershipFeePrescription;
+use App\Models\CircularRecipient;
 
 class Member extends Model
 {
@@ -88,6 +89,15 @@ class Member extends Model
     {
         return $this->hasMany(
             MembershipFeePrescription::class,
+            'memberID',
+            'memberID'
+        );
+    }
+
+    public function circularRecipients(): HasMany
+    {
+        return $this->hasMany(
+            CircularRecipient::class,
             'memberID',
             'memberID'
         );

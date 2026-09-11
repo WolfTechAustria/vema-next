@@ -11,6 +11,7 @@ use App\Livewire\DutyPlan\Index as DutyPlanIndex;
 use App\Livewire\DutyPlan\Absences as DutyPlanAbsences;
 use App\Livewire\DutyPlan\Volunteers as DutyPlanVolunteers;
 use App\Livewire\MembershipFees\Index as MembershipFeesIndex;
+use App\Http\Controllers\CircularController;
 
 use App\Livewire\Templates\Index as TemplatesIndex;
 
@@ -83,6 +84,33 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/members/pdf/overview',[\App\Http\Controllers\MemberController::class, 'downloadOverview'])
         ->name('members.pdf.overview');
+
+    Route::livewire('/circulars',\App\Livewire\Circulars\Index::class)
+        ->name('circulars.index');
+
+    Route::get('/circulars/{circular}/recipient/{member}/preview', [CircularController::class, 'previewRecipient'])
+        ->name('circulars.recipient.preview');
+
+    Route::get('/circulars/{circular}/post-pdf', [CircularController::class, 'downloadPostBatch'])
+        ->name('circulars.post-pdf');
+
+    Route::post('/circulars/{circular}/recipients/{recipient}/test-mail', [CircularController::class, 'sendTestMail'])
+        ->name('circulars.test-mail');
+
+    Route::post('/circulars/{circular}/send-emails',[CircularController::class, 'sendAllEmails'])
+        ->name('circulars.send-emails');
+
+    Route::post('/circulars/{circular}/mark-post-sent', [CircularController::class, 'markPostAsSent'])
+        ->name('circulars.mark-post-sent');
+
+    Route::get('/circulars/{circular}/recipients/{recipient}/email', [CircularController::class, 'showEmail'])
+        ->name('circulars.email-preview');
+
+    Route::get('/circular-attachments/{attachment}', [CircularController::class, 'showAttachment'])
+        ->name('circular-attachments.show');
+
+    Route::livewire('/recipient-groups', \App\Livewire\RecipientGroups\Index::class)
+        ->name('recipient-groups.index');
 
 
     Route::post('/logout', [LoginController::class, 'destroy'])

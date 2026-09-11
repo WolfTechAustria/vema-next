@@ -303,6 +303,8 @@
 
         </div>
     </div>
+
+    <!-- Beitragsvorschreibungen -->
     <div class="grid gap-6 xl:grid-cols-1">
         <div class="mt-8 rounded-xl border border-slate-200 bg-white shadow-sm">
 
@@ -440,5 +442,331 @@
         </div>
 
     </div>
+
+    <!-- Rundschreiben -->
+    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+
+            <div>
+                <h3 class="font-semibold text-slate-900">
+                    Rundschreiben
+                </h3>
+
+                <p class="mt-1 text-xs text-slate-500">
+                    Versandte und geplante Mitteilungen an dieses Mitglied
+                </p>
+            </div>
+
+            <div class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                {{ $member->circularRecipients->count() }}
+                Einträge
+            </div>
+
+        </div>
+
+
+        @forelse($member->circularRecipients as $recipient)
+
+            @php
+                $circular = $recipient->circular;
+            @endphp
+
+            <div class="border-b border-slate-100 px-6 py-4 last:border-b-0">
+
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+                    {{-- Rundschreiben --}}
+                    <div class="min-w-0 flex-1">
+
+                        <div class="flex flex-wrap items-center gap-2">
+
+                            <div class="truncate font-medium text-slate-900">
+                                {{ $circular?->title ?? 'Rundschreiben' }}
+                            </div>
+
+                            @if($recipient->delivery_method === 'email')
+
+                                <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                                E-Mail
+                            </span>
+
+                            @elseif($recipient->delivery_method === 'post')
+
+                                <span class="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                                Post
+                            </span>
+
+                            @endif
+
+
+                            @if($recipient->sent_at)
+
+                                <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                                Versendet
+                            </span>
+
+                            @else
+
+                                <span class="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
+                                Offen
+                            </span>
+
+                            @endif
+
+                        </div>
+
+
+                        @if($circular?->subject)
+
+                            <div class="mt-1 text-sm text-slate-500">
+                                {{ $circular->subject }}
+                            </div>
+
+                        @endif
+
+
+                        <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
+
+                            @if($recipient->sent_at)
+
+                                <span>
+                                Versand:
+                                {{ $recipient->sent_at->format('d.m.Y H:i') }}
+                            </span>
+
+                            @else
+
+                                <span>
+                                Noch nicht versendet
+                            </span>
+
+                            @endif
+
+
+                            @if($recipient->delivery_method === 'email' && $recipient->email)
+
+                                <span>
+                                {{ $recipient->email }}
+                            </span>
+
+                            @endif
+
+
+                            @if($circular?->attachments?->isNotEmpty())
+
+                                <span>
+                                📎 {{ $circular->attachments->count() }}
+                                    {{ $circular->attachments->count() === 1 ? 'Anhang' : 'Anhänge' }}
+                            </span>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- Aktionen --}}
+                    <div class="flex shrink-0 items-center gap-2">
+
+                        @if($recipient->delivery_method === 'email')
+
+                            <button
+                                type="button"
+                                wire:click="showCircularEmail({{ $recipient->recipientID }})"
+                                class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+                            >
+                                E-Mail anzeigen
+                            </button>
+
+                        @elseif($recipient->delivery_method === 'post')
+
+                            <a
+                                href="{{ route('circulars.recipient.preview', [
+                                'circular' => $recipient->circularID,
+                                'member' => $member->memberID,
+                            ]) }}"
+                                target="_blank"
+                                class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                            >
+                                PDF öffnen
+                            </a>
+
+                        @endif
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        @empty
+
+            <div class="px-6 py-10 text-center">
+
+                <div class="text-sm font-medium text-slate-600">
+                    Noch keine Rundschreiben vorhanden
+                </div>
+
+                <div class="mt-1 text-xs text-slate-400">
+                    Sobald dieses Mitglied ein Rundschreiben erhält, erscheint es hier.
+                </div>
+
+            </div>
+
+        @endforelse
+
+    </div>
+
+
+    <!-- Modal Email Preview -->
+    @if($showCircularEmailModal && $selectedCircularRecipientID)
+
+        @php
+            $selectedRecipient = $member->circularRecipients
+                ->firstWhere('recipientID', $selectedCircularRecipientID);
+
+            $selectedCircular = $selectedRecipient?->circular;
+
+            $body = $selectedRecipient && $selectedCircular
+                ? app(\App\Services\TemplateRendererService::class)->circular(
+                    $selectedCircular->body_html ?? '',
+                    $member
+                )
+                : '';
+        @endphp
+
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+
+            <div class="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-xl">
+
+                <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            E-Mail
+                        </div>
+
+                        <h3 class="mt-1 text-lg font-semibold text-slate-900">
+                            {{ $selectedCircular?->subject ?: $selectedCircular?->title }}
+                        </h3>
+                    </div>
+
+                    <button
+                        type="button"
+                        wire:click="$set('showCircularEmailModal', false)"
+                        class="rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-100"
+                    >
+                        Schließen
+                    </button>
+
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6">
+
+                    @if($selectedRecipient && $selectedCircular)
+
+                        <div class="space-y-6">
+
+                            <div class="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
+
+                                <div>
+                                <span class="font-medium">
+                                    An:
+                                </span>
+
+                                    {{ $member->full_name }}
+                                </div>
+
+                                <div class="mt-1">
+                                <span class="font-medium">
+                                    E-Mail:
+                                </span>
+
+                                    {{ $selectedRecipient->email }}
+                                </div>
+
+                                @if($selectedRecipient->sent_at)
+
+                                    <div class="mt-1">
+                                    <span class="font-medium">
+                                        Versandt:
+                                    </span>
+
+                                        {{ $selectedRecipient->sent_at->format('d.m.Y H:i') }}
+                                    </div>
+
+                                @endif
+
+                            </div>
+
+                            <div class="prose max-w-none">
+                                {!! $body !!}
+                            </div>
+
+                            @if($selectedCircular->attachments->isNotEmpty())
+
+                                <div class="border-t border-slate-200 pt-5">
+
+                                    <div class="mb-3 text-sm font-semibold text-slate-700">
+                                        Anhänge
+                                    </div>
+
+                                    <div class="space-y-2">
+
+                                        @foreach($selectedCircular->attachments as $attachment)
+
+                                            <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+
+                                                <div>
+
+                                                    <a
+                                                        href="{{ route('circular-attachments.show', $attachment) }}"
+                                                        target="_blank"
+                                                        class="text-sm font-medium text-blue-600 hover:text-blue-800"
+                                                    >
+                                                        📎 {{ $attachment->file_name }}
+                                                    </a>
+
+                                                    @if($attachment->file_size)
+
+                                                        <div class="mt-1 text-xs text-slate-500">
+                                                            {{
+                                                                number_format(
+                                                                    $attachment->file_size / 1024 / 1024,
+                                                                    2,
+                                                                    ',',
+                                                                    '.'
+                                                                )
+                                                            }}
+                                                            MB
+                                                        </div>
+
+                                                    @endif
+
+                                                </div>
+
+                                            </div>
+
+                                        @endforeach
+
+                                    </div>
+
+                                </div>
+
+                            @endif
+
+                        </div>
+
+                    @endif
+
+                </div>
+
+            </div>
+
+        </div>
+
+    @endif
 
 </div>

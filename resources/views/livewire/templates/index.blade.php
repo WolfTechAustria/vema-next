@@ -84,11 +84,11 @@
                 <div
                     wire:key="template-editor-{{ $selectedTemplateID }}"
                     x-data="templateEditor(@entangle('bodyHtml'))"
+                    wire:ignore
                     class="space-y-3"
                 >
                     <div
                         x-ref="editor"
-                        wire:ignore
                         class="min-h-[320px] bg-white"
                     ></div>
                 </div>
