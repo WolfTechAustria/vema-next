@@ -15,6 +15,21 @@ class Index extends Component
     public string $subject = '';
     public string $bodyHtml = '';
 
+    // In der Livewire-Komponente
+    public array $placeholders = [
+        '{{first_name}}' => 'Vorname',
+        '{{last_name}}' => 'Nachname',
+        '{{full_name}}' => 'Vollständiger Name',
+        '{{street}}' => 'Straße',
+        '{{zip}}' => 'PLZ',
+        '{{city}}' => 'Ort',
+        '{{year}}' => 'Jahr',
+        '{{amount}}' => 'Betrag',
+        '{{due_date}}' => 'Fälligkeit',
+        '{{salutation}}' => 'Anrede',
+        '{{reminder_level}}' => 'Erinnerungsstufe',
+    ];
+
     public function mount(): void
     {
         $this->templates = \App\Models\Template::query()

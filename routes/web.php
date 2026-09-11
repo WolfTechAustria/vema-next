@@ -63,8 +63,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/membership-fees/{entry}/prescription',[MembershipFeePrescriptionController::class, 'download'])
         ->name('membership-fees.prescription');
 
-    Route::get('/templates/membership-fee-prescription/preview',[MembershipFeePrescriptionController::class, 'preview'])
-        ->name('templates.membership-fee-prescription.preview');
+    Route::get('/templates/{template}/preview', [MembershipFeePrescriptionController::class, 'preview'])
+        ->name('templates.preview');
 
     Route::get('/membership-fees/{year}/prescriptions',[MembershipFeePrescriptionController::class, 'downloadAll'])
         ->name('membership-fees.prescriptions.all');
@@ -83,6 +83,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/members/pdf/overview',[\App\Http\Controllers\MemberController::class, 'downloadOverview'])
         ->name('members.pdf.overview');
+
 
     Route::post('/logout', [LoginController::class, 'destroy'])
         ->name('logout');

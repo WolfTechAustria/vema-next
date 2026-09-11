@@ -18,6 +18,7 @@
         </div>
     @endif
 
+
     <div class="mb-6">
         <label class="mb-1 block text-sm font-medium text-slate-700">
             Template auswählen
@@ -35,12 +36,13 @@
         </select>
     </div>
 
+
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
         <div class="border-b border-slate-200 px-6 py-4">
 
             <h3 class="font-semibold">
-                Beitragsvorschreibung
+                Template bearbeiten
             </h3>
 
         </div>
@@ -49,7 +51,6 @@
         <div class="space-y-6 p-6">
 
             <div>
-
                 <label class="mb-1 block text-sm font-medium">
                     Bezeichnung
                 </label>
@@ -59,12 +60,10 @@
                     wire:model="name"
                     class="w-full rounded-lg border border-slate-300 px-3 py-2"
                 >
-
             </div>
 
 
             <div>
-
                 <label class="mb-1 block text-sm font-medium">
                     Betreff
                 </label>
@@ -74,22 +73,25 @@
                     wire:model="subject"
                     class="w-full rounded-lg border border-slate-300 px-3 py-2"
                 >
-
             </div>
 
 
             <div>
-
                 <label class="mb-1 block text-sm font-medium">
                     Text
                 </label>
 
-                <textarea
-                    wire:model="bodyHtml"
-                    rows="20"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm"
-                ></textarea>
-
+                <div
+                    wire:key="template-editor-{{ $selectedTemplateID }}"
+                    x-data="templateEditor(@entangle('bodyHtml'))"
+                    class="space-y-3"
+                >
+                    <div
+                        x-ref="editor"
+                        wire:ignore
+                        class="min-h-[320px] bg-white"
+                    ></div>
+                </div>
             </div>
 
 
@@ -102,19 +104,20 @@
                 <div class="flex flex-wrap gap-2 text-xs">
 
                     @foreach([
-                        '{{first_name}}',
-                        '{{last_name}}',
-                        '{{full_name}}',
-                        '{{street}}',
-                        '{{zip}}',
-                        '{{city}}',
-                        '{{year}}',
-                        '{{amount}}',
-                        '{{due_date}}',
-                        '{{salutation}}'
+                        '@{{first_name}}',
+                        '@{{last_name}}',
+                        '@{{full_name}}',
+                        '@{{street}}',
+                        '@{{zip}}',
+                        '@{{city}}',
+                        '@{{year}}',
+                        '@{{amount}}',
+                        '@{{due_date}}',
+                        '@{{salutation}}',
+                        '@{{reminder_level}}'
                     ] as $placeholder)
 
-                        <code class="rounded bg-white px-2 py-1">
+                        <code class="rounded border border-slate-200 bg-white px-2 py-1">
                             {{ $placeholder }}
                         </code>
 
@@ -127,9 +130,10 @@
         </div>
 
 
-        <div class="flex justify-end border-t border-slate-200 bg-slate-50 px-6 py-4">
+        <div class="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
 
             <button
+                type="button"
                 wire:click="save"
                 class="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white"
             >
@@ -137,7 +141,7 @@
             </button>
 
             <a
-                href="{{ route('templates.membership-fee-prescription.preview') }}"
+                href="{{ route('templates.preview', $selectedTemplateID) }}"
                 target="_blank"
                 class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
@@ -147,5 +151,115 @@
         </div>
 
     </section>
+
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+
+            Alpine.data('templateEditor', (bodyHtml) => ({
+
+                quill: null,
+                bodyHtml: bodyHtml,
+
+                init() {
+
+                    this.quill = new Quill(
+                        this.$refs.editor,
+                        {
+                            theme: 'snow',
+
+                            modules: {
+                                toolbar: [
+                                    [
+                                        'bold',
+                                        'italic',
+                                        'underline'
+                                    ],
+
+                                    [
+                                        {
+                                            size: [
+                                                'small',
+                                                false,
+                                                'large',
+                                                'huge'
+                                            ]
+                                        }
+                                    ],
+
+                                    [
+                                        {
+                                            color: []
+                                        }
+                                    ],
+
+                                    [
+                                        {
+                                            align: []
+                                        }
+                                    ],
+
+                                    [
+                                        {
+                                            list: 'ordered'
+                                        },
+                                        {
+                                            list: 'bullet'
+                                        }
+                                    ],
+
+                                    ['clean']
+                                ]
+                            }
+                        }
+                    );
+
+
+                    this.quill.root.innerHTML =
+                        this.bodyHtml || '';
+
+
+                    this.quill.on(
+                        'text-change',
+                        () => {
+
+                            this.bodyHtml =
+                                this.quill.root.innerHTML;
+
+                            this.$wire.set(
+                                'bodyHtml',
+                                this.bodyHtml,
+                                false
+                            );
+
+                        }
+                    );
+
+
+                    this.$watch(
+                        'bodyHtml',
+                        (value) => {
+
+                            const html =
+                                value || '';
+
+                            if (
+                                this.quill
+                                &&
+                                this.quill.root.innerHTML !== html
+                            ) {
+                                this.quill.root.innerHTML =
+                                    html;
+                            }
+
+                        }
+                    );
+
+                }
+
+            }));
+
+        });
+    </script>
 
 </div>

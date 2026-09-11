@@ -119,7 +119,7 @@ class MembershipFeePrescriptionController extends Controller
         );
     }
 
-    public function preview()
+    public function preview(\App\Models\Template $template)
     {
         $entry = \App\Models\MembershipFeeEntry::query()
             ->with([
@@ -136,17 +136,31 @@ class MembershipFeePrescriptionController extends Controller
         $member = $entry->member;
         $year = $entry->year;
 
-        $template = \App\Models\Template::query()
-            ->where('key', 'membership_fee_prescription')
-            ->where('active', true)
-            ->firstOrFail();
 
-        $body = app(
+
+        $renderer = app(
             \App\Services\TemplateRendererService::class
-        )->membershipFeePrescription(
-            $template,
-            $entry
         );
+
+        if ($template->key === 'membership_fee_reminder') {
+
+            $reminderLevel = 1;
+
+            $body = $renderer->membershipFeeReminder(
+                $template,
+                $entry,
+                $reminderLevel
+            );
+
+        } else {
+
+            $reminderLevel = null;
+
+            $body = $renderer->membershipFeePrescription(
+                $template,
+                $entry
+            );
+        }
 
         $amount = $entry->amount
             ?? $year->default_amount;
@@ -176,6 +190,7 @@ class MembershipFeePrescriptionController extends Controller
                 'email' => $email,
                 'template' => $template,
                 'body' => $body,
+                'reminderLevel' => $reminderLevel,
             ]
         )->setPaper('a4', 'portrait');
 
@@ -205,12 +220,16 @@ class MembershipFeePrescriptionController extends Controller
 
         @unlink($tempPdf);
 
+        $previewFilename = $template->key === 'membership_fee_reminder'
+            ? 'Vorschau_Erinnerung.pdf'
+            : 'Vorschau_Beitragsvorschreibung.pdf';
+
         return response(
             $finalPdf,
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="Vorschau.pdf"',
+                'Content-Disposition' =>    'inline; filename="' . $previewFilename . '"',
             ]
         );
     }
