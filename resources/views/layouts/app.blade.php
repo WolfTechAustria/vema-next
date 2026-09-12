@@ -192,17 +192,78 @@
                 </a>
 
 
-                <a
-                    href="{{ route('circulars.index') }}"
-                    wire:navigate
-                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                    {{ request()->routeIs('circulars.*')
-                        ? 'bg-slate-900 text-white'
-                        : 'text-slate-700 hover:bg-slate-100' }}"
+                <div
+                    x-data="{
+        open: {{ request()->routeIs('circulars.*', 'recipient-groups.*') ? 'true' : 'false' }}
+    }"
+                    class="space-y-1"
                 >
-                    <span>✉</span>
-                    Kommunikation
-                </a>
+
+                    <button
+                        type="button"
+                        @click="open = !open"
+                        class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition
+        {{ request()->routeIs('circulars.*', 'recipient-groups.*')
+            ? 'bg-slate-900 text-white'
+            : 'text-slate-700 hover:bg-slate-100' }}"
+                    >
+        <span class="flex items-center gap-3">
+            <span>✉</span>
+            Kommunikation
+        </span>
+
+                        <svg
+                            class="h-4 w-4 transition-transform duration-200"
+                            :class="open ? 'rotate-180' : ''"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M19 9l-7 7-7-7"
+                            />
+                        </svg>
+                    </button>
+
+
+                    <div
+                        x-show="open"
+                        x-collapse
+                        x-cloak
+                        class="space-y-1 pl-6"
+                    >
+
+                        <a
+                            href="{{ route('circulars.index') }}"
+                            wire:navigate
+                            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+            {{ request()->routeIs('circulars.*')
+                ? 'bg-slate-100 text-slate-900'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                        >
+                            <span>✉</span>
+                            Rundschreiben
+                        </a>
+
+
+                        <a
+                            href="{{ route('recipient-groups.index') }}"
+                            wire:navigate
+                            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+            {{ request()->routeIs('recipient-groups.*')
+                ? 'bg-slate-100 text-slate-900'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                        >
+                            <span>♙</span>
+                            Empfängergruppen
+                        </a>
+
+                    </div>
+
+                </div>
 
 
                 <a

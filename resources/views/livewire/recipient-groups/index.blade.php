@@ -20,9 +20,23 @@
 
         <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
 
-            <h3 class="text-lg font-semibold">
-                Neue Gruppe
-            </h3>
+            <div class="flex items-center justify-between">
+
+                <h3 class="text-lg font-semibold">
+                    {{ $editingGroupID ? 'Gruppe bearbeiten' : 'Neue Gruppe' }}
+                </h3>
+
+                @if($editingGroupID)
+                    <button
+                        type="button"
+                        wire:click="cancelEdit"
+                        class="text-sm font-medium text-slate-500 hover:text-slate-800"
+                    >
+                        Abbrechen
+                    </button>
+                @endif
+
+            </div>
 
             <div class="mt-4 space-y-4">
 
@@ -36,6 +50,12 @@
                         wire:model="name"
                         class="w-full rounded-lg border border-slate-300 px-3 py-2"
                     >
+
+                    @error('name')
+                    <p class="mt-1 text-xs text-red-600">
+                        {{ $message }}
+                    </p>
+                    @enderror
                 </div>
 
                 <div>
@@ -48,6 +68,12 @@
                         rows="3"
                         class="w-full rounded-lg border border-slate-300 px-3 py-2"
                     ></textarea>
+
+                    @error('description')
+                    <p class="mt-1 text-xs text-red-600">
+                        {{ $message }}
+                    </p>
+                    @enderror
                 </div>
 
                 <div>
@@ -78,13 +104,47 @@
                     </div>
                 </div>
 
-                <button
-                    type="button"
-                    wire:click="createGroup"
-                    class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-                >
-                    Gruppe anlegen
-                </button>
+                <div class="flex items-center gap-3">
+
+                    @if($editingGroupID)
+
+                        <button
+                            type="button"
+                            wire:click="updateGroup"
+                            wire:loading.attr="disabled"
+                            wire:target="updateGroup"
+                            class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="updateGroup">
+                                Änderungen speichern
+                            </span>
+
+                            <span wire:loading wire:target="updateGroup">
+                                Speichern …
+                            </span>
+                        </button>
+
+                    @else
+
+                        <button
+                            type="button"
+                            wire:click="createGroup"
+                            wire:loading.attr="disabled"
+                            wire:target="createGroup"
+                            class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="createGroup">
+                                Gruppe anlegen
+                            </span>
+
+                            <span wire:loading wire:target="createGroup">
+                                Anlegen …
+                            </span>
+                        </button>
+
+                    @endif
+
+                </div>
 
             </div>
 
@@ -102,7 +162,10 @@
 
                 @forelse($groups as $group)
 
-                    <div class="flex items-start justify-between gap-4 px-6 py-4">
+                    <div
+                        wire:key="recipient-group-{{ $group->groupID }}"
+                        class="flex items-start justify-between gap-4 px-6 py-4"
+                    >
 
                         <div>
                             <div class="font-medium text-slate-900">
@@ -121,14 +184,26 @@
                             </div>
                         </div>
 
-                        <button
-                            type="button"
-                            wire:click="deleteGroup({{ $group->groupID }})"
-                            wire:confirm="Empfängergruppe wirklich löschen?"
-                            class="text-sm font-medium text-red-600 hover:text-red-800"
-                        >
-                            Löschen
-                        </button>
+                        <div class="flex items-center gap-3">
+
+                            <button
+                                type="button"
+                                wire:click="editGroup({{ $group->groupID }})"
+                                class="text-sm font-medium text-slate-600 hover:text-slate-900"
+                            >
+                                Bearbeiten
+                            </button>
+
+                            <button
+                                type="button"
+                                wire:click="deleteGroup({{ $group->groupID }})"
+                                wire:confirm="Empfängergruppe wirklich löschen?"
+                                class="text-sm font-medium text-red-600 hover:text-red-800"
+                            >
+                                Löschen
+                            </button>
+
+                        </div>
 
                     </div>
 
