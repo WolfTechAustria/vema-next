@@ -452,6 +452,15 @@ class Index extends Component
     ): void {
         $this->validate();
 
+        if (!$this->planId) {
+            $this->addError(
+                'planId',
+                'Bitte zuerst einen Dienstplan auswählen oder erstellen.'
+            );
+
+            return;
+        }
+
         $activeRules = collect($this->weekdayRules)
             ->filter(fn ($rule) => $rule['active'])
             ->count();
@@ -466,6 +475,7 @@ class Index extends Component
         }
 
         $result = $generator->generate(
+            $this->planId,
             $this->dateFrom,
             $this->dateTo,
             $this->weekdayRules,

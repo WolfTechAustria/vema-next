@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class MemberAccount extends Authenticatable
 {
@@ -31,5 +32,19 @@ class MemberAccount extends Authenticatable
             'memberID',
             'memberID'
         );
+    }
+
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Member::class,
+            'tb_member_account_members',
+            'accountID',
+            'memberID',
+            'accountID',
+            'memberID'
+        )
+            ->withPivot('relation')
+            ->withTimestamps();
     }
 }

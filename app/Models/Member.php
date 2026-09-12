@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\MembershipFeePrescription;
 use App\Models\CircularRecipient;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Member extends Model
 {
@@ -110,5 +111,19 @@ class Member extends Model
             'memberID',
             'memberID'
         );
+    }
+
+    public function accounts(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            MemberAccount::class,
+            'tb_member_account_members',
+            'memberID',
+            'accountID',
+            'memberID',
+            'accountID'
+        )
+            ->withPivot('relation')
+            ->withTimestamps();
     }
 }

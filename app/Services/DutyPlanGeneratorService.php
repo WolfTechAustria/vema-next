@@ -23,6 +23,7 @@ class DutyPlanGeneratorService
         $skippedHolidays = 0;
 
         DB::transaction(function () use (
+            $planId,
             $from,
             $to,
             $weekdayRules,
