@@ -418,8 +418,19 @@ class Index extends Component
             'dateTo' => ['required', 'date', 'after_or_equal:dateFrom'],
         ]);
 
+        if (!$this->planId) {
+            $this->addError(
+                'planId',
+                'Bitte zuerst einen Dienstplan auswählen.'
+            );
+
+            return;
+        }
+
         $result = $service->assign(
-            $this->planId
+            $this->planId,
+            $this->dateFrom,
+            $this->dateTo
         );
 
         session()->flash(
@@ -428,7 +439,9 @@ class Index extends Component
             . ' Helfer wurden eingeteilt.'
             . (
             $result['unfilled'] > 0
-                ? ' ' . $result['unfilled'] . ' Plätze konnten nicht besetzt werden.'
+                ? ' '
+                . $result['unfilled']
+                . ' Plätze konnten nicht besetzt werden.'
                 : ''
             )
         );

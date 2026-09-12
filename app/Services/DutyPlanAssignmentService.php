@@ -31,6 +31,7 @@ class DutyPlanAssignmentService
         $unfilled = 0;
 
         DB::transaction(function () use (
+            $planID,
             $events,
             $volunteers,
             $dateFrom,
@@ -40,7 +41,8 @@ class DutyPlanAssignmentService
         ) {
             DutyPlanAssignment::query()
                 ->whereHas('event', fn ($q) =>
-                $q->whereBetween('duty_date', [$dateFrom, $dateTo])
+                $q->where('planID', $planID)
+                    ->whereBetween('duty_date', [$dateFrom, $dateTo])
                 )
                 ->delete();
 
@@ -56,7 +58,8 @@ class DutyPlanAssignmentService
             $previousAssignments = DutyPlanAssignment::query()
                 ->with('event')
                 ->whereHas('event', fn ($q) =>
-                $q->where('duty_date', '<', $dateFrom)
+                $q->where('planID', $planID)
+                    ->where('duty_date', '<', $dateFrom)
                 )
                 ->get()
                 ->groupBy('memberID');
