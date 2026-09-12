@@ -2,9 +2,10 @@
 
 namespace App\Livewire\MemberPortal;
 
+use App\Models\Member;
+use App\Models\MemberPhone;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
-use App\Models\MemberPhone;
 
 class Profile extends Component
 {
@@ -12,35 +13,59 @@ class Profile extends Component
     public string $surname = '';
     public string $street = '';
     public string $zip = '';
+
     public array $phones = [];
 
     public function mount(): void
     {
-        $account = Auth::guard('member')->user();
+        $member = $this->activeMember();
 
-        abort_unless($account, 403);
-
-        $member = $account->member()
-            ->with('phones')
-            ->firstOrFail();
-
-        abort_unless($member, 404);
-
-        $this->phones = $member->phones
-            ->map(fn ($phone) => [
-                'ID' => $phone->ID,
-                'phoneCategory' => (int) $phone->phoneCategory,
-                'phoneNumber' => $phone->phoneNumber,
-            ])
-            ->values()
-            ->all();
-
-
+        $member->load('phones');
 
         $this->name = $member->name ?? '';
         $this->surname = $member->surname ?? '';
         $this->street = $member->street ?? '';
         $this->zip = $member->zip ?? '';
+
+        $this->phones = $member->phones
+            ->map(fn ($phone) => [
+                'ID' => $phone->ID,
+                'phoneCategory' => (int) $phone->phoneCategory,
+                'phoneNumber' => $phone->phoneNumber ?? '',
+            ])
+            ->values()
+            ->all();
+    }
+
+    public function addPhone(): void
+    {
+        $this->phones[] = [
+            'ID' => null,
+            'phoneCategory' => 1,
+            'phoneNumber' => '',
+        ];
+    }
+
+    public function removePhone(int $index): void
+    {
+        if (!isset($this->phones[$index])) {
+            return;
+        }
+
+        $member = $this->activeMember();
+
+        $phoneID = $this->phones[$index]['ID'] ?? null;
+
+        if ($phoneID) {
+            MemberPhone::query()
+                ->where('ID', $phoneID)
+                ->where('memberID', $member->memberID)
+                ->delete();
+        }
+
+        unset($this->phones[$index]);
+
+        $this->phones = array_values($this->phones);
     }
 
     public function saveProfile(): void
@@ -92,14 +117,11 @@ class Profile extends Component
             ],
         ]);
 
-        $account = Auth::guard('member')->user();
+        $member = $this->activeMember();
 
-        abort_unless($account, 403);
-
-        $member = $account->member;
-
-        abort_unless($member, 404);
-
+        /*
+         * Stammdaten speichern
+         */
         $member->update([
             'name' => $validated['name'],
             'surname' => $validated['surname'],
@@ -107,48 +129,50 @@ class Profile extends Component
             'zip' => $validated['zip'],
         ]);
 
-        foreach ($validated['phones'] as $phoneData) {
+        /*
+         * Telefonnummern speichern
+         */
+        foreach ($validated['phones'] as $index => $phoneData) {
+            $phoneNumber = trim($phoneData['phoneNumber'] ?? '');
 
             /*
-             * Leere neue Telefonnummern nicht speichern.
+             * Leere neue Telefonnummern ignorieren.
              */
-            if (blank($phoneData['phoneNumber'] ?? null)) {
+            if ($phoneNumber === '') {
                 continue;
             }
 
-            if (!empty($phoneData['ID'])) {
+            $phoneID = $phoneData['ID'] ?? null;
 
+            /*
+             * Bestehende Telefonnummer aktualisieren.
+             */
+            if ($phoneID) {
                 MemberPhone::query()
-                    ->where('ID', $phoneData['ID'])
+                    ->where('ID', $phoneID)
                     ->where('memberID', $member->memberID)
                     ->update([
                         'phoneCategory' => $phoneData['phoneCategory'],
-                        'phoneNumber' => $phoneData['phoneNumber'],
+                        'phoneNumber' => $phoneNumber,
                     ]);
 
-            } else {
-
-                $phone = MemberPhone::create([
-                    'memberID' => $member->memberID,
-                    'phoneCategory' => $phoneData['phoneCategory'],
-                    'phoneNumber' => $phoneData['phoneNumber'],
-                ]);
-
-                /*
-                 * ID ins Livewire-Array übernehmen.
-                 */
-                foreach ($this->phones as $index => $existingPhone) {
-
-                    if (
-                        empty($existingPhone['ID'])
-                        && $existingPhone['phoneNumber'] === $phoneData['phoneNumber']
-                        && (int) $existingPhone['phoneCategory'] === (int) $phoneData['phoneCategory']
-                    ) {
-                        $this->phones[$index]['ID'] = $phone->ID;
-                        break;
-                    }
-                }
+                continue;
             }
+
+            /*
+             * Neue Telefonnummer erstellen.
+             */
+            $phone = MemberPhone::create([
+                'memberID' => $member->memberID,
+                'phoneCategory' => $phoneData['phoneCategory'],
+                'phoneNumber' => $phoneNumber,
+            ]);
+
+            /*
+             * Neue Datenbank-ID zurück ins Livewire-Array schreiben.
+             */
+            $this->phones[$index]['ID'] = $phone->ID;
+            $this->phones[$index]['phoneNumber'] = $phoneNumber;
         }
 
         session()->flash(
@@ -157,50 +181,57 @@ class Profile extends Component
         );
     }
 
-    public function addPhone(): void
+    private function activeMember(): Member
     {
-        $this->phones[] = [
-            'ID' => null,
-            'phoneCategory' => 1,
-            'phoneNumber' => '',
-        ];
-    }
+        $account = Auth::guard('member')->user();
 
-    public function removePhone(int $index): void
-    {
-        if (!isset($this->phones[$index])) {
-            return;
-        }
-
-        $phoneID = $this->phones[$index]['ID'] ?? null;
-
-        if ($phoneID) {
-            MemberPhone::query()
-                ->where('ID', $phoneID)
-                ->where('memberID', Auth::guard('member')->user()->memberID)
-                ->delete();
-        }
-
-        unset($this->phones[$index]);
-
-        $this->phones = array_values(
-            $this->phones
+        abort_unless(
+            $account,
+            403
         );
+
+        $memberID = session('active_member_id');
+
+        abort_unless(
+            $memberID,
+            403,
+            'Kein Mitgliederprofil ausgewählt.'
+        );
+
+        /*
+         * Wichtig:
+         *
+         * Das ausgewählte Mitglied muss aktiv sein UND die
+         * Login-E-Mail des Accounts muss beim Mitglied in
+         * tb_email hinterlegt sein.
+         *
+         * Dadurch kann nicht einfach eine fremde memberID
+         * in die Session geschrieben werden.
+         */
+        return Member::query()
+            ->where('memberID', $memberID)
+            ->where('active', true)
+            ->whereHas('emails', function ($query) use ($account) {
+                $query->where('email', $account->email);
+            })
+            ->firstOrFail();
     }
 
     public function render()
     {
         $account = Auth::guard('member')->user();
 
-        abort_unless($account, 403);
+        abort_unless(
+            $account,
+            403
+        );
 
-        $member = $account->member()
-            ->with([
+        $member = $this->activeMember()
+            ->load([
                 'city',
                 'emails',
                 'phones',
-            ])
-            ->firstOrFail();
+            ]);
 
         return view(
             'livewire.member-portal.profile',

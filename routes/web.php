@@ -129,6 +129,9 @@ Route::middleware('auth:member')->group(function () {
     Route::livewire('/member/profile', \App\Livewire\MemberPortal\Profile::class)
         ->name('member.profile');
 
+    Route::livewire('/member/select-profile', \App\Livewire\MemberPortal\SelectProfile::class)
+        ->name('member.select-profile');
+
     Route::post('/member/logout', [MemberAuthController::class, 'logout'])
         ->name('member.logout');
 });

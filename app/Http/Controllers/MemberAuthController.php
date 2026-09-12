@@ -9,10 +9,8 @@ use Illuminate\Support\Facades\Auth;
 
 class MemberAuthController extends Controller
 {
-    public function magicLogin(
-        Request $request,
-        string $token
-    ) {
+    public function magicLogin(Request $request, string $token)
+    {
         $tokenHash = hash('sha256', $token);
 
         $loginToken = MemberLoginToken::query()
@@ -20,11 +18,7 @@ class MemberAuthController extends Controller
             ->whereNull('used_at')
             ->first();
 
-        abort_unless(
-            $loginToken,
-            403,
-            'Dieser Login-Link ist ungültig oder wurde bereits verwendet.'
-        );
+        abort_unless($loginToken, 403, 'Ungültiger oder bereits verwendeter Login-Link.');
 
         abort_if(
             $loginToken->isExpired(),
@@ -32,20 +26,27 @@ class MemberAuthController extends Controller
             'Dieser Login-Link ist abgelaufen.'
         );
 
-        $member = $loginToken->member;
+        $members = \App\Models\Member::query()
+            ->where('active', true)
+            ->whereHas('emails', function ($query) use ($loginToken) {
+                $query->where('email', $loginToken->email);
+            })
+            ->orderBy('surname')
+            ->orderBy('name')
+            ->get();
 
-        abort_unless(
-            $member && $member->active,
+        abort_if(
+            $members->isEmpty(),
             403,
-            'Dieses Mitglied ist nicht aktiv.'
+            'Für diese E-Mail-Adresse wurde kein aktives Mitglied gefunden.'
         );
 
         $account = MemberAccount::firstOrCreate(
             [
-                'memberID' => $member->memberID,
+                'email' => $loginToken->email,
             ],
             [
-                'email' => $loginToken->email,
+                'memberID' => $members->first()->memberID,
                 'email_verified_at' => now(),
             ]
         );
@@ -71,9 +72,27 @@ class MemberAuthController extends Controller
             'last_login_at' => now(),
         ]);
 
-        return redirect()->route(
-            'member.profile'
-        );
+        /*
+         * Genau ein Mitglied:
+         * direkt dieses Profil aktivieren.
+         */
+        if ($members->count() === 1) {
+
+            $request->session()->put(
+                'active_member_id',
+                $members->first()->memberID
+            );
+
+            return redirect()->route('member.profile');
+        }
+
+        /*
+         * Mehrere Mitglieder mit derselben E-Mail:
+         * noch kein Profil auswählen.
+         */
+        $request->session()->forget('active_member_id');
+
+        return redirect()->route('member.select-profile');
     }
     public function logout(Request $request)
     {

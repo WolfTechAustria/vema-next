@@ -316,6 +316,44 @@
                     Mein Profil
                 </a>
 
+                @php
+                    $memberProfileCount = 0;
+
+                    if ($isMember && $memberAccount) {
+                        $memberProfileCount = \App\Models\Member::query()
+                            ->where('active', true)
+                            ->whereHas('emails', function ($query) use ($memberAccount) {
+                                $query->where('email', $memberAccount->email);
+                            })
+                            ->count();
+                    }
+                @endphp
+
+                @if($isMember && $memberProfileCount > 1)
+
+                    <a
+                        href="{{ route('member.select-profile') }}"
+                        class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    >
+                        <svg
+                            class="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m4 6v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m9-10a4 4 0 110-8 4 4 0 010 8zm-6 0a4 4 0 110-8 4 4 0 010 8z"
+                            />
+                        </svg>
+
+                        Profil wechseln
+                    </a>
+
+                @endif
+
 
                 {{-- Einstellungen kommt als nächster Block --}}
                 <button
