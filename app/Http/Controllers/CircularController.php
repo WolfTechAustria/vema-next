@@ -12,6 +12,7 @@ use App\Models\CircularRecipient;
 use Illuminate\Support\Facades\Mail;
 use App\Models\CircularAttachment;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ImapSentMailService;
 
 class CircularController extends Controller
 {
@@ -233,12 +234,26 @@ class CircularController extends Controller
 
             try {
 
-                Mail::to($recipient->email)->send(
-                    new CircularMail(
-                        $circular,
-                        $recipient
-                    )
+                $rawMessage = null;
+
+                $mail = new CircularMail(
+                    $circular,
+                    $recipient
                 );
+
+                $mail->withSymfonyMessage(
+                    function ($message) use (&$rawMessage) {
+                        $rawMessage = $message->toString();
+                    }
+                );
+
+                Mail::to($recipient->email)->send($mail);
+
+                if ($rawMessage) {
+                    app(ImapSentMailService::class)->append(
+                        $rawMessage
+                    );
+                }
 
                 $recipient->update([
                     'sent_at' => now(),

@@ -1,14 +1,70 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
 
     <title>{{ $title ?? 'VEMA' }}</title>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite([
+        'resources/css/app.css',
+        'resources/js/app.js'
+    ])
+
     @livewireStyles
 </head>
+
+
+@php
+    /*
+    |--------------------------------------------------------------------------
+    | Aktueller Benutzer
+    |--------------------------------------------------------------------------
+    |
+    | web    = interne VEMA-Benutzer
+    | member = Mitgliederportal
+    |
+    */
+
+    $webUser = auth()->guard('web')->user();
+    $memberAccount = auth()->guard('member')->user();
+
+    $isMember = $memberAccount !== null;
+    $isInternal = $webUser !== null;
+
+    $portalMember = $memberAccount?->member;
+
+    if ($isMember) {
+
+        $displayName = $portalMember?->full_name
+            ?: $memberAccount->email;
+
+        $displaySubline = $memberAccount->email;
+
+    } elseif ($isInternal) {
+
+        $displayName =
+            $webUser->member?->full_name
+            ?? $webUser->username
+            ?? 'Benutzer';
+
+        $displaySubline =
+            $webUser->username
+            ?? '';
+
+    } else {
+
+        $displayName = 'VEMA';
+        $displaySubline = '';
+
+    }
+@endphp
+
 
 <body class="bg-slate-100 text-slate-900">
 
@@ -16,155 +72,308 @@
     x-data="{ sidebarOpen: false }"
     class="min-h-screen"
 >
+
     {{-- Mobile Overlay --}}
     <div
         x-show="sidebarOpen"
         x-transition.opacity
+        x-cloak
         class="fixed inset-0 z-40 bg-black/50 lg:hidden"
         @click="sidebarOpen = false"
     ></div>
 
+
     {{-- Sidebar --}}
     <aside
-        class="fixed inset-y-0 left-0 z-50 w-64 transform border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-50 flex w-64 transform flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     >
-        <div class="flex h-16 items-center border-b border-slate-200 px-6">
+
+        {{-- Logo --}}
+        <div class="flex h-16 shrink-0 items-center border-b border-slate-200 px-6">
+
             <div>
+
                 <div class="text-xl font-bold tracking-tight text-slate-900">
                     VEMA
                 </div>
 
                 <div class="text-xs text-slate-500">
-                    Vereinsmanagement
+
+                    @if($isMember)
+                        Mitgliederbereich
+                    @else
+                        Vereinsmanagement
+                    @endif
+
                 </div>
+
             </div>
+
         </div>
 
-        <nav class="space-y-1 p-4">
 
-            <a
-                href="{{ route('dashboard') }}"
-                wire:navigate
-                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                {{ request()->routeIs('dashboard')
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-700 hover:bg-slate-100' }}"
-            >
-                <span>▦</span>
-                Dashboard
-            </a>
+        {{-- Navigation --}}
+        <nav class="flex-1 space-y-1 overflow-y-auto p-4">
 
-            <a
-                href="{{ route('members.index') }}"
-                wire:navigate
-                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                {{ request()->routeIs('members.*')
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-700 hover:bg-slate-100' }}"
-            >
-                <span>♙</span>
-                Mitglieder
-            </a>
+            @if($isInternal)
 
-            <a
-                href="{{ route('duty-plan.index') }}"
-                wire:navigate
-                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                {{ request()->routeIs('duty-plan.*')
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-700 hover:bg-slate-100' }}"
-            >
-                <span>▤</span>
-                Dienstplan
-            </a>
+                {{-- =====================================================
+                     INTERNE VEMA-NAVIGATION
+                ====================================================== --}}
 
-            <a
-                href="{{ route('membership-fees.index') }}"
-                wire:navigate
-                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-    {{ request()->routeIs('membership-fees.*')
-        ? 'bg-slate-900 text-white'
-        : 'text-slate-700 hover:bg-slate-100' }}"
-            >
-                <span>€</span>
-                Mitgliedsbeiträge
-            </a>
+                <a
+                    href="{{ route('dashboard') }}"
+                    wire:navigate
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                    {{ request()->routeIs('dashboard')
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
+                >
+                    <span>▦</span>
+                    Dashboard
+                </a>
 
-            <a
-                href="#"
-                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
-            >
-                <span>▣</span>
-                Finanzen
-            </a>
 
-            <a
-                href="#"
-                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
-            >
-                <span>▧</span>
-                Rechnungen
-            </a>
+                <a
+                    href="{{ route('members.index') }}"
+                    wire:navigate
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                    {{ request()->routeIs('members.*')
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
+                >
+                    <span>♙</span>
+                    Mitglieder
+                </a>
 
-            <a
-                href="{{ route('circulars.index') }}"
-                wire:navigate
-                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                {{ request()->routeIs('circulars.*')
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-700 hover:bg-slate-100' }}"
-            >
-                <span>✉</span>
-                Kommunikation
-            </a>
-            <a
-                href="#"
-                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
-            >
-                <span>◫</span>
-                Berichte
-            </a>
 
-            <a
-                href="{{ route('templates.index') }}"
-                wire:navigate
-                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                {{ request()->routeIs('templates.*')
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-700 hover:bg-slate-100' }}"
-            >
-                <span>▤</span>
-                Templates
-            </a>
+                <a
+                    href="{{ route('duty-plan.index') }}"
+                    wire:navigate
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                    {{ request()->routeIs('duty-plan.*')
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
+                >
+                    <span>▤</span>
+                    Dienstplan
+                </a>
+
+
+                <a
+                    href="{{ route('membership-fees.index') }}"
+                    wire:navigate
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                    {{ request()->routeIs('membership-fees.*')
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
+                >
+                    <span>€</span>
+                    Mitgliedsbeiträge
+                </a>
+
+
+                <a
+                    href="#"
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
+                >
+                    <span>▣</span>
+                    Finanzen
+                </a>
+
+
+                <a
+                    href="#"
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
+                >
+                    <span>▧</span>
+                    Rechnungen
+                </a>
+
+
+                <a
+                    href="{{ route('circulars.index') }}"
+                    wire:navigate
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                    {{ request()->routeIs('circulars.*')
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
+                >
+                    <span>✉</span>
+                    Kommunikation
+                </a>
+
+
+                <a
+                    href="#"
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
+                >
+                    <span>◫</span>
+                    Berichte
+                </a>
+
+
+                <a
+                    href="{{ route('templates.index') }}"
+                    wire:navigate
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                    {{ request()->routeIs('templates.*')
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
+                >
+                    <span>▤</span>
+                    Templates
+                </a>
+
+
+            @elseif($isMember)
+
+                {{-- =====================================================
+                     MITGLIEDER-NAVIGATION
+                ====================================================== --}}
+
+                <div class="mb-2 px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Mitgliederbereich
+                </div>
+
+
+                <a
+                    href="{{ route('member.profile') }}"
+                    wire:navigate
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                    {{ request()->routeIs('member.profile')
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
+                >
+                    <span>♙</span>
+                    Mein Profil
+                </a>
+
+
+                {{-- Diese Bereiche bauen wir danach auf das eigene Mitglied beschränkt aus --}}
+
+                <div
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
+                    title="Wird noch freigeschaltet"
+                >
+                    <span>€</span>
+                    Meine Beiträge
+                </div>
+
+
+                <div
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
+                    title="Wird noch freigeschaltet"
+                >
+                    <span>✉</span>
+                    Meine Rundschreiben
+                </div>
+
+
+                <div
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
+                    title="Wird noch freigeschaltet"
+                >
+                    <span>▤</span>
+                    Mein Dienstplan
+                </div>
+
+            @endif
 
         </nav>
 
-        <div class="absolute bottom-0 left-0 right-0 border-t border-slate-200 p-4">
+
+        {{-- Benutzerbereich --}}
+        <div class="shrink-0 border-t border-slate-200 p-4">
 
             <div class="mb-3 px-3">
-                <div class="text-sm font-semibold text-slate-900">
-                    {{ auth()->user()->member?->full_name ?? auth()->user()->username }}
+
+                <div class="truncate text-sm font-semibold text-slate-900">
+                    {{ $displayName }}
                 </div>
 
-                <div class="text-xs text-slate-500">
-                    {{ auth()->user()->username }}
-                </div>
+                @if($displaySubline)
+
+                    <div class="truncate text-xs text-slate-500">
+                        {{ $displaySubline }}
+                    </div>
+
+                @endif
+
             </div>
 
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
 
-                <button
-                    type="submit"
-                    class="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+            @if($isMember)
+
+                {{-- Profil --}}
+                <a
+                    href="{{ route('member.profile') }}"
+                    wire:navigate
+                    class="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
                 >
-                    Abmelden
+                    <span>♙</span>
+                    Mein Profil
+                </a>
+
+
+                {{-- Einstellungen kommt als nächster Block --}}
+                <button
+                    type="button"
+                    disabled
+                    class="mb-1 flex w-full cursor-not-allowed items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-400"
+                    title="Kommt als nächstes"
+                >
+                    <span>⚙</span>
+                    Einstellungen
                 </button>
-            </form>
+
+
+                @if(Route::has('member.logout'))
+
+                    <form
+                        method="POST"
+                        action="{{ route('member.logout') }}"
+                    >
+                        @csrf
+
+                        <button
+                            type="submit"
+                            class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                        >
+                            <span>↪</span>
+                            Abmelden
+                        </button>
+
+                    </form>
+
+                @endif
+
+
+            @elseif($isInternal)
+
+                <form
+                    method="POST"
+                    action="{{ route('logout') }}"
+                >
+                    @csrf
+
+                    <button
+                        type="submit"
+                        class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                    >
+                        <span>↪</span>
+                        Abmelden
+                    </button>
+
+                </form>
+
+            @endif
 
         </div>
+
     </aside>
+
 
     {{-- Main Area --}}
     <div class="lg:pl-64">
@@ -180,21 +389,41 @@
                 ☰
             </button>
 
+
             <div class="flex-1">
+
                 <h1 class="text-lg font-semibold">
                     {{ $heading ?? 'VEMA' }}
                 </h1>
+
             </div>
 
-            <div class="text-sm text-slate-500">
-                {{ now()->format('d.m.Y') }}
+
+            <div class="flex items-center gap-4">
+
+                @if($isMember)
+
+                    <span class="hidden rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 sm:inline-flex">
+                        Mitgliederbereich
+                    </span>
+
+                @endif
+
+
+                <div class="text-sm text-slate-500">
+                    {{ now()->format('d.m.Y') }}
+                </div>
+
             </div>
 
         </header>
 
+
         {{-- Page Content --}}
         <main class="p-4 sm:p-6 lg:p-8">
+
             {{ $slot }}
+
         </main>
 
     </div>
@@ -202,14 +431,16 @@
 </div>
 
 
-
 @livewireScripts
 
+
+{{-- Global Loader --}}
 <div
     id="global-loader"
     class="fixed inset-0 z-[9999] hidden items-center justify-center bg-slate-900/30 backdrop-blur-sm"
 >
     <div class="flex items-center gap-3 rounded-xl bg-white px-6 py-4 shadow-xl">
+
         <svg
             class="h-5 w-5 animate-spin text-slate-700"
             xmlns="http://www.w3.org/2000/svg"
@@ -235,8 +466,11 @@
         <span class="text-sm font-medium text-slate-700">
             Bitte warten …
         </span>
+
     </div>
 </div>
+
+
 <script>
     document.addEventListener('livewire:init', () => {
 
@@ -244,29 +478,40 @@
 
         const loader = document.getElementById('global-loader');
 
+        if (!loader) {
+            return;
+        }
+
         Livewire.interceptRequest(({ onSend, onFinish }) => {
 
             onSend(() => {
+
                 activeRequests++;
 
                 loader.classList.remove('hidden');
                 loader.classList.add('flex');
+
             });
 
             onFinish(() => {
+
                 activeRequests--;
 
                 if (activeRequests <= 0) {
+
                     activeRequests = 0;
 
                     loader.classList.add('hidden');
                     loader.classList.remove('flex');
+
                 }
+
             });
 
         });
 
     });
 </script>
+
 </body>
 </html>

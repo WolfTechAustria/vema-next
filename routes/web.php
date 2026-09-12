@@ -13,6 +13,8 @@ use App\Livewire\DutyPlan\Volunteers as DutyPlanVolunteers;
 use App\Livewire\MembershipFees\Index as MembershipFeesIndex;
 use App\Http\Controllers\CircularController;
 
+use App\Http\Controllers\MemberAuthController;
+
 use App\Livewire\Templates\Index as TemplatesIndex;
 
 
@@ -25,6 +27,12 @@ Route::middleware('guest')->group(function () {
         ->name('login');
 
     Route::post('/login', [LoginController::class, 'store']);
+
+    Route::livewire('/member/login',\App\Livewire\MemberAuth\Login::class)
+        ->name('member.login');
+
+    Route::get('/member/login/{token}', [MemberAuthController::class, 'magicLogin'])
+        ->name('member.magic-login');
 });
 
 Route::middleware('auth')->group(function () {
@@ -115,4 +123,12 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [LoginController::class, 'destroy'])
         ->name('logout');
+});
+
+Route::middleware('auth:member')->group(function () {
+    Route::livewire('/member/profile', \App\Livewire\MemberPortal\Profile::class)
+        ->name('member.profile');
+
+    Route::post('/member/logout', [MemberAuthController::class, 'logout'])
+        ->name('member.logout');
 });

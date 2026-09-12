@@ -42,7 +42,13 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'member' => [
+            'driver' => 'session',
+            'provider' => 'member_accounts',
+        ],
     ],
+
+
 
     /*
     |--------------------------------------------------------------------------
@@ -65,6 +71,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => App\Models\User::class,
+        ],
+
+        'member_accounts' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\MemberAccount::class,
         ],
 
         // 'users' => [

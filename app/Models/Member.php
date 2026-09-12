@@ -102,4 +102,13 @@ class Member extends Model
             'memberID'
         );
     }
+
+    public function account()
+    {
+        return $this->hasOne(
+            MemberAccount::class,
+            'memberID',
+            'memberID'
+        );
+    }
 }
