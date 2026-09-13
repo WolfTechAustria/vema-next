@@ -27,15 +27,29 @@ class CircularMail extends Mailable
         $this->circular = $circular;
         $this->recipient = $recipient;
 
-        $this->recipient->loadMissing(
-            'member.city'
-        );
+        /*
+         * Mitglied oder externen Kontakt laden.
+         */
+        $this->recipient->loadMissing([
+            'member.city',
+            'externalContact',
+        ]);
+
+        $recipientModel =
+            $this->recipient->member
+            ?? $this->recipient->externalContact;
+
+        if (!$recipientModel) {
+            throw new \RuntimeException(
+                'Rundschreiben-Empfänger konnte nicht ermittelt werden.'
+            );
+        }
 
         $this->body = app(
             TemplateRendererService::class
         )->circular(
             $this->circular->body_html ?? '',
-            $this->recipient->member
+            $recipientModel
         );
     }
 

@@ -27,13 +27,16 @@ class ImapSentMailService
         $client->connect();
 
         try {
-            $folder = $client->getFolder(
-                env('IMAP_SENT_FOLDER', 'INBOX.Sent')
+
+            $sentFolderPath = env('IMAP_SENT_FOLDER', 'INBOX.Sent');
+
+            $folder = $client->getFolderByPath(
+                $sentFolderPath
             );
 
             if (!$folder) {
                 throw new \RuntimeException(
-                    'IMAP Sent-Ordner wurde nicht gefunden.'
+                    'IMAP Sent-Ordner wurde nicht gefunden: '. $sentFolderPath
                 );
             }
 

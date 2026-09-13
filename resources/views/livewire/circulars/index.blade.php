@@ -600,78 +600,198 @@
                         @endif
 
 
-                        {{-- Mitgliedertabelle --}}
-                        <div class="max-h-72 overflow-y-auto rounded-lg border border-slate-200">
+                        {{-- Mitglieder --}}
+                        <div class="space-y-2">
 
-                            <table class="min-w-full divide-y divide-slate-200">
+                            <div class="flex items-center justify-between">
 
-                                <thead class="sticky top-0 z-10 bg-slate-50">
+                                <label class="text-sm font-medium text-slate-700">
+                                    Mitglieder
+                                </label>
 
-                                <tr>
+                                <span class="text-xs text-slate-500">
+            {{ count($selectedRecipients) }} ausgewählt
+        </span>
 
-                                    <th class="w-12 px-4 py-2"></th>
+                            </div>
 
-                                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                        Mitglied
-                                    </th>
+                            <div class="max-h-72 overflow-y-auto rounded-lg border border-slate-200">
 
-                                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                        E-Mail
-                                    </th>
+                                <table class="min-w-full divide-y divide-slate-200">
 
-                                </tr>
-
-                                </thead>
-
-
-                                <tbody class="divide-y divide-slate-100 bg-white">
-
-                                @forelse($members as $member)
-
-                                    <tr class="hover:bg-slate-50">
-
-                                        <td class="px-4 py-2">
-
-                                            <input
-                                                type="checkbox"
-                                                wire:model.live="selectedRecipients"
-                                                value="{{ $member->memberID }}"
-                                                class="h-4 w-4 rounded border-slate-300"
-                                            >
-
-                                        </td>
-
-
-                                        <td class="px-4 py-2 text-sm text-slate-800">
-                                            {{ $member->surname }}
-                                            {{ $member->name }}
-                                        </td>
-
-
-                                        <td class="px-4 py-2 text-sm text-slate-600">
-                                            {{ $member->emails->first()?->email ?? '—' }}
-                                        </td>
-
-                                    </tr>
-
-                                @empty
+                                    <thead class="sticky top-0 z-10 bg-slate-50">
 
                                     <tr>
 
-                                        <td
-                                            colspan="3"
-                                            class="px-4 py-6 text-center text-sm text-slate-500"
-                                        >
-                                            Keine Mitglieder gefunden.
-                                        </td>
+                                        <th class="w-12 px-4 py-2"></th>
+
+                                        <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            Mitglied
+                                        </th>
+
+                                        <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            E-Mail
+                                        </th>
 
                                     </tr>
 
-                                @endforelse
+                                    </thead>
 
-                                </tbody>
+                                    <tbody class="divide-y divide-slate-100 bg-white">
 
-                            </table>
+                                    @forelse($members as $member)
+
+                                        <tr class="hover:bg-slate-50">
+
+                                            <td class="px-4 py-2">
+
+                                                <input
+                                                    type="checkbox"
+                                                    wire:model.live="selectedRecipients"
+                                                    value="{{ $member->memberID }}"
+                                                    class="h-4 w-4 rounded border-slate-300"
+                                                >
+
+                                            </td>
+
+                                            <td class="px-4 py-2 text-sm text-slate-800">
+                                                {{ $member->surname }}
+                                                {{ $member->name }}
+                                            </td>
+
+                                            <td class="px-4 py-2 text-sm text-slate-600">
+                                                {{ $member->emails->first()?->email ?? '—' }}
+                                            </td>
+
+                                        </tr>
+
+                                    @empty
+
+                                        <tr>
+
+                                            <td
+                                                colspan="3"
+                                                class="px-4 py-6 text-center text-sm text-slate-500"
+                                            >
+                                                Keine Mitglieder gefunden.
+                                            </td>
+
+                                        </tr>
+
+                                    @endforelse
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </div>
+
+
+                        {{-- Externe Kontakte --}}
+                        <div class="mt-5 space-y-2">
+
+                            <div class="flex items-center justify-between">
+
+                                <label class="text-sm font-medium text-slate-700">
+                                    Externe Kontakte
+                                </label>
+
+                                <span class="text-xs text-slate-500">
+            {{ count($selectedExternalRecipients) }} ausgewählt
+        </span>
+
+                            </div>
+
+                            <div class="max-h-60 overflow-y-auto rounded-lg border border-slate-200">
+
+                                <table class="min-w-full divide-y divide-slate-200">
+
+                                    <thead class="sticky top-0 z-10 bg-slate-50">
+
+                                    <tr>
+
+                                        <th class="w-12 px-4 py-2"></th>
+
+                                        <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            Kontakt
+                                        </th>
+
+                                        <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            Organisation
+                                        </th>
+
+                                        <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            E-Mail
+                                        </th>
+
+                                    </tr>
+
+                                    </thead>
+
+
+                                    <tbody class="divide-y divide-slate-100 bg-white">
+
+                                    @forelse($externalContacts as $contact)
+
+                                        <tr class="hover:bg-slate-50">
+
+                                            <td class="px-4 py-2">
+
+                                                <input
+                                                    type="checkbox"
+                                                    wire:model.live="selectedExternalRecipients"
+                                                    value="{{ $contact->externalContactID }}"
+                                                    class="h-4 w-4 rounded border-slate-300"
+                                                >
+
+                                            </td>
+
+
+                                            <td class="px-4 py-2 text-sm text-slate-800">
+
+                                                {{ $contact->surname }}
+                                                {{ $contact->name }}
+
+                                            </td>
+
+
+                                            <td class="px-4 py-2 text-sm text-slate-600">
+
+                                                {{ $contact->organization ?: '—' }}
+
+                                            </td>
+
+
+                                            <td class="px-4 py-2 text-sm text-slate-600">
+
+                                                {{ $contact->email }}
+
+                                            </td>
+
+                                        </tr>
+
+                                    @empty
+
+                                        <tr>
+
+                                            <td
+                                                colspan="4"
+                                                class="px-4 py-6 text-center text-sm text-slate-500"
+                                            >
+                                                Keine externen Kontakte vorhanden.
+                                            </td>
+
+                                        </tr>
+
+                                    @endforelse
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
 
                         </div>
 

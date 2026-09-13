@@ -34,4 +34,16 @@ class RecipientGroup extends Model
             'memberID'
         )->withTimestamps();
     }
+
+    public function externalContacts(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            ExternalContact::class,
+            'tb_recipient_group_external_contacts',
+            'groupID',
+            'externalContactID',
+            'groupID',
+            'externalContactID'
+        )->withTimestamps();
+    }
 }

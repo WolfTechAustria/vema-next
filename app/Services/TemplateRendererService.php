@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\MembershipFeeEntry;
 use App\Models\Template;
+use App\Models\ExternalContact;
+use App\Models\Member;
 
 class TemplateRendererService
 {
@@ -134,38 +136,46 @@ class TemplateRendererService
 
     public function circular(
         string $bodyHtml,
-        \App\Models\Member $member
-    ): string {
-        $member->loadMissing('city');
+        Member|ExternalContact $recipient
+    ): string
+    {
+        if ($recipient instanceof Member) {
 
-        $gender = mb_strtolower(
-            trim((string) $member->gender)
-        );
+            $recipient->loadMissing('city');
 
-        $salutation = in_array(
-            $gender,
-            ['herr', 'm', 'male', 'männlich'],
-            true
-        )
-            ? 'lieber'
-            : 'liebe';
+            $salutation = match (strtolower((string) $recipient->gender)) {
+                'm', 'male', 'mann', 'männlich' => 'Lieber',
+                default => 'Liebe',
+            };
 
-        $replacements = [
-            '{{first_name}}' => $member->name ?? '',
-            '{{last_name}}' => $member->surname ?? '',
+            $replacements = [
+                '{{first_name}}' => $recipient->name ?? '',
+                '{{last_name}}' => $recipient->surname ?? '',
+                '{{full_name}}' => $recipient->full_name ?? '',
+                '{{street}}' => $recipient->street ?? '',
+                '{{zip}}' => $recipient->zip ?? '',
+                '{{city}}' => $recipient->city?->city ?? '',
+                '{{salutation}}' => $salutation,
+            ];
 
-            '{{full_name}}' => trim(
-                ($member->name ?? '')
-                . ' '
-                . ($member->surname ?? '')
-            ),
+        } else {
 
-            '{{street}}' => $member->street ?? '',
-            '{{zip}}' => $member->zip ?? '',
-            '{{city}}' => $member->city?->city ?? '',
-
-            '{{salutation}}' => $salutation,
-        ];
+            /*
+             * Externer Kontakt
+             *
+             * Hier haben wir aktuell kein Geschlecht und keine Adresse.
+             * Deshalb verwenden wir eine neutrale Anrede.
+             */
+            $replacements = [
+                '{{first_name}}' => $recipient->name ?? '',
+                '{{last_name}}' => $recipient->surname ?? '',
+                '{{full_name}}' => $recipient->full_name ?? '',
+                '{{street}}' => '',
+                '{{zip}}' => '',
+                '{{city}}' => '',
+                '{{salutation}}' => 'Guten Tag',
+            ];
+        }
 
         return str_replace(
             array_keys($replacements),

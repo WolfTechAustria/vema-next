@@ -104,6 +104,56 @@
                     </div>
                 </div>
 
+                <div>
+                    <label class="mb-2 block text-sm font-medium">
+                        Externe Kontakte
+                    </label>
+
+                    <div class="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
+
+                        @forelse($externalContacts as $contact)
+
+                            <label class="flex items-center gap-3 border-b border-slate-100 px-4 py-2 last:border-b-0">
+
+                                <input
+                                    type="checkbox"
+                                    wire:model.live="selectedExternalContacts"
+                                    value="{{ $contact->externalContactID }}"
+                                    class="h-4 w-4 rounded border-slate-300"
+                                >
+
+                                <div class="min-w-0">
+
+                                    <div class="text-sm text-slate-700">
+                                        {{ $contact->surname }}
+                                        {{ $contact->name }}
+                                    </div>
+
+                                    @if($contact->organization)
+                                        <div class="text-xs text-slate-500">
+                                            {{ $contact->organization }}
+                                        </div>
+                                    @endif
+
+                                    <div class="text-xs text-slate-400">
+                                        {{ $contact->email }}
+                                    </div>
+
+                                </div>
+
+                            </label>
+
+                        @empty
+
+                            <div class="px-4 py-5 text-center text-sm text-slate-500">
+                                Keine aktiven externen Kontakte vorhanden.
+                            </div>
+
+                        @endforelse
+
+                    </div>
+                </div>
+
                 <div class="flex items-center gap-3">
 
                     @if($editingGroupID)
@@ -178,9 +228,18 @@
                                 </div>
                             @endif
 
-                            <div class="mt-2 text-xs text-slate-500">
-                                {{ $group->members->count() }}
-                                Mitglieder
+                            <div class="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
+
+                                <span>
+                                    {{ $group->members->count() }}
+                                    Mitglieder
+                                </span>
+
+                                                            <span>
+                                    {{ $group->externalContacts->count() }}
+                                    externe Kontakte
+                                </span>
+
                             </div>
                         </div>
 

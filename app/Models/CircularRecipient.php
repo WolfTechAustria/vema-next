@@ -34,4 +34,26 @@ class CircularRecipient extends Model
             'memberID'
         );
     }
+
+    public function externalContact(): BelongsTo
+    {
+        return $this->belongsTo(
+            ExternalContact::class,
+            'externalContactID',
+            'externalContactID'
+        );
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        if ($this->member) {
+            return $this->member->full_name;
+        }
+
+        if ($this->externalContact) {
+            return $this->externalContact->full_name;
+        }
+
+        return $this->email ?? 'Unbekannter Empfänger';
+    }
 }

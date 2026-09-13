@@ -5,6 +5,7 @@ namespace App\Livewire\RecipientGroups;
 use App\Models\Member;
 use App\Models\RecipientGroup;
 use Livewire\Component;
+use App\Models\ExternalContact;
 
 class Index extends Component
 {
@@ -12,6 +13,8 @@ class Index extends Component
     public string $description = '';
 
     public array $selectedMembers = [];
+    public array $selectedExternalContacts = [];
+
 
     public ?int $editingGroupID = null;
 
@@ -30,6 +33,9 @@ class Index extends Component
             'selectedMembers' => [
                 'array',
             ],
+            'selectedExternalContacts' => [
+                'array',
+            ],
         ]);
 
         $group = RecipientGroup::create([
@@ -39,6 +45,10 @@ class Index extends Component
 
         $group->members()->sync(
             array_map('intval', $this->selectedMembers)
+        );
+
+        $group->externalContacts()->sync(
+            array_map('intval', $this->selectedExternalContacts)
         );
 
         $this->resetForm();
@@ -52,7 +62,10 @@ class Index extends Component
     public function editGroup(int $groupID): void
     {
         $group = RecipientGroup::query()
-            ->with('members')
+            ->with([
+                'members',
+                'externalContacts',
+            ])
             ->findOrFail($groupID);
 
         $this->editingGroupID = $group->groupID;
@@ -62,6 +75,12 @@ class Index extends Component
         $this->selectedMembers = $group->members
             ->pluck('memberID')
             ->map(fn ($memberID) => (string) $memberID)
+            ->values()
+            ->all();
+
+        $this->selectedExternalContacts = $group->externalContacts
+            ->pluck('externalContactID')
+            ->map(fn ($externalContactID) => (string) $externalContactID)
             ->values()
             ->all();
 
@@ -88,11 +107,16 @@ class Index extends Component
             'selectedMembers' => [
                 'array',
             ],
+            'selectedExternalContacts' => [
+                'array',
+            ],
         ]);
 
         $group = RecipientGroup::findOrFail(
             $this->editingGroupID
         );
+
+
 
         $group->update([
             'name' => $validated['name'],
@@ -101,6 +125,10 @@ class Index extends Component
 
         $group->members()->sync(
             array_map('intval', $this->selectedMembers)
+        );
+
+        $group->externalContacts()->sync(
+            array_map('intval', $this->selectedExternalContacts)
         );
 
         $this->resetForm();
@@ -141,13 +169,16 @@ class Index extends Component
             'description',
             'selectedMembers',
             'editingGroupID',
+            'selectedExternalContacts',
         ]);
     }
 
     public function render()
     {
         $groups = RecipientGroup::query()
-            ->with('members')
+            ->with(
+                'members',
+                'externalContacts',)
             ->orderBy('name')
             ->get();
 
@@ -157,11 +188,18 @@ class Index extends Component
             ->orderBy('name')
             ->get();
 
+        $externalContacts = ExternalContact::query()
+            ->where('active', true)
+            ->orderBy('surname')
+            ->orderBy('name')
+            ->get();
+
         return view(
             'livewire.recipient-groups.index',
             [
                 'groups' => $groups,
                 'members' => $members,
+                'externalContacts' => $externalContacts,
             ]
         )->layout('layouts.app', [
             'title' => 'Empfängergruppen | VEMA',

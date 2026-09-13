@@ -21,6 +21,7 @@ class Index extends Component
     public string $recipientEmailFilter = 'all';
 
     public array $selectedRecipients = [];
+    public array $selectedExternalRecipients = [];
 
     public array $attachments = [];
     public bool $showCreateDialog = false;
@@ -89,6 +90,9 @@ class Index extends Component
             ]);
         }
 
+        /*
+         * Mitglieder als Empfänger speichern
+         */
         foreach ($this->selectedRecipients as $memberID) {
 
             $member = \App\Models\Member::query()
@@ -101,11 +105,33 @@ class Index extends Component
             CircularRecipient::create([
                 'circularID' => $circular->circularID,
                 'memberID' => (int) $memberID,
+                'externalContactID' => null,
                 'delivery_method' => $email ? 'email' : 'post',
                 'email' => $email,
             ]);
         }
 
+        /*
+         * Externe Kontakte als Empfänger speichern
+         */
+        foreach ($this->selectedExternalRecipients as $externalContactID) {
+
+            $contact = \App\Models\ExternalContact::query()
+                ->where('active', true)
+                ->findOrFail((int) $externalContactID);
+
+            CircularRecipient::create([
+                'circularID' => $circular->circularID,
+                'memberID' => null,
+                'externalContactID' => $contact->externalContactID,
+                'delivery_method' => 'email',
+                'email' => $contact->email,
+            ]);
+        }
+
+        /*
+         * Anhänge speichern
+         */
         foreach ($this->attachments as $file) {
 
             $originalName = $file->getClientOriginalName();
@@ -132,6 +158,7 @@ class Index extends Component
             'bodyHtml',
             'attachments',
             'selectedRecipients',
+            'selectedExternalRecipients',
             'editingCircularID',
             'existingAttachments',
         ]);
@@ -158,6 +185,7 @@ class Index extends Component
         $this->subject = $template->subject ?? '';
         $this->bodyHtml = $template->body_html ?? '';
     }
+
     public function removeAttachment(int $index): void
     {
         if (!isset($this->attachments[$index])) {
@@ -207,14 +235,21 @@ class Index extends Component
     public function clearRecipientSelection(): void
     {
         $this->selectedRecipients = [];
+        $this->selectedExternalRecipients = [];
     }
 
     public function addRecipientGroup(int $groupID): void
     {
         $group = \App\Models\RecipientGroup::query()
-            ->with('members')
+            ->with([
+                'members',
+                'externalContacts',
+            ])
             ->findOrFail($groupID);
 
+        /*
+         * Mitglieder übernehmen
+         */
         $memberIds = $group->members
             ->pluck('memberID')
             ->map(fn ($id) => (string) $id)
@@ -224,6 +259,21 @@ class Index extends Component
             array_unique([
                 ...$this->selectedRecipients,
                 ...$memberIds,
+            ])
+        );
+
+        /*
+         * Externe Kontakte übernehmen
+         */
+        $externalContactIds = $group->externalContacts
+            ->pluck('externalContactID')
+            ->map(fn ($id) => (string) $id)
+            ->all();
+
+        $this->selectedExternalRecipients = array_values(
+            array_unique([
+                ...$this->selectedExternalRecipients,
+                ...$externalContactIds,
             ])
         );
     }
@@ -252,9 +302,24 @@ class Index extends Component
         $this->subject = $circular->subject ?? '';
         $this->bodyHtml = $circular->body_html ?? '';
 
+        /*
+         * Mitglieder laden
+         */
         $this->selectedRecipients = $circular->recipients
+            ->whereNotNull('memberID')
             ->pluck('memberID')
             ->map(fn ($id) => (string) $id)
+            ->values()
+            ->all();
+
+        /*
+         * Externe Kontakte laden
+         */
+        $this->selectedExternalRecipients = $circular->recipients
+            ->whereNotNull('externalContactID')
+            ->pluck('externalContactID')
+            ->map(fn ($id) => (string) $id)
+            ->values()
             ->all();
 
         $this->showCreateDialog = true;
@@ -336,6 +401,12 @@ class Index extends Component
             ->orderBy('name')
             ->get();
 
+        $externalContacts = \App\Models\ExternalContact::query()
+            ->where('active', true)
+            ->orderBy('surname')
+            ->orderBy('name')
+            ->get();
+
         return view(
             'livewire.circulars.index',
             [
@@ -343,6 +414,7 @@ class Index extends Component
                 'templates' => $templates,
                 'members' => $members,
                 'recipientGroups' => $recipientGroups,
+                'externalContacts' => $externalContacts,
             ]
         )->layout('layouts.app', [
             'title' => 'Rundschreiben | VEMA',

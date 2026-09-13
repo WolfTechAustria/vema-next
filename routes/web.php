@@ -93,6 +93,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/members/pdf/overview',[\App\Http\Controllers\MemberController::class, 'downloadOverview'])
         ->name('members.pdf.overview');
 
+    Route::livewire('/external-contacts', \App\Livewire\ExternalContacts\Index::class)
+        ->name('external-contacts.index');
+
     Route::livewire('/circulars',\App\Livewire\Circulars\Index::class)
         ->name('circulars.index');
 

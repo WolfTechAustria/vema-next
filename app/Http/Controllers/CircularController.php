@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CircularMail;
 use App\Models\Circular;
+use App\Models\CircularAttachment;
+use App\Models\CircularRecipient;
 use App\Models\Member;
+use App\Services\ImapSentMailService;
 use App\Services\PdfLetterheadService;
 use App\Services\TemplateRendererService;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Mail\CircularMail;
-use App\Models\CircularRecipient;
 use Illuminate\Support\Facades\Mail;
-use App\Models\CircularAttachment;
 use Illuminate\Support\Facades\Storage;
-use App\Services\ImapSentMailService;
 
 class CircularController extends Controller
 {
@@ -41,9 +41,9 @@ class CircularController extends Controller
         $contentPdf = $pdf->output();
 
         $contentPath = tempnam(
-                sys_get_temp_dir(),
-                'circular_'
-            ) . '.pdf';
+            sys_get_temp_dir(),
+            'circular_'
+        ).'.pdf';
 
         file_put_contents(
             $contentPath,
@@ -67,18 +67,17 @@ class CircularController extends Controller
 
         $fileName =
             'Rundschreiben_'
-            . $circular->circularID
-            . '_'
-            . $member->memberID
-            . '.pdf';
+            .$circular->circularID
+            .'_'
+            .$member->memberID
+            .'.pdf';
 
         return response(
             $finalPdf,
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' =>
-                    'inline; filename="' . $fileName . '"',
+                'Content-Disposition' => 'inline; filename="'.$fileName.'"',
             ]
         );
     }
@@ -107,7 +106,7 @@ class CircularController extends Controller
 
             $member = $recipient->member;
 
-            if (!$member) {
+            if (! $member) {
                 continue;
             }
 
@@ -137,9 +136,9 @@ class CircularController extends Controller
         )->setPaper('a4');
 
         $contentPath = tempnam(
-                sys_get_temp_dir(),
-                'circular_batch_'
-            ) . '.pdf';
+            sys_get_temp_dir(),
+            'circular_batch_'
+        ).'.pdf';
 
         file_put_contents(
             $contentPath,
@@ -163,16 +162,15 @@ class CircularController extends Controller
 
         $fileName =
             'Rundschreiben_'
-            . $circular->circularID
-            . '_Post.pdf';
+            .$circular->circularID
+            .'_Post.pdf';
 
         return response(
             $finalPdf,
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' =>
-                    'inline; filename="' . $fileName . '"',
+                'Content-Disposition' => 'inline; filename="'.$fileName.'"',
             ]
         );
     }
@@ -202,7 +200,9 @@ class CircularController extends Controller
 
         return back()->with(
             'success',
-            'Testmail wurde an ' . $recipient->email . ' versendet.'
+            'Testmail wurde an '
+            .$recipient->display_name
+            .' ('.$recipient->email.') versendet.'
         );
     }
 
@@ -247,19 +247,47 @@ class CircularController extends Controller
                     }
                 );
 
+                /*
+                 * 1. E-Mail tatsächlich versenden
+                 */
                 Mail::to($recipient->email)->send($mail);
 
-                if ($rawMessage) {
-                    app(ImapSentMailService::class)->append(
-                        $rawMessage
-                    );
-                }
-
+                /*
+                 * Ab hier gilt die Mail als versendet.
+                 */
                 $recipient->update([
                     'sent_at' => now(),
                 ]);
 
                 $sentCount++;
+
+                /*
+                    * 2. Kopie zusätzlich per IMAP
+                    *    im Gesendet-Ordner speichern.
+                    *
+                    * Ein Fehler hier darf den eigentlichen
+                    * Versand NICHT als fehlgeschlagen markieren.
+                */
+                if ($rawMessage) {
+                    try {
+                        app(ImapSentMailService::class)->append(
+                            $rawMessage
+                        );
+                    } catch (\Throwable $imapException) {
+
+                        \Log::warning(
+                            'Rundschreiben wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
+                            [
+                                'circularID' => $circular->circularID,
+                                'recipientID' => $recipient->recipientID,
+                                'memberID' => $recipient->memberID,
+                                'externalContactID' => $recipient->externalContactID,
+                                'email' => $recipient->email,
+                                'error' => $imapException->getMessage(),
+                            ]
+                        );
+                    }
+                }
 
             } catch (\Throwable $e) {
 
@@ -271,6 +299,7 @@ class CircularController extends Controller
                         'circularID' => $circular->circularID,
                         'recipientID' => $recipient->recipientID,
                         'memberID' => $recipient->memberID,
+                        'externalContactID' => $recipient->externalContactID,
                         'email' => $recipient->email,
                         'error' => $e->getMessage(),
                     ]
@@ -289,7 +318,7 @@ class CircularController extends Controller
             ->whereNull('sent_at')
             ->exists();
 
-        if (!$hasOpenRecipients) {
+        if (! $hasOpenRecipients) {
 
             $circular->update([
                 'status' => 'sent',
@@ -302,16 +331,16 @@ class CircularController extends Controller
             return back()->with(
                 'warning',
                 $sentCount
-                . ' E-Mail(s) erfolgreich versendet. '
-                . $failedCount
-                . ' E-Mail(s) konnten nicht versendet werden.'
+                .' E-Mail(s) erfolgreich versendet. '
+                .$failedCount
+                .' E-Mail(s) konnten nicht versendet werden.'
             );
         }
 
         return back()->with(
             'success',
             $sentCount
-            . ' Rundschreiben wurden erfolgreich per E-Mail versendet.'
+            .' Rundschreiben wurden erfolgreich per E-Mail versendet.'
         );
     }
 
@@ -338,7 +367,7 @@ class CircularController extends Controller
             ->whereNull('sent_at')
             ->exists();
 
-        if (!$hasOpenRecipients) {
+        if (! $hasOpenRecipients) {
             $circular->update([
                 'status' => 'sent',
                 'sent_at' => now(),
@@ -348,10 +377,9 @@ class CircularController extends Controller
         return back()->with(
             'success',
             $postRecipients->count()
-            . ' Post-Empfänger wurden als versendet markiert.'
+            .' Post-Empfänger wurden als versendet markiert.'
         );
     }
-
 
     public function showEmail(
         Circular $circular,
@@ -406,5 +434,4 @@ class CircularController extends Controller
             $attachment->file_name
         );
     }
-
 }

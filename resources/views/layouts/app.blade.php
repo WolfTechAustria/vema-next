@@ -194,7 +194,7 @@
 
                 <div
                     x-data="{
-        open: {{ request()->routeIs('circulars.*', 'recipient-groups.*') ? 'true' : 'false' }}
+        open: {{ request()->routeIs('circulars.*', 'recipient-groups.*', 'templates.*', 'external-contacts.*') ? 'true' : 'false' }}
     }"
                     class="space-y-1"
                 >
@@ -203,7 +203,7 @@
                         type="button"
                         @click="open = !open"
                         class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition
-        {{ request()->routeIs('circulars.*', 'recipient-groups.*')
+        {{ request()->routeIs('circulars.*', 'recipient-groups.*','templates.*', 'external-contacts.*')
             ? 'bg-slate-900 text-white'
             : 'text-slate-700 hover:bg-slate-100' }}"
                     >
@@ -240,9 +240,9 @@
                             href="{{ route('circulars.index') }}"
                             wire:navigate
                             class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
-            {{ request()->routeIs('circulars.*')
-                ? 'bg-slate-100 text-slate-900'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                            {{ request()->routeIs('circulars.*')
+                                ? 'bg-slate-100 text-slate-900'
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
                         >
                             <span>✉</span>
                             Rundschreiben
@@ -253,12 +253,36 @@
                             href="{{ route('recipient-groups.index') }}"
                             wire:navigate
                             class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
-            {{ request()->routeIs('recipient-groups.*')
-                ? 'bg-slate-100 text-slate-900'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                            {{ request()->routeIs('recipient-groups.*')
+                            ? 'bg-slate-100 text-slate-900'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
                         >
                             <span>♙</span>
                             Empfängergruppen
+                        </a>
+
+                        <a
+                            href="{{ route('external-contacts.index') }}"
+                            wire:navigate
+                            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+                            {{ request()->routeIs('external-contacts.*')
+                                ? 'bg-slate-100 text-slate-900'
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                        >
+                            <span>♙</span>
+                            Externe Kontakte
+                        </a>
+
+                        <a
+                            href="{{ route('templates.index') }}"
+                            wire:navigate
+                            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                            {{ request()->routeIs('templates.*')
+                            ? 'bg-slate-100 text-slate-900'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'  }}"
+                        >
+                            <span>▤</span>
+                            Templates
                         </a>
 
                     </div>
@@ -275,17 +299,7 @@
                 </a>
 
 
-                <a
-                    href="{{ route('templates.index') }}"
-                    wire:navigate
-                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                    {{ request()->routeIs('templates.*')
-                        ? 'bg-slate-900 text-white'
-                        : 'text-slate-700 hover:bg-slate-100' }}"
-                >
-                    <span>▤</span>
-                    Templates
-                </a>
+
 
 
             @elseif($isMember)
