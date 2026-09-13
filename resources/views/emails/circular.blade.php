@@ -66,13 +66,8 @@
                 </tr>
 
                 <tr>
-                    <td style="
-                        padding: 18px 32px;
-                        border-top: 1px solid #e5e7eb;
-                        font-size: 12px;
-                        color: #6b7280;
-                    ">
-                        Schützengilde Angerberg
+                    <td style="padding: 18px 32px;">
+                        @include('emails.partials.signature')
                     </td>
                 </tr>
 
