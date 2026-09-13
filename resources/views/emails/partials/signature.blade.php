@@ -19,7 +19,7 @@
             "
         >
             <img
-                src="{{ asset('images/logo.jpg') }}"
+                src="https://vema.sg-angerberg.at/images/logo.png"
                 alt="Schützengilde Angerberg"
                 width="120"
                 style="
