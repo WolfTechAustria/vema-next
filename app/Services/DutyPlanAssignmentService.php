@@ -5,27 +5,74 @@ namespace App\Services;
 use App\Models\DutyPlanAbsence;
 use App\Models\DutyPlanAssignment;
 use App\Models\DutyPlanEvent;
+use App\Models\DutyPlanExternalVolunteer;
 use App\Models\DutyPlanVolunteer;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Carbon\CarbonInterface;
 
 class DutyPlanAssignmentService
 {
-    public function assign(int $planID, string $dateFrom, string $dateTo): array
-    {
+    public function assign(
+        int $planID,
+        string $dateFrom,
+        string $dateTo
+    ): array {
         $events = DutyPlanEvent::query()
             ->where('planID', $planID)
             ->whereBetween('duty_date', [$dateFrom, $dateTo])
             ->orderBy('duty_date')
             ->get();
 
-        $volunteers = DutyPlanVolunteer::query()
+        /*
+         * Vereinsmitglieder
+         */
+        $memberVolunteers = DutyPlanVolunteer::query()
             ->with('member')
             ->where('active', true)
-            ->whereHas('member', fn ($q) => $q->where('active', true))
+            ->whereHas(
+                'member',
+                fn ($q) => $q->where('active', true)
+            )
             ->get();
+
+        /*
+         * Externe Helfer
+         */
+        $externalVolunteers = DutyPlanExternalVolunteer::query()
+            ->with('externalContact')
+            ->where('active', true)
+            ->whereHas(
+                'externalContact',
+                fn ($q) => $q->where('active', true)
+            )
+            ->get();
+
+        /*
+         * Beide Helferpools in ein einheitliches Format bringen.
+         */
+        $volunteers = collect();
+
+        foreach ($memberVolunteers as $volunteer) {
+            $volunteers->push([
+                'key' => 'member:' . $volunteer->memberID,
+                'type' => 'member',
+                'memberID' => (int) $volunteer->memberID,
+                'externalContactID' => null,
+                'volunteer' => $volunteer,
+            ]);
+        }
+
+        foreach ($externalVolunteers as $volunteer) {
+            $volunteers->push([
+                'key' => 'external:' . $volunteer->externalContactID,
+                'type' => 'external',
+                'memberID' => null,
+                'externalContactID' => (int) $volunteer->externalContactID,
+                'volunteer' => $volunteer,
+            ]);
+        }
 
         $assigned = 0;
         $unfilled = 0;
@@ -39,10 +86,18 @@ class DutyPlanAssignmentService
             &$assigned,
             &$unfilled
         ) {
+            /*
+             * Bestehende Zuweisungen im gewählten Zeitraum löschen.
+             */
             DutyPlanAssignment::query()
-                ->whereHas('event', fn ($q) =>
-                $q->where('planID', $planID)
-                    ->whereBetween('duty_date', [$dateFrom, $dateTo])
+                ->whereHas(
+                    'event',
+                    fn ($q) =>
+                    $q->where('planID', $planID)
+                        ->whereBetween(
+                            'duty_date',
+                            [$dateFrom, $dateTo]
+                        )
                 )
                 ->delete();
 
@@ -50,34 +105,58 @@ class DutyPlanAssignmentService
             $lastServiceDates = [];
             $teamCounts = [];
 
-            foreach ($volunteers as $volunteer) {
-                $serviceCounts[$volunteer->memberID] = 0;
-                $lastServiceDates[$volunteer->memberID] = null;
+            foreach ($volunteers as $candidate) {
+                $serviceCounts[$candidate['key']] = 0;
+                $lastServiceDates[$candidate['key']] = null;
             }
 
+            /*
+             * Frühere Dienste berücksichtigen.
+             */
             $previousAssignments = DutyPlanAssignment::query()
                 ->with('event')
-                ->whereHas('event', fn ($q) =>
-                $q->where('planID', $planID)
-                    ->where('duty_date', '<', $dateFrom)
+                ->whereHas(
+                    'event',
+                    fn ($q) =>
+                    $q->where('planID', $planID)
+                        ->where('duty_date', '<', $dateFrom)
                 )
-                ->get()
-                ->groupBy('memberID');
+                ->get();
 
-            foreach ($previousAssignments as $memberId => $assignments) {
-                $last = $assignments
-                    ->sortByDesc(fn ($a) => $a->event->duty_date)
-                    ->first();
+            foreach ($previousAssignments as $assignment) {
+                $key = $this->assignmentKey($assignment);
 
-                if ($last?->event) {
-                    $lastServiceDates[$memberId] = $last->event->duty_date;
+                if (!$key) {
+                    continue;
+                }
+
+                if (!array_key_exists($key, $lastServiceDates)) {
+                    continue;
+                }
+
+                $currentLastDate = $lastServiceDates[$key];
+
+                if (
+                    !$currentLastDate
+                    || Carbon::parse($assignment->event->duty_date)
+                        ->greaterThan(Carbon::parse($currentLastDate))
+                ) {
+                    $lastServiceDates[$key] =
+                        $assignment->event->duty_date;
                 }
             }
 
+            /*
+             * Termine durchlaufen.
+             */
             foreach ($events as $event) {
                 $selected = [];
 
-                for ($slot = 0; $slot < $event->required_helpers; $slot++) {
+                for (
+                    $slot = 0;
+                    $slot < $event->required_helpers;
+                    $slot++
+                ) {
                     $candidate = $this->pickCandidate(
                         $event,
                         $volunteers,
@@ -94,26 +173,37 @@ class DutyPlanAssignmentService
 
                     DutyPlanAssignment::create([
                         'eventID' => $event->eventID,
-                        'memberID' => $candidate->memberID,
+
+                        'memberID' =>
+                            $candidate['memberID'],
+
+                        'externalContactID' =>
+                            $candidate['externalContactID'],
+
                         'slot_no' => $slot + 1,
                     ]);
 
-                    $selected[] = $candidate->memberID;
-                    $serviceCounts[$candidate->memberID]++;
-                    $lastServiceDates[$candidate->memberID] = $event->duty_date;
+                    $key = $candidate['key'];
 
-                    foreach ($selected as $otherMemberId) {
-                        if ($otherMemberId === $candidate->memberID) {
-                            continue;
-                        }
-
-                        $key = $this->teamKey(
-                            $candidate->memberID,
-                            $otherMemberId
+                    /*
+                     * Teamstatistik aktualisieren.
+                     */
+                    foreach ($selected as $otherKey) {
+                        $teamKey = $this->teamKey(
+                            $key,
+                            $otherKey
                         );
 
-                        $teamCounts[$key] = ($teamCounts[$key] ?? 0) + 1;
+                        $teamCounts[$teamKey] =
+                            ($teamCounts[$teamKey] ?? 0) + 1;
                     }
+
+                    $selected[] = $key;
+
+                    $serviceCounts[$key]++;
+
+                    $lastServiceDates[$key] =
+                        $event->duty_date;
 
                     $assigned++;
                 }
@@ -133,27 +223,51 @@ class DutyPlanAssignmentService
         array $serviceCounts,
         array $lastServiceDates,
         array $teamCounts
-    ): ?DutyPlanVolunteer {
+    ): ?array {
         $weekday = $event->duty_date->isoWeekday();
 
         $eligible = $volunteers
-            ->filter(function ($volunteer) use (
+            ->filter(function ($candidate) use (
                 $event,
                 $weekday,
                 $selected
             ) {
-                if (in_array($volunteer->memberID, $selected, true)) {
+                /*
+                 * Nicht doppelt am selben Termin.
+                 */
+                if (
+                    in_array(
+                        $candidate['key'],
+                        $selected,
+                        true
+                    )
+                ) {
                     return false;
                 }
 
-                if (!$volunteer->isAvailableOnWeekday($weekday)) {
+                /*
+                 * Wochentags-Verfügbarkeit.
+                 */
+                if (
+                    !$candidate['volunteer']
+                        ->isAvailableOnWeekday($weekday)
+                ) {
                     return false;
                 }
 
-                return !$this->isAbsent(
-                    $volunteer->memberID,
-                    $event->duty_date
-                );
+                /*
+                 * Abwesenheiten.
+                 */
+                if (
+                    $this->isAbsent(
+                        $candidate,
+                        $event->duty_date
+                    )
+                ) {
+                    return false;
+                }
+
+                return true;
             });
 
         if ($eligible->isEmpty()) {
@@ -161,37 +275,54 @@ class DutyPlanAssignmentService
         }
 
         return $eligible
-            ->map(function ($volunteer) use (
+            ->map(function ($candidate) use (
                 $event,
                 $selected,
                 $serviceCounts,
                 $lastServiceDates,
                 $teamCounts
             ) {
-                $memberId = $volunteer->memberID;
+                $key = $candidate['key'];
 
-                $serviceCount = $serviceCounts[$memberId] ?? 0;
+                $serviceCount =
+                    $serviceCounts[$key] ?? 0;
 
-                $lastDate = $lastServiceDates[$memberId] ?? null;
+                $lastDate =
+                    $lastServiceDates[$key] ?? null;
 
                 $daysSinceLast = $lastDate
-                    ? Carbon::parse($lastDate)->diffInDays($event->duty_date)
+                    ? Carbon::parse($lastDate)
+                        ->diffInDays($event->duty_date)
                     : 9999;
 
+                /*
+                 * Wiederholte Teams vermeiden.
+                 */
                 $teamPenalty = 0;
 
-                foreach ($selected as $otherMemberId) {
-                    $key = $this->teamKey($memberId, $otherMemberId);
+                foreach ($selected as $otherKey) {
+                    $teamKey = $this->teamKey(
+                        $key,
+                        $otherKey
+                    );
 
-                    $teamPenalty += $teamCounts[$key] ?? 0;
+                    $teamPenalty +=
+                        $teamCounts[$teamKey] ?? 0;
                 }
 
+                /*
+                 * Zu kurze Abstände stark bestrafen.
+                 */
                 $consecutivePenalty = 0;
 
                 if ($lastDate) {
                     $last = Carbon::parse($lastDate);
 
-                    if ($last->diffInDays($event->duty_date) <= 4) {
+                    if (
+                        $last->diffInDays(
+                            $event->duty_date
+                        ) <= 4
+                    ) {
                         $consecutivePenalty = 1000;
                     }
                 }
@@ -204,32 +335,68 @@ class DutyPlanAssignmentService
                     + random_int(0, 20);
 
                 return [
-                    'volunteer' => $volunteer,
+                    'candidate' => $candidate,
                     'score' => $score,
                 ];
             })
             ->sortBy('score')
-            ->first()['volunteer'] ?? null;
+            ->first()['candidate']
+            ?? null;
     }
 
     protected function isAbsent(
-        int $memberId,
+        array $candidate,
         CarbonInterface $date
-    ): bool
-    {
+    ): bool {
+        /*
+         * Bestehende Abwesenheitstabelle gilt momentan
+         * ausschließlich für Mitglieder.
+         */
+        if ($candidate['type'] !== 'member') {
+            return false;
+        }
+
         return DutyPlanAbsence::query()
-            ->where('memberID', $memberId)
-            ->whereDate('date_from', '<=', $date->toDateString())
-            ->whereDate('date_to', '>=', $date->toDateString())
+            ->where(
+                'memberID',
+                $candidate['memberID']
+            )
+            ->whereDate(
+                'date_from',
+                '<=',
+                $date->toDateString()
+            )
+            ->whereDate(
+                'date_to',
+                '>=',
+                $date->toDateString()
+            )
             ->exists();
     }
 
-    protected function teamKey(int $a, int $b): string
-    {
-        $ids = [$a, $b];
+    protected function assignmentKey(
+        DutyPlanAssignment $assignment
+    ): ?string {
+        if ($assignment->memberID) {
+            return 'member:' . $assignment->memberID;
+        }
 
-        sort($ids);
+        if ($assignment->externalContactID) {
+            return 'external:'
+                . $assignment->externalContactID;
+        }
 
-        return implode(':', $ids);
+        return null;
+    }
+
+    protected function teamKey(
+        string $a,
+        string $b
+    ): string {
+        $keys = [$a, $b];
+
+        sort($keys);
+
+        return implode('|', $keys);
     }
 }

@@ -13,6 +13,7 @@ use App\Exports\DutyPlanExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\DutyPlan;
+use App\Models\DutyPlanExternalVolunteer;
 
 
 class Index extends Component
@@ -255,6 +256,7 @@ class Index extends Component
             ->where('planID', $this->planId)
             ->with([
                 'assignments.member',
+                'assignments.externalContact',
             ])
             ->whereBetween('duty_date', [
                 $this->dateFrom,
@@ -326,30 +328,53 @@ class Index extends Component
     public function updateAssignment(
         int $eventId,
         int $slotNo,
-        ?int $memberId
+        ?string $volunteerKey
     ): void {
         $assignment = DutyPlanAssignment::query()
             ->where('eventID', $eventId)
             ->where('slot_no', $slotNo)
             ->first();
 
+        if (!$volunteerKey) {
+            $assignment?->delete();
+
+            return;
+        }
+
+        [$type, $id] = array_pad(
+            explode(':', $volunteerKey, 2),
+            2,
+            null
+        );
+
+        $id = (int) $id;
+
+        if (
+            !in_array($type, ['member', 'external'], true)
+            || $id <= 0
+        ) {
+            return;
+        }
+
         $alreadyAssigned = DutyPlanAssignment::query()
             ->where('eventID', $eventId)
-            ->where('memberID', $memberId)
             ->where('slot_no', '!=', $slotNo)
+            ->where(function ($query) use ($type, $id) {
+
+                if ($type === 'member') {
+                    $query->where('memberID', $id);
+                } else {
+                    $query->where('externalContactID', $id);
+                }
+
+            })
             ->exists();
 
         if ($alreadyAssigned) {
             session()->flash(
                 'error',
-                'Dieses Mitglied ist bei diesem Termin bereits eingeteilt.'
+                'Dieser Helfer ist bei diesem Termin bereits eingeteilt.'
             );
-
-            return;
-        }
-
-        if (!$memberId) {
-            $assignment?->delete();
 
             return;
         }
@@ -360,7 +385,15 @@ class Index extends Component
                 'slot_no' => $slotNo,
             ],
             [
-                'memberID' => $memberId,
+                'memberID' =>
+                    $type === 'member'
+                        ? $id
+                        : null,
+
+                'externalContactID' =>
+                    $type === 'external'
+                        ? $id
+                        : null,
             ]
         );
     }
@@ -400,6 +433,7 @@ class Index extends Component
         return DutyPlanEvent::query()
             ->with([
                 'assignments.member',
+                'assignments.externalContact',
             ])
             ->where('planID', $this->planId)
             ->whereBetween('duty_date', [
@@ -544,8 +578,25 @@ class Index extends Component
             )
             ->values();
 
+        $externalVolunteers = DutyPlanExternalVolunteer::query()
+            ->with('externalContact')
+            ->where('active', true)
+            ->whereHas(
+                'externalContact',
+                fn ($query) => $query->where('active', true)
+            )
+            ->get()
+            ->sortBy(
+                fn ($volunteer) =>
+                    $volunteer->externalContact->surname
+                    . ' '
+                    . $volunteer->externalContact->name
+            )
+            ->values();
+
         return view('livewire.duty-plan.index', [
             'volunteers' => $volunteers,
+            'externalVolunteers' => $externalVolunteers,
         ])->layout('layouts.app', [
             'title' => 'Dienstplan | VEMA',
             'heading' => 'Dienstplan',

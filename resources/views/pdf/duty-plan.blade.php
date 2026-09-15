@@ -133,21 +133,25 @@
                 {{ $event->duty_name }}
             </td>
 
-            <td class="helper">
-                {{ $assignments->get(0)?->member?->full_name ?? '' }}
-            </td>
+            @for($slot = 0; $slot < 4; $slot++)
 
-            <td class="helper">
-                {{ $assignments->get(1)?->member?->full_name ?? '' }}
-            </td>
+                @php
+                    $assignment = $assignments->get($slot);
 
-            <td class="helper">
-                {{ $assignments->get(2)?->member?->full_name ?? '' }}
-            </td>
+                    $helperName = '';
 
-            <td class="helper">
-                {{ $assignments->get(3)?->member?->full_name ?? '' }}
-            </td>
+                    if ($assignment?->member) {
+                        $helperName = $assignment->member->full_name;
+                    } elseif ($assignment?->externalContact) {
+                        $helperName = $assignment->externalContact->full_name;
+                    }
+                @endphp
+
+                <td class="helper">
+                    {{ $helperName }}
+                </td>
+
+            @endfor
 
         </tr>
 

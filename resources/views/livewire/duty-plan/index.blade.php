@@ -6,6 +6,14 @@
 
 @endif
 
+@if(session('error'))
+
+    <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+        {{ session('error') }}
+    </div>
+
+@endif
+
 
 <div class="space-y-6">
 
@@ -44,6 +52,8 @@
 
     </div>
 
+
+    {{-- Dienstplan Auswahl --}}
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
         <div class="flex flex-col gap-4 p-6 lg:flex-row lg:items-end">
@@ -90,6 +100,7 @@
                 + Neuer Dienstplan
             </button>
 
+
             <div class="flex flex-wrap gap-2">
 
                 <button
@@ -123,7 +134,10 @@
 
     </section>
 
+
+    {{-- Neuer Dienstplan --}}
     @if($showCreatePlan)
+
         <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
 
             <h3 class="mb-5 font-semibold">
@@ -133,6 +147,7 @@
             <div class="grid gap-4 md:grid-cols-3">
 
                 <div>
+
                     <label class="mb-1 block text-sm font-medium">
                         Name
                     </label>
@@ -143,9 +158,12 @@
                         placeholder="z. B. Saison 2027"
                         class="w-full rounded-lg border border-slate-300 px-3 py-2"
                     >
+
                 </div>
 
+
                 <div>
+
                     <label class="mb-1 block text-sm font-medium">
                         Von
                     </label>
@@ -155,9 +173,12 @@
                         type="date"
                         class="w-full rounded-lg border border-slate-300 px-3 py-2"
                     >
+
                 </div>
 
+
                 <div>
+
                     <label class="mb-1 block text-sm font-medium">
                         Bis
                     </label>
@@ -167,9 +188,11 @@
                         type="date"
                         class="w-full rounded-lg border border-slate-300 px-3 py-2"
                     >
+
                 </div>
 
             </div>
+
 
             <div class="mt-5 flex justify-end gap-2">
 
@@ -192,6 +215,7 @@
             </div>
 
         </section>
+
     @endif
 
 
@@ -199,14 +223,17 @@
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
         <div class="border-b border-slate-200 px-6 py-4">
+
             <h3 class="font-semibold text-slate-900">
                 Zeitraum
             </h3>
+
         </div>
 
         <div class="grid gap-6 p-6 md:grid-cols-3">
 
             <div>
+
                 <label class="mb-1 block text-sm font-medium text-slate-700">
                     Von
                 </label>
@@ -216,9 +243,12 @@
                     wire:model.live="dateFrom"
                     class="w-full rounded-lg border border-slate-300 px-3 py-2"
                 >
+
             </div>
 
+
             <div>
+
                 <label class="mb-1 block text-sm font-medium text-slate-700">
                     Bis
                 </label>
@@ -228,7 +258,9 @@
                     wire:model.live="dateTo"
                     class="w-full rounded-lg border border-slate-300 px-3 py-2"
                 >
+
             </div>
+
 
             <div class="flex items-end">
 
@@ -267,6 +299,7 @@
             </p>
 
         </div>
+
 
         <div class="divide-y divide-slate-100">
 
@@ -358,6 +391,7 @@
 
     </section>
 
+
     @error('weekdayRules')
 
     <div class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -365,7 +399,6 @@
     </div>
 
     @enderror
-
 
 
     {{-- Aktionen --}}
@@ -378,14 +411,17 @@
             wire:target="generateEvents"
             class="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
         >
+
             <span wire:loading.remove wire:target="generateEvents">
                 Termine erzeugen
             </span>
 
             <span wire:loading wire:target="generateEvents">
-        Termine werden erzeugt ...
+                Termine werden erzeugt ...
             </span>
+
         </button>
+
 
         <button
             type="button"
@@ -395,24 +431,27 @@
             wire:target="autoAssign"
             class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         >
-    <span wire:loading.remove wire:target="autoAssign">
-        Automatisch einteilen
-    </span>
+
+            <span wire:loading.remove wire:target="autoAssign">
+                Automatisch einteilen
+            </span>
 
             <span wire:loading wire:target="autoAssign">
-        Einteilung läuft ...
-    </span>
+                Einteilung läuft ...
+            </span>
+
         </button>
 
     </div>
 
 
-    {{-- Plan --}}
+    {{-- Diensttermine --}}
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
         <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
 
             <div>
+
                 <h3 class="font-semibold text-slate-900">
                     Diensttermine
                 </h3>
@@ -420,14 +459,17 @@
                 <p class="mt-1 text-sm text-slate-500">
                     {{ $this->events->count() }} Termine im ausgewählten Zeitraum.
                 </p>
+
             </div>
 
         </div>
 
-        <div class="flex flex-wrap items-end gap-3">
 
-            <br>
+        {{-- Export --}}
+        <div class="flex flex-wrap items-end gap-3 p-6">
+
             <div>
+
                 <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">
                     Export
                 </label>
@@ -436,15 +478,23 @@
                     wire:model="exportWeekday"
                     class="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
                 >
-                    <option value="all">Alle Wochentage</option>
+
+                    <option value="all">
+                        Alle Wochentage
+                    </option>
 
                     @for($weekday = 1; $weekday <= 7; $weekday++)
+
                         <option value="{{ $weekday }}">
                             {{ $this->weekdayName($weekday) }}
                         </option>
+
                     @endfor
+
                 </select>
+
             </div>
+
 
             <button
                 type="button"
@@ -455,6 +505,7 @@
             >
                 Excel exportieren
             </button>
+
 
             <button
                 type="button"
@@ -467,7 +518,9 @@
             </button>
 
         </div>
-        <br>
+
+
+        {{-- Tabelle --}}
         <div class="overflow-x-auto">
 
             <table class="min-w-full divide-y divide-slate-200">
@@ -503,6 +556,7 @@
 
                     <tr class="hover:bg-slate-50">
 
+                        {{-- Datum --}}
                         <td class="whitespace-nowrap px-6 py-4">
 
                             <div class="font-medium text-slate-900">
@@ -518,9 +572,11 @@
                             @if($holiday = $this->holidayName($event->duty_date))
 
                                 <div class="mt-1">
+
                                     <span class="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
                                         {{ $holiday }}
                                     </span>
+
                                 </div>
 
                             @endif
@@ -528,6 +584,7 @@
                         </td>
 
 
+                        {{-- Dienst --}}
                         <td class="px-6 py-4">
 
                             <div class="font-medium text-slate-900">
@@ -535,114 +592,172 @@
                             </div>
 
                             <div class="text-sm text-slate-500">
-                                {{ $event->required_helpers }} Helfer benötigt
+                                {{ $event->required_helpers }}
+                                Helfer benötigt
                             </div>
 
                         </td>
 
 
+                        {{-- Helfer --}}
                         <td class="px-6 py-4">
 
-                            @if($event->assignments->isEmpty())
+                            <div class="space-y-2">
 
-                                <span class="text-sm text-slate-400">
-                                        Noch niemand eingeteilt
-                                    </span>
+                                @for($slot = 1; $slot <= $event->required_helpers; $slot++)
 
-                            @else
+                                    @php
+                                        $assignment = $event->assignments
+                                            ->firstWhere('slot_no', $slot);
 
-                                <div class="flex flex-wrap gap-2">
+                                        $selectedVolunteerKey = null;
 
-                                    <div class="space-y-2">
+                                        if ($assignment?->memberID) {
 
-                                        @for($slot = 1; $slot <= $event->required_helpers; $slot++)
+                                            $selectedVolunteerKey =
+                                                'member:' . $assignment->memberID;
 
-                                            @php
-                                                $assignment = $event->assignments
-                                                    ->firstWhere('slot_no', $slot);
+                                        } elseif ($assignment?->externalContactID) {
 
-                                                $selectedMemberId = $assignment?->memberID;
+                                            $selectedVolunteerKey =
+                                                'external:' . $assignment->externalContactID;
 
-                                                $weekday = $event->duty_date->isoWeekday();
-                                            @endphp
+                                        }
 
-                                            <div class="flex items-center gap-2">
+                                        $weekday =
+                                            $event->duty_date->isoWeekday();
+                                    @endphp
 
-                                                <div class="w-16 text-xs font-medium text-slate-400">
-                                                    Helfer {{ $slot }}
-                                                </div>
 
-                                                <select
-                                                    wire:change="updateAssignment(
-                    {{ $event->eventID }},
-                    {{ $slot }},
-                    $event.target.value || null
-                )"
-                                                    class="min-w-60 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-                                                >
-                                                    <option value="">
-                                                        Nicht besetzt
-                                                    </option>
+                                    <div class="flex items-center gap-2">
 
-                                                    @foreach($volunteers as $volunteer)
+                                        <div class="w-16 shrink-0 text-xs font-medium text-slate-400">
+                                            Helfer {{ $slot }}
+                                        </div>
 
-                                                        @php
-                                                            $available =
-                                                                $volunteer->isAvailableOnWeekday($weekday)
-                                                                && $this->memberAvailableForEvent(
-                                                                    $volunteer->memberID,
-                                                                    $event->duty_date
-                                                                );
-                                                        @endphp
 
-                                                        @if($available)
+                                        <select
+                                            wire:key="assignment-{{ $event->eventID }}-{{ $slot }}"
+                                            wire:change="updateAssignment(
+                                                {{ $event->eventID }},
+                                                {{ $slot }},
+                                                $event.target.value || null
+                                            )"
+                                            class="min-w-60 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                                        >
 
-                                                            <option
-                                                                value="{{ $volunteer->memberID }}"
-                                                                @selected($selectedMemberId == $volunteer->memberID)
-                                                            >
-                                                                {{ $volunteer->member->surname }}
-                                                                {{ $volunteer->member->name }}
-                                                            </option>
+                                            <option value="">
+                                                Nicht besetzt
+                                            </option>
 
-                                                        @endif
 
-                                                    @endforeach
+                                            {{-- Vereinsmitglieder --}}
+                                            <optgroup label="Mitglieder">
 
-                                                </select>
+                                                @foreach($volunteers as $volunteer)
 
-                                            </div>
+                                                    @php
+                                                        $available =
+                                                            $volunteer->isAvailableOnWeekday($weekday)
+                                                            && $this->memberAvailableForEvent(
+                                                                $volunteer->memberID,
+                                                                $event->duty_date
+                                                            );
 
-                                        @endfor
+                                                        $volunteerKey =
+                                                            'member:' . $volunteer->memberID;
+                                                    @endphp
+
+
+                                                    @if($available)
+
+                                                        <option
+                                                            value="{{ $volunteerKey }}"
+                                                            @selected(
+                                                                $selectedVolunteerKey === $volunteerKey
+                                                            )
+                                                        >
+                                                            {{ $volunteer->member->surname }}
+                                                            {{ $volunteer->member->name }}
+                                                        </option>
+
+                                                    @endif
+
+                                                @endforeach
+
+                                            </optgroup>
+
+
+                                            {{-- Externe Helfer --}}
+                                            <optgroup label="Externe Helfer">
+
+                                                @foreach($externalVolunteers as $volunteer)
+
+                                                    @php
+                                                        $available =
+                                                            $volunteer->isAvailableOnWeekday($weekday);
+
+                                                        $volunteerKey =
+                                                            'external:' . $volunteer->externalContactID;
+                                                    @endphp
+
+
+                                                    @if($available)
+
+                                                        <option
+                                                            value="{{ $volunteerKey }}"
+                                                            @selected(
+                                                                $selectedVolunteerKey === $volunteerKey
+                                                            )
+                                                        >
+                                                            {{ $volunteer->externalContact->surname }}
+                                                            {{ $volunteer->externalContact->name }}
+
+                                                            @if($volunteer->externalContact->organization)
+                                                                – {{ $volunteer->externalContact->organization }}
+                                                            @endif
+                                                        </option>
+
+                                                    @endif
+
+                                                @endforeach
+
+                                            </optgroup>
+
+                                        </select>
 
                                     </div>
 
-                                </div>
+                                @endfor
 
-                            @endif
+                            </div>
 
                         </td>
 
 
+                        {{-- Status --}}
                         <td class="whitespace-nowrap px-6 py-4 text-right">
 
-                            @if($event->assignments->count() >= $event->required_helpers)
+                            @if(
+                                $event->assignments->count()
+                                >= $event->required_helpers
+                            )
 
                                 <span class="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
-                                        Vollständig
-                                    </span>
+                                    Vollständig
+                                </span>
 
                             @elseif($event->assignments->count() > 0)
 
                                 <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                                        Teilweise
-                                    </span>
+                                    Teilweise
+                                </span>
 
                             @else
 
                                 <span class="rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
-                                        Offen
-                                    </span>
+                                    Offen
+                                </span>
 
                             @endif
 
@@ -653,12 +768,14 @@
                 @empty
 
                     <tr>
+
                         <td
                             colspan="4"
                             class="px-6 py-12 text-center text-sm text-slate-500"
                         >
                             Für diesen Zeitraum wurden noch keine Diensttermine angelegt.
                         </td>
+
                     </tr>
 
                 @endforelse

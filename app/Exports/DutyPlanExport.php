@@ -3,11 +3,11 @@
 namespace App\Exports;
 
 use App\Models\DutyPlanEvent;
+use Illuminate\Support\Enumerable;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Illuminate\Support\Enumerable;
 
 class DutyPlanExport implements
     FromCollection,
@@ -29,6 +29,7 @@ class DutyPlanExport implements
             ->where('planID', $this->planId)
             ->with([
                 'assignments.member',
+                'assignments.externalContact',
             ])
             ->whereBetween('duty_date', [
                 $this->dateFrom,
@@ -67,16 +68,34 @@ class DutyPlanExport implements
 
         return [
             $event->duty_date->format('d.m.Y'),
+
             $event->duty_date
                 ->locale('de')
                 ->translatedFormat('l'),
 
             $event->duty_name,
 
-            $assignments->get(0)?->member?->full_name ?? '',
-            $assignments->get(1)?->member?->full_name ?? '',
-            $assignments->get(2)?->member?->full_name ?? '',
-            $assignments->get(3)?->member?->full_name ?? '',
+            $this->helperName($assignments->get(0)),
+            $this->helperName($assignments->get(1)),
+            $this->helperName($assignments->get(2)),
+            $this->helperName($assignments->get(3)),
         ];
+    }
+
+    protected function helperName($assignment): string
+    {
+        if (!$assignment) {
+            return '';
+        }
+
+        if ($assignment->member) {
+            return $assignment->member->full_name;
+        }
+
+        if ($assignment->externalContact) {
+            return $assignment->externalContact->full_name;
+        }
+
+        return '';
     }
 }

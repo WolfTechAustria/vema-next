@@ -38,4 +38,13 @@ class DutyPlanAssignment extends Model
             'memberID'
         );
     }
+
+    public function externalContact()
+    {
+        return $this->belongsTo(
+            ExternalContact::class,
+            'externalContactID',
+            'externalContactID'
+        );
+    }
 }

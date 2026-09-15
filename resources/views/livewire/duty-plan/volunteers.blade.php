@@ -150,4 +150,164 @@
 
     </section>
 
+    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+        <div class="border-b border-slate-200 px-6 py-4">
+
+            <h3 class="font-semibold text-slate-900">
+                Externe Helfer
+            </h3>
+
+            <p class="mt-1 text-sm text-slate-500">
+                Externe Kontakte können ebenfalls für Dienste eingeteilt werden.
+            </p>
+
+        </div>
+
+        <div class="overflow-x-auto">
+
+            <table class="min-w-full divide-y divide-slate-200">
+
+                <thead class="bg-slate-50">
+
+                <tr>
+
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Kontakt
+                    </th>
+
+                    <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Helfer
+                    </th>
+
+                    @for($weekday = 1; $weekday <= 7; $weekday++)
+
+                        <th class="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            {{ $this->weekdayName($weekday) }}
+                        </th>
+
+                    @endfor
+
+                </tr>
+
+                </thead>
+
+
+                <tbody class="divide-y divide-slate-100">
+
+                @forelse($externalContacts as $contact)
+
+                    @php
+                        $volunteer = $contact->dutyPlanVolunteer;
+
+                        $active =
+                            (bool) ($volunteer?->active ?? false);
+
+                        $mask =
+                            (int) ($volunteer?->weekday_mask ?? 127);
+                    @endphp
+
+                    <tr class="hover:bg-slate-50">
+
+                        <td class="px-6 py-4">
+
+                            <div class="font-medium text-slate-900">
+                                {{ $contact->surname }}
+                                {{ $contact->name }}
+                            </div>
+
+                            @if($contact->organization)
+                                <div class="mt-1 text-xs text-slate-500">
+                                    {{ $contact->organization }}
+                                </div>
+                            @endif
+
+                            <div class="text-xs text-slate-400">
+                                {{ $contact->email }}
+                            </div>
+
+                        </td>
+
+
+                        <td class="px-6 py-4 text-center">
+
+                            <button
+                                type="button"
+                                wire:click="toggleExternalVolunteer({{ $contact->externalContactID }})"
+                                class="
+                                inline-flex rounded-full px-3 py-1 text-xs font-semibold
+                                {{ $active
+                                    ? 'bg-green-50 text-green-700'
+                                    : 'bg-slate-100 text-slate-500'
+                                }}
+                            "
+                            >
+                                {{ $active ? 'Aktiv' : 'Inaktiv' }}
+                            </button>
+
+                        </td>
+
+
+                        @for($weekday = 1; $weekday <= 7; $weekday++)
+
+                            @php
+                                $bit = 1 << ($weekday - 1);
+
+                                $available =
+                                    ($mask & $bit) !== 0;
+                            @endphp
+
+                            <td class="px-3 py-4 text-center">
+
+                                <button
+                                    type="button"
+                                    wire:click="toggleExternalWeekday(
+                                    {{ $contact->externalContactID }},
+                                    {{ $weekday }}
+                                )"
+                                    @disabled(!$active)
+                                    class="
+                                    inline-flex h-8 w-8 items-center justify-center rounded-lg border text-sm font-semibold
+
+                                    {{ !$active
+                                        ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300'
+                                        : (
+                                            $available
+                                                ? 'border-green-200 bg-green-50 text-green-700'
+                                                : 'border-slate-200 bg-white text-slate-300'
+                                        )
+                                    }}
+                                "
+                                >
+                                    {{ $available ? '✓' : '–' }}
+                                </button>
+
+                            </td>
+
+                        @endfor
+
+                    </tr>
+
+                @empty
+
+                    <tr>
+
+                        <td
+                            colspan="9"
+                            class="px-6 py-8 text-center text-sm text-slate-500"
+                        >
+                            Keine externen Kontakte vorhanden.
+                        </td>
+
+                    </tr>
+
+                @endforelse
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
 </div>

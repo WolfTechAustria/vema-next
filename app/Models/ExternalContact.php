@@ -35,4 +35,13 @@ class ExternalContact extends Model
             'groupID'
         )->withTimestamps();
     }
+
+    public function dutyPlanVolunteer()
+    {
+        return $this->hasOne(
+            DutyPlanExternalVolunteer::class,
+            'externalContactID',
+            'externalContactID'
+        );
+    }
 }

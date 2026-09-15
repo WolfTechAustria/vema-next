@@ -2,7 +2,9 @@
 
 namespace App\Livewire\DutyPlan;
 
+use App\Models\DutyPlanExternalVolunteer;
 use App\Models\DutyPlanVolunteer;
+use App\Models\ExternalContact;
 use App\Models\Member;
 use Livewire\Component;
 
@@ -47,14 +49,65 @@ class Volunteers extends Component
             return;
         }
 
-        $bit = 1 << ($weekday - 1);
+        $volunteer->setWeekdayAvailability(
+            $weekday,
+            !$volunteer->isAvailableOnWeekday($weekday)
+        );
+    }
 
-        $volunteer->weekday_mask =
-            ($volunteer->weekday_mask & $bit) !== 0
-                ? $volunteer->weekday_mask & ~$bit
-                : $volunteer->weekday_mask | $bit;
+    public function toggleExternalVolunteer(
+        int $externalContactID
+    ): void {
+        $contact = ExternalContact::query()
+            ->where('active', true)
+            ->findOrFail($externalContactID);
 
-        $volunteer->save();
+        $volunteer = DutyPlanExternalVolunteer::query()
+            ->where(
+                'externalContactID',
+                $contact->externalContactID
+            )
+            ->first();
+
+        if (!$volunteer) {
+            DutyPlanExternalVolunteer::create([
+                'externalContactID' =>
+                    $contact->externalContactID,
+                'active' => true,
+                'weekday_mask' => 127,
+            ]);
+
+            return;
+        }
+
+        $volunteer->update([
+            'active' => !$volunteer->active,
+        ]);
+    }
+
+    public function toggleExternalWeekday(
+        int $externalContactID,
+        int $weekday
+    ): void {
+        if ($weekday < 1 || $weekday > 7) {
+            return;
+        }
+
+        $volunteer = DutyPlanExternalVolunteer::query()
+            ->where(
+                'externalContactID',
+                $externalContactID
+            )
+            ->first();
+
+        if (!$volunteer || !$volunteer->active) {
+            return;
+        }
+
+        $volunteer->setWeekdayAvailability(
+            $weekday,
+            !$volunteer->isAvailableOnWeekday($weekday)
+        );
     }
 
     public function weekdayName(int $weekday): string
@@ -80,8 +133,16 @@ class Volunteers extends Component
                 function ($query) {
                     $query->where(function ($query) {
                         $query
-                            ->where('name', 'like', '%' . $this->search . '%')
-                            ->orWhere('surname', 'like', '%' . $this->search . '%');
+                            ->where(
+                                'name',
+                                'like',
+                                '%' . $this->search . '%'
+                            )
+                            ->orWhere(
+                                'surname',
+                                'like',
+                                '%' . $this->search . '%'
+                            );
                     });
                 }
             )
@@ -89,9 +150,48 @@ class Volunteers extends Component
             ->orderBy('name')
             ->get();
 
-        return view('livewire.duty-plan.volunteers', [
-            'members' => $members,
-        ])->layout('layouts.app', [
+        $externalContacts = ExternalContact::query()
+            ->with('dutyPlanVolunteer')
+            ->where('active', true)
+            ->when(
+                $this->search,
+                function ($query) {
+                    $query->where(function ($query) {
+                        $query
+                            ->where(
+                                'name',
+                                'like',
+                                '%' . $this->search . '%'
+                            )
+                            ->orWhere(
+                                'surname',
+                                'like',
+                                '%' . $this->search . '%'
+                            )
+                            ->orWhere(
+                                'organization',
+                                'like',
+                                '%' . $this->search . '%'
+                            )
+                            ->orWhere(
+                                'email',
+                                'like',
+                                '%' . $this->search . '%'
+                            );
+                    });
+                }
+            )
+            ->orderBy('surname')
+            ->orderBy('name')
+            ->get();
+
+        return view(
+            'livewire.duty-plan.volunteers',
+            [
+                'members' => $members,
+                'externalContacts' => $externalContacts,
+            ]
+        )->layout('layouts.app', [
             'title' => 'Helfer | VEMA',
             'heading' => 'Helferverwaltung',
         ]);
