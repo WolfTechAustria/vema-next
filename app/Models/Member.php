@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\MembershipFeePrescription;
 use App\Models\CircularRecipient;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\BirthdayReminderSent;
 
 class Member extends Model
 {
@@ -125,5 +127,80 @@ class Member extends Model
         )
             ->withPivot('relation')
             ->withTimestamps();
+    }
+
+    /**
+     * Nur aktive Mitglieder.
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('active', true);
+    }
+
+    /**
+     * Mitglieder, die an einem bestimmten Tag im Jahr (Monat/Tag) Geburtstag haben,
+     * unabhängig vom Geburtsjahr.
+     */
+    public function scopeBirthdayOn(Builder $query, \Carbon\CarbonInterface $date): Builder
+    {
+        return $query
+            ->whereNotNull('dateOfBirth')
+            ->whereMonth('dateOfBirth', $date->month)
+            ->whereDay('dateOfBirth', $date->day);
+    }
+
+    public function reminderLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(
+            BirthdayReminderSent::class,
+            'memberID',
+            'memberID'
+        );
+    }
+
+    /**
+     * Aktuelles/erreichtes Alter des Mitglieds (null, falls kein Geburtsdatum hinterlegt ist).
+     */
+    public function getAgeAttribute(): ?int
+    {
+        if (!$this->dateOfBirth) {
+            return null;
+        }
+
+        return $this->dateOfBirth->age;
+    }
+
+    /**
+     * Alter, das das Mitglied an seinem naechsten/aktuellen Geburtstag im
+     * uebergebenen Referenzjahr erreicht (bzw. erreicht hat).
+     */
+    public function ageOn(\Carbon\CarbonInterface $date): ?int
+    {
+        if (!$this->dateOfBirth) {
+            return null;
+        }
+
+        return $date->year - $this->dateOfBirth->year;
+    }
+
+    /**
+     * "Runder" Geburtstag: durch 10 teilbar (30, 40, 50, ...).
+     */
+    public function isRoundBirthday(int $age): bool
+    {
+        return $age > 0 && $age % 10 === 0;
+    }
+
+    /**
+     * "Halbrunder" Geburtstag: durch 5, aber nicht durch 10 teilbar (25, 35, 45, ...).
+     */
+    public function isHalfRoundBirthday(int $age): bool
+    {
+        return $age > 0 && $age % 5 === 0 && $age % 10 !== 0;
+    }
+
+    public function isRoundOrHalfRoundBirthday(int $age): bool
+    {
+        return $this->isRoundBirthday($age) || $this->isHalfRoundBirthday($age);
     }
 }

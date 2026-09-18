@@ -12,6 +12,8 @@ use App\Livewire\DutyPlan\Absences as DutyPlanAbsences;
 use App\Livewire\DutyPlan\Volunteers as DutyPlanVolunteers;
 use App\Livewire\MembershipFees\Index as MembershipFeesIndex;
 use App\Http\Controllers\CircularController;
+use App\Livewire\Members\Birthdays as MembersBirthdays;
+
 
 use App\Http\Controllers\MemberAuthController;
 
@@ -47,6 +49,13 @@ Route::middleware('auth')->group(function () {
 
     Route::livewire('/members/create', MembersCreate::class)
         ->name('members.create');
+
+    Route::livewire('/members/birthdays', MembersBirthdays::class)
+        ->name('members.birthdays');
+
+
+    Route::get('/members/birthdays/pdf', [\App\Http\Controllers\MemberController::class, 'downloadBirthdaysPdf'])
+        ->name('members.birthdays.pdf');
 
     Route::livewire('/members/{member}', MembersShow::class)
         ->name('members.show');
@@ -122,6 +131,9 @@ Route::middleware('auth')->group(function () {
 
     Route::livewire('/recipient-groups', \App\Livewire\RecipientGroups\Index::class)
         ->name('recipient-groups.index');
+
+
+
 
 
     Route::post('/logout', [LoginController::class, 'destroy'])

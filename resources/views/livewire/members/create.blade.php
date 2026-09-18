@@ -146,9 +146,15 @@
 
                     <input
                         type="text"
+                        inputmode="numeric"
+                        maxlength="4"
                         wire:model="zip"
                         class="w-full rounded-lg border border-slate-300 px-3 py-2"
                     >
+
+                    @error('zip')
+                    <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
+                    @enderror
                 </div>
 
             </div>

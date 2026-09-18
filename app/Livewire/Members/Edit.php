@@ -44,7 +44,7 @@ class Edit extends Component
         $this->dateOfBirth = $member->dateOfBirth?->format('Y-m-d');
         $this->dateOfJoin = $member->dateOfJoin?->format('Y-m-d');
         $this->street = $member->street ?? '';
-        $this->zip = $member->zip ?? '';
+        $this->zip = $this->sanitizeZip($member->zip ?? '');
         $this->active = (bool) $member->active;
         $this->competitionMember = (bool) $member->competitionMember;
         $this->supportingMember = (bool) $member->supportingMember;
@@ -76,7 +76,7 @@ class Edit extends Component
             'dateOfBirth' => ['nullable', 'date'],
             'dateOfJoin' => ['nullable', 'date'],
             'street' => ['nullable', 'string', 'max:255'],
-            'zip' => ['nullable', 'string', 'max:20'],
+            'zip' => ['nullable', 'string', 'regex:/^\d{4}$/'],
             'active' => ['boolean'],
             'competitionMember' => ['boolean'],
             'supportingMember' => ['boolean'],
@@ -89,6 +89,33 @@ class Edit extends Component
             'phones.*.phoneCategory' => ['required', 'integer'],
             'phones.*.phoneNumber' => ['required', 'string', 'max:100'],
         ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'zip.regex' => 'Bitte nur die 4-stellige Postleitzahl eingeben, ohne Ortsname (z. B. 1010).',
+        ];
+    }
+
+    public function updatedZip(string $value): void
+    {
+        $this->zip = $this->sanitizeZip($value);
+    }
+
+    /**
+     * Falls "1010 Wien" statt "1010" eingegeben (oder als Altdatensatz
+     * gespeichert) wurde: automatisch nur die führenden Ziffern übernehmen.
+     * Der Ortsname wird ohnehin separat aus tb_city anhand der PLZ ermittelt
+     * und muss hier nicht eingegeben werden.
+     */
+    private function sanitizeZip(string $value): string
+    {
+        if (preg_match('/^(\d{4,})\D.*$/', trim($value), $matches)) {
+            return $matches[1];
+        }
+
+        return $value;
     }
 
     public function addEmail(): void

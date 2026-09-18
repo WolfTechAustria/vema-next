@@ -20,6 +20,13 @@
             PDF Mitgliederliste
         </a>
 
+        <a href="{{ route('members.birthdays') }}"
+           target="_blank"
+           class="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Geburtstagsliste
+        </a>
+
         <a
             href="{{ route('members.create') }}"
             wire:navigate

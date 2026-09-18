@@ -34,7 +34,7 @@ class Create extends Component
             'dateOfBirth' => ['nullable', 'date'],
             'dateOfJoin' => ['nullable', 'date'],
             'street' => ['nullable', 'string', 'max:255'],
-            'zip' => ['nullable', 'string', 'max:20'],
+            'zip' => ['nullable', 'string', 'regex:/^\d{4}$/', 'max:20'],
             'active' => ['boolean'],
             'competitionMember' => ['boolean'],
             'supportingMember' => ['boolean'],
@@ -120,6 +120,23 @@ class Create extends Component
             ['member' => $member->memberID],
             navigate: true
         );
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'zip.regex' => 'Bitte nur die 4-stellige Postleitzahl eingeben, ohne Ortsname (z. B. 1010).',
+        ];
+    }
+
+    public function updatedZip(string $value): void
+    {
+        // Falls jemand "1010 Wien" statt "1010" eingibt: automatisch nur die
+        // führenden Ziffern übernehmen. Der Ortsname wird ohnehin separat aus
+        // tb_city anhand der PLZ ermittelt und muss hier nicht eingegeben werden.
+        if (preg_match('/^(\d{4,})\D.*$/', trim($value), $matches)) {
+            $this->zip = $matches[1];
+        }
     }
 
     public function render()
