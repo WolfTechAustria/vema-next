@@ -44,4 +44,16 @@ class ExternalContact extends Model
             'externalContactID'
         );
     }
+
+    public function skills(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Skill::class,
+            'tb_skill_external_contacts',
+            'externalContactID',
+            'skillID',
+            'externalContactID',
+            'skillID'
+        )->withTimestamps();
+    }
 }

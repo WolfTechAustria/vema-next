@@ -5,6 +5,7 @@ namespace App\Livewire\Members;
 use App\Models\Member;
 use App\Models\MemberEmail;
 use App\Models\MemberPhone;
+use App\Models\Skill;
 use Livewire\Component;
 
 class Edit extends Component
@@ -34,6 +35,8 @@ class Edit extends Component
     public array $emails = [];
 
     public array $phones = [];
+
+    public array $selectedSkills = [];
 
     public function mount(Member $member): void
     {
@@ -66,6 +69,12 @@ class Edit extends Component
             ])
             ->values()
             ->toArray();
+
+        $this->selectedSkills = $member->skills
+            ->pluck('skillID')
+            ->map(fn ($skillID) => (string) $skillID)
+            ->values()
+            ->all();
     }
 
     protected function rules(): array
@@ -88,6 +97,9 @@ class Edit extends Component
             'phones' => ['array'],
             'phones.*.phoneCategory' => ['required', 'integer'],
             'phones.*.phoneNumber' => ['required', 'string', 'max:100'],
+
+            'selectedSkills' => ['array'],
+            'selectedSkills.*' => ['integer'],
         ];
     }
 
@@ -166,6 +178,10 @@ class Edit extends Component
 
         $this->syncEmails();
         $this->syncPhones();
+
+        $this->member->skills()->sync(
+            array_map('intval', $this->selectedSkills)
+        );
 
         session()->flash('success', 'Mitglied wurde gespeichert.');
 
@@ -263,7 +279,9 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.members.edit')
+        return view('livewire.members.edit', [
+            'skills' => Skill::where('active', true)->orderBy('name')->get(),
+        ])
             ->layout('layouts.app', [
                 'title' => 'Mitglied bearbeiten | VEMA',
                 'heading' => 'Mitglied bearbeiten',

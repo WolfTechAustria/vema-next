@@ -196,7 +196,7 @@
 
                 <div
                     x-data="{
-        open: {{ request()->routeIs('circulars.*', 'recipient-groups.*', 'templates.*', 'external-contacts.*') ? 'true' : 'false' }}
+        open: {{ request()->routeIs('circulars.*', 'recipient-groups.*', 'templates.*', 'external-contacts.*', 'skills.*') ? 'true' : 'false' }}
     }"
                     class="space-y-1"
                 >
@@ -205,7 +205,7 @@
                         type="button"
                         @click="open = !open"
                         class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition
-        {{ request()->routeIs('circulars.*', 'recipient-groups.*','templates.*', 'external-contacts.*')
+        {{ request()->routeIs('circulars.*', 'recipient-groups.*','templates.*', 'external-contacts.*', 'skills.*')
             ? 'bg-slate-900 text-white'
             : 'text-slate-700 hover:bg-slate-100' }}"
                     >
@@ -261,6 +261,18 @@
                         >
                             <span>♙</span>
                             Empfängergruppen
+                        </a>
+
+                        <a
+                            href="{{ route('skills.index') }}"
+                            wire:navigate
+                            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+                            {{ request()->routeIs('skills.*')
+                            ? 'bg-slate-100 text-slate-900'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                        >
+                            <span>★</span>
+                            Fähigkeiten
                         </a>
 
                         <a

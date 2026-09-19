@@ -207,6 +207,30 @@ class Member extends Model
 
 
 
+    public function skills(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Skill::class,
+            'tb_skill_members',
+            'memberID',
+            'skillID',
+            'memberID',
+            'skillID'
+        )->withTimestamps();
+    }
+
+    public function recipientGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            RecipientGroup::class,
+            'tb_recipient_group_members',
+            'memberID',
+            'groupID',
+            'memberID',
+            'groupID'
+        )->withTimestamps();
+    }
+
     public function dutySettings(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(

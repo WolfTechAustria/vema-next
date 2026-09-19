@@ -133,6 +133,9 @@ Route::middleware('auth')->group(function () {
     Route::livewire('/recipient-groups', \App\Livewire\RecipientGroups\Index::class)
         ->name('recipient-groups.index');
 
+    Route::livewire('/skills', \App\Livewire\Skills\Index::class)
+        ->name('skills.index');
+
 
 
 

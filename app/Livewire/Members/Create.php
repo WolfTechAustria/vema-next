@@ -5,6 +5,7 @@ namespace App\Livewire\Members;
 use App\Models\Member;
 use App\Models\MemberEmail;
 use App\Models\MemberPhone;
+use App\Models\Skill;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -24,6 +25,7 @@ class Create extends Component
 
     public array $emails = [];
     public array $phones = [];
+    public array $selectedSkills = [];
 
     protected function rules(): array
     {
@@ -46,6 +48,9 @@ class Create extends Component
             'phones' => ['array'],
             'phones.*.phoneCategory' => ['required', 'integer'],
             'phones.*.phoneNumber' => ['required', 'string', 'max:100'],
+
+            'selectedSkills' => ['array'],
+            'selectedSkills.*' => ['integer'],
         ];
     }
 
@@ -110,6 +115,10 @@ class Create extends Component
                 ]);
             }
 
+            $member->skills()->sync(
+                array_map('intval', $this->selectedSkills)
+            );
+
             return $member;
         });
 
@@ -141,7 +150,9 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.members.create')
+        return view('livewire.members.create', [
+            'skills' => Skill::where('active', true)->orderBy('name')->get(),
+        ])
             ->layout('layouts.app', [
                 'title' => 'Mitglied hinzufügen | VEMA',
                 'heading' => 'Mitglied hinzufügen',
