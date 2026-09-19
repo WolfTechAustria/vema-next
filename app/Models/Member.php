@@ -203,4 +203,22 @@ class Member extends Model
     {
         return $this->isRoundBirthday($age) || $this->isHalfRoundBirthday($age);
     }
+
+
+
+
+    public function dutySettings(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(
+            MemberDutySettings::class,
+            'memberID',
+            'memberID'
+        );
+    }
+
+    public function dutyReminderEnabled(): bool
+    {
+        // Standard: aktiviert, solange kein Datensatz existiert.
+        return $this->dutySettings?->duty_reminder_enabled ?? true;
+    }
 }

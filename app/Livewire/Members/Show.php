@@ -20,12 +20,11 @@ class Show extends Component
             'city',
             'emails',
             'phones',
+            'dutyAssignments.event',   // NEU
 
             'circularRecipients' => fn ($query) =>
             $query
-                ->with([
-                    'circular.attachments',
-                ])
+                ->with(['circular.attachments'])
                 ->latest('sent_at'),
         ]);
     }

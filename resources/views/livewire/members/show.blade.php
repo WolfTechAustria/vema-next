@@ -304,6 +304,59 @@
         </div>
     </div>
 
+    <!-- Dienste -->
+    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+            <div>
+                <h3 class="font-semibold text-slate-900">
+                    Dienste
+                </h3>
+                <p class="mt-1 text-xs text-slate-500">
+                    Eingeteilte Dienste dieses Mitglieds
+                </p>
+            </div>
+
+            <div class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                {{ $member->dutyAssignments->count() }} Einträge
+            </div>
+        </div>
+
+        @php
+            $sortedAssignments = $member->dutyAssignments
+                ->filter(fn ($a) => $a->event !== null)
+                ->sortByDesc(fn ($a) => $a->event->duty_date);
+        @endphp
+
+        @forelse ($sortedAssignments as $assignment)
+            <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 last:border-b-0">
+                <div>
+                    <div class="font-medium text-slate-900">
+                        {{ $assignment->event->duty_name }}
+                    </div>
+                    <div class="text-sm text-slate-500">
+                        {{ $assignment->event->duty_date->format('d.m.Y') }}
+                    </div>
+                </div>
+
+                @if ($assignment->event->duty_date->isFuture())
+                    <span class="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800">
+                    Bevorstehend
+                </span>
+                @else
+                    <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                    Vergangen
+                </span>
+                @endif
+            </div>
+        @empty
+            <p class="px-6 py-4 text-sm text-slate-500">
+                Diesem Mitglied sind aktuell keine Dienste zugeteilt.
+            </p>
+        @endforelse
+
+    </div>
+
     <!-- Beitragsvorschreibungen -->
     <div class="grid gap-6 xl:grid-cols-1">
         <div class="mt-8 rounded-xl border border-slate-200 bg-white shadow-sm">

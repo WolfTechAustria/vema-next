@@ -18,3 +18,7 @@ Schedule::command('birthdays:send-reminders')
 Schedule::command('birthdays:send-monthly-list')
     ->monthlyOn(1, '06:30')
     ->withoutOverlapping();
+
+Schedule::command('duty:send-reminders')
+    ->dailyAt('07:00')
+    ->withoutOverlapping();

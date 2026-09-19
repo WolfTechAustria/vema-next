@@ -13,7 +13,8 @@ use App\Livewire\DutyPlan\Volunteers as DutyPlanVolunteers;
 use App\Livewire\MembershipFees\Index as MembershipFeesIndex;
 use App\Http\Controllers\CircularController;
 use App\Livewire\Members\Birthdays as MembersBirthdays;
-
+use App\Http\Controllers\DutyPlanIcalController;
+use App\Livewire\MemberPortal\MyDuties as MemberPortalMyDuties;
 
 use App\Http\Controllers\MemberAuthController;
 
@@ -149,4 +150,10 @@ Route::middleware('auth:member')->group(function () {
 
     Route::post('/member/logout', [MemberAuthController::class, 'logout'])
         ->name('member.logout');
+
+    Route::livewire('/member/duties', MemberPortalMyDuties::class)
+        ->name('member.duties');
 });
+
+Route::get('/calendar/duty/{token}.ics', [DutyPlanIcalController::class, 'show'])
+    ->name('duty-plan.ical');
