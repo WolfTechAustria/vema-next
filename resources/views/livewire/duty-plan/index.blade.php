@@ -14,6 +14,14 @@
 
 @endif
 
+@if(session('warning'))
+
+    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+        ⚠ {{ session('warning') }}
+    </div>
+
+@endif
+
 
 <div class="space-y-6">
 
@@ -548,6 +556,8 @@
 
                                         $weekday =
                                             $event->duty_date->isoWeekday();
+
+                                        $requiredSkillID = $event->role?->requiredSkillID;
                                     @endphp
 
 
@@ -584,6 +594,10 @@
                                                             && $this->memberAvailableForEvent(
                                                                 $volunteer->memberID,
                                                                 $event->duty_date
+                                                            )
+                                                            && (
+                                                                !$requiredSkillID
+                                                                || $volunteer->member->skills->contains('skillID', $requiredSkillID)
                                                             );
 
                                                         $volunteerKey =
@@ -617,7 +631,11 @@
 
                                                     @php
                                                         $available =
-                                                            $volunteer->isAvailableOnWeekday($weekday);
+                                                            $volunteer->isAvailableOnWeekday($weekday)
+                                                            && (
+                                                                !$requiredSkillID
+                                                                || $volunteer->externalContact->skills->contains('skillID', $requiredSkillID)
+                                                            );
 
                                                         $volunteerKey =
                                                             'external:' . $volunteer->externalContactID;

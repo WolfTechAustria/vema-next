@@ -370,7 +370,9 @@ class Index extends Component
             return;
         }
 
-        $alreadyAssigned = DutyPlanAssignment::query()
+        $event = DutyPlanEvent::with('role')->findOrFail($eventId);
+
+        $alreadyAssignedThisEvent = DutyPlanAssignment::query()
             ->where('eventID', $eventId)
             ->where('slot_no', '!=', $slotNo)
             ->where(function ($query) use ($type, $id) {
@@ -384,13 +386,59 @@ class Index extends Component
             })
             ->exists();
 
-        if ($alreadyAssigned) {
+        if ($alreadyAssignedThisEvent) {
             session()->flash(
                 'error',
                 'Dieser Helfer ist bei diesem Termin bereits eingeteilt.'
             );
 
             return;
+        }
+
+        /*
+         * Auch keine Doppelbelegung über mehrere Rollen desselben Tages
+         * (z. B. nicht Bar UND Auswertung am selben Tag).
+         */
+        $alreadyAssignedThisDate = DutyPlanAssignment::query()
+            ->where('eventID', '!=', $eventId)
+            ->whereHas('event', fn ($q) => $q
+                ->where('planID', $event->planID)
+                ->whereDate('duty_date', $event->duty_date))
+            ->where(function ($query) use ($type, $id) {
+
+                if ($type === 'member') {
+                    $query->where('memberID', $id);
+                } else {
+                    $query->where('externalContactID', $id);
+                }
+
+            })
+            ->exists();
+
+        if ($alreadyAssignedThisDate) {
+            session()->flash(
+                'error',
+                'Dieser Helfer ist an diesem Tag bereits einer anderen Dienstbezeichnung zugeteilt.'
+            );
+
+            return;
+        }
+
+        $requiredSkillID = $event->role?->requiredSkillID;
+
+        if ($requiredSkillID) {
+            $hasSkill = $type === 'member'
+                ? \App\Models\Member::find($id)?->skills->contains('skillID', $requiredSkillID)
+                : \App\Models\ExternalContact::find($id)?->skills->contains('skillID', $requiredSkillID);
+
+            if (!$hasSkill) {
+                session()->flash(
+                    'error',
+                    'Dieser Helfer hat nicht die für "' . $event->duty_name . '" erforderliche Fähigkeit.'
+                );
+
+                return;
+            }
         }
 
         DutyPlanAssignment::updateOrCreate(
@@ -519,6 +567,17 @@ class Index extends Component
                 : ''
             )
         );
+
+        if (!empty($result['group_violations'])) {
+            $lines = collect($result['group_violations'])
+                ->map(fn ($v) => Carbon::parse($v['date'])->format('d.m.Y') . ' (' . $v['duty_name'] . '): kein Helfer aus "' . $v['group'] . '" verfügbar')
+                ->implode('; ');
+
+            session()->flash(
+                'warning',
+                'Pflichtgruppen-Anforderung nicht erfüllt bei: ' . $lines
+            );
+        }
     }
 
     public function weekdayName(int $weekday): string
@@ -610,7 +669,7 @@ class Index extends Component
     {
 
         $volunteers = DutyPlanVolunteer::query()
-            ->with('member')
+            ->with('member.skills')
             ->where('planID', $this->planId)
             ->whereNotNull('memberID')
             ->where('active', 1)
@@ -625,7 +684,7 @@ class Index extends Component
             ->values();
 
         $externalVolunteers = DutyPlanVolunteer::query()
-            ->with('externalContact')
+            ->with('externalContact.skills')
             ->where('planID', $this->planId)
             ->whereNotNull('externalContactID')
             ->where('active', true)
