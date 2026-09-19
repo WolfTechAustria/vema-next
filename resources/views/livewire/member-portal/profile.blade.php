@@ -1,12 +1,6 @@
 <div class="mx-auto max-w-4xl space-y-6">
 
-    @if(session('success'))
-
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            {{ session('success') }}
-        </div>
-
-    @endif
+    @include('partials.flash-messages')
 
 
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm">

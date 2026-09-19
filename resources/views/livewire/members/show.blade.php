@@ -1,5 +1,7 @@
 <div class="space-y-6">
 
+    @include('partials.flash-messages')
+
     {{-- Header --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 

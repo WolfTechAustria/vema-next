@@ -1,5 +1,7 @@
 <div class="space-y-6">
 
+    @include('partials.flash-messages')
+
     <!-- Kalender-Abo -->
     <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 class="font-semibold text-slate-900">
