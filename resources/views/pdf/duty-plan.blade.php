@@ -64,7 +64,7 @@
         }
 
         .helper {
-            min-width: 150px;
+            width: {{ round(55 / max(1, $maxHelperColumns ?? 4)) }}%;
         }
 
         .footer {
@@ -93,6 +93,14 @@
     Wochentag: {{ $weekdayName }}
 </div>
 
+@php
+    $maxHelperColumns = $maxHelperColumns ?? 4;
+
+    $eventsByDate = $events->groupBy(
+        fn ($event) => $event->duty_date->toDateString()
+    );
+@endphp
+
 <table>
 
     <thead>
@@ -100,60 +108,68 @@
         <th class="date">Datum</th>
         <th class="weekday">Wochentag</th>
         <th class="service">Dienst</th>
-        <th class="helper">Helfer 1</th>
-        <th class="helper">Helfer 2</th>
-        <th class="helper">Helfer 3</th>
-        <th class="helper">Helfer 4</th>
+
+        @for($i = 1; $i <= $maxHelperColumns; $i++)
+            <th class="helper">Helfer {{ $i }}</th>
+        @endfor
     </tr>
     </thead>
 
     <tbody>
 
-    @foreach($events as $event)
+    @foreach($eventsByDate as $dateKey => $eventsOfDate)
 
-        @php
-            $assignments = $event->assignments
-                ->sortBy('slot_no')
-                ->values();
-        @endphp
+        @foreach($eventsOfDate as $index => $event)
 
-        <tr>
+            @php
+                $assignments = $event->assignments
+                    ->sortBy('slot_no')
+                    ->values();
+            @endphp
 
-            <td class="date">
-                {{ $event->duty_date->format('d.m.Y') }}
-            </td>
+            <tr>
 
-            <td class="weekday">
-                {{ $event->duty_date
-                    ->locale('de')
-                    ->translatedFormat('l') }}
-            </td>
+                @if($index === 0)
 
-            <td class="service">
-                {{ $event->duty_name }}
-            </td>
+                    <td class="date" rowspan="{{ $eventsOfDate->count() }}">
+                        {{ $event->duty_date->format('d.m.Y') }}
+                    </td>
 
-            @for($slot = 0; $slot < 4; $slot++)
+                    <td class="weekday" rowspan="{{ $eventsOfDate->count() }}">
+                        {{ $event->duty_date
+                            ->locale('de')
+                            ->translatedFormat('l') }}
+                    </td>
 
-                @php
-                    $assignment = $assignments->get($slot);
+                @endif
 
-                    $helperName = '';
-
-                    if ($assignment?->member) {
-                        $helperName = $assignment->member->full_name;
-                    } elseif ($assignment?->externalContact) {
-                        $helperName = $assignment->externalContact->full_name;
-                    }
-                @endphp
-
-                <td class="helper">
-                    {{ $helperName }}
+                <td class="service">
+                    {{ $event->duty_name }}
                 </td>
 
-            @endfor
+                @for($slot = 0; $slot < $maxHelperColumns; $slot++)
 
-        </tr>
+                    @php
+                        $assignment = $assignments->get($slot);
+
+                        $helperName = '';
+
+                        if ($assignment?->member) {
+                            $helperName = $assignment->member->full_name;
+                        } elseif ($assignment?->externalContact) {
+                            $helperName = $assignment->externalContact->full_name;
+                        }
+                    @endphp
+
+                    <td class="helper">
+                        {{ $helperName }}
+                    </td>
+
+                @endfor
+
+            </tr>
+
+        @endforeach
 
     @endforeach
 

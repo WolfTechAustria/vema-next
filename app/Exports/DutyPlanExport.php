@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\DutyPlanEvent;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Enumerable;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -15,23 +16,33 @@ class DutyPlanExport implements
     WithMapping,
     ShouldAutoSize
 {
+    protected const MAX_HELPER_COLUMNS = 8;
+
+    protected ?Collection $cachedCollection = null;
+
     public function __construct(
         protected int $planId,
         protected string $dateFrom,
         protected string $dateTo,
-        protected ?int $weekday = null
+        protected ?int $weekday = null,
+        protected ?int $roleId = null
     ) {
     }
 
     public function collection(): Enumerable
     {
-        return DutyPlanEvent::query()
-            ->where('planID', $this->planId)
+        if ($this->cachedCollection) {
+            return $this->cachedCollection;
+        }
+
+        return $this->cachedCollection = DutyPlanEvent::query()
+            ->where('tb_dutyplan_events.planID', $this->planId)
             ->with([
+                'role',
                 'assignments.member',
                 'assignments.externalContact',
             ])
-            ->whereBetween('duty_date', [
+            ->whereBetween('tb_dutyplan_events.duty_date', [
                 $this->dateFrom,
                 $this->dateTo,
             ])
@@ -39,25 +50,38 @@ class DutyPlanExport implements
                 $this->weekday,
                 fn ($query) =>
                 $query->whereRaw(
-                    'WEEKDAY(duty_date) + 1 = ?',
+                    'WEEKDAY(tb_dutyplan_events.duty_date) + 1 = ?',
                     [$this->weekday]
                 )
             )
-            ->orderBy('duty_date')
+            ->when(
+                $this->roleId,
+                fn ($query) => $query->where('tb_dutyplan_events.roleID', $this->roleId)
+            )
+            ->join('tb_dutyplan_roles', 'tb_dutyplan_roles.roleID', '=', 'tb_dutyplan_events.roleID')
+            ->orderBy('tb_dutyplan_events.duty_date')
+            ->orderBy('tb_dutyplan_roles.sort_order')
+            ->select('tb_dutyplan_events.*')
             ->get();
+    }
+
+    protected function maxHelperColumns(): int
+    {
+        return min(
+            self::MAX_HELPER_COLUMNS,
+            max(1, $this->collection()->max('required_helpers') ?? 1)
+        );
     }
 
     public function headings(): array
     {
-        return [
-            'Datum',
-            'Wochentag',
-            'Dienst',
-            'Helfer 1',
-            'Helfer 2',
-            'Helfer 3',
-            'Helfer 4',
-        ];
+        return array_merge(
+            ['Datum', 'Wochentag', 'Dienst'],
+            array_map(
+                fn ($i) => 'Helfer ' . $i,
+                range(1, $this->maxHelperColumns())
+            )
+        );
     }
 
     public function map($event): array
@@ -66,20 +90,24 @@ class DutyPlanExport implements
             ->sortBy('slot_no')
             ->values();
 
-        return [
-            $event->duty_date->format('d.m.Y'),
+        $helperCells = [];
 
-            $event->duty_date
-                ->locale('de')
-                ->translatedFormat('l'),
+        for ($slot = 0; $slot < $this->maxHelperColumns(); $slot++) {
+            $helperCells[] = $this->helperName($assignments->get($slot));
+        }
 
-            $event->duty_name,
+        return array_merge(
+            [
+                $event->duty_date->format('d.m.Y'),
 
-            $this->helperName($assignments->get(0)),
-            $this->helperName($assignments->get(1)),
-            $this->helperName($assignments->get(2)),
-            $this->helperName($assignments->get(3)),
-        ];
+                $event->duty_date
+                    ->locale('de')
+                    ->translatedFormat('l'),
+
+                $event->duty_name,
+            ],
+            $helperCells
+        );
     }
 
     protected function helperName($assignment): string

@@ -30,6 +30,7 @@ class Index extends Component
     public string $dateTo = '';
 
     public string $exportWeekday = 'all';
+    public string $exportRole = 'all';
     public bool $excludeHolidays = true;
 
     #[On('duty-plan-roles-updated')]
@@ -266,13 +267,18 @@ class Index extends Component
             ? null
             : (int) $this->exportWeekday;
 
+        $roleId = $this->exportRole === 'all'
+            ? null
+            : (int) $this->exportRole;
+
         $events = DutyPlanEvent::query()
-            ->where('planID', $this->planId)
+            ->where('tb_dutyplan_events.planID', $this->planId)
             ->with([
+                'role',
                 'assignments.member',
                 'assignments.externalContact',
             ])
-            ->whereBetween('duty_date', [
+            ->whereBetween('tb_dutyplan_events.duty_date', [
                 $this->dateFrom,
                 $this->dateTo,
             ])
@@ -280,16 +286,25 @@ class Index extends Component
                 $weekday,
                 fn ($query) =>
                 $query->whereRaw(
-                    'WEEKDAY(duty_date) + 1 = ?',
+                    'WEEKDAY(tb_dutyplan_events.duty_date) + 1 = ?',
                     [$weekday]
                 )
             )
-            ->orderBy('duty_date')
+            ->when(
+                $roleId,
+                fn ($query) => $query->where('tb_dutyplan_events.roleID', $roleId)
+            )
+            ->join('tb_dutyplan_roles', 'tb_dutyplan_roles.roleID', '=', 'tb_dutyplan_events.roleID')
+            ->orderBy('tb_dutyplan_events.duty_date')
+            ->orderBy('tb_dutyplan_roles.sort_order')
+            ->select('tb_dutyplan_events.*')
             ->get();
 
         $weekdayName = $weekday
             ? $this->weekdayName($weekday)
             : 'Alle';
+
+        $maxHelperColumns = min(8, max(1, $events->max('required_helpers') ?? 1));
 
         $filename = sprintf(
             'Dienstplan_%s_%s_%s.pdf',
@@ -303,6 +318,7 @@ class Index extends Component
             'dateFrom' => $this->dateFrom,
             'dateTo' => $this->dateTo,
             'weekdayName' => $weekdayName,
+            'maxHelperColumns' => $maxHelperColumns,
         ])
             ->setPaper('a4', 'landscape');
 
@@ -317,6 +333,10 @@ class Index extends Component
         $weekday = $this->exportWeekday === 'all'
             ? null
             : (int) $this->exportWeekday;
+
+        $roleId = $this->exportRole === 'all'
+            ? null
+            : (int) $this->exportRole;
 
         $weekdayName = $weekday
             ? $this->weekdayName($weekday)
@@ -334,7 +354,8 @@ class Index extends Component
                 $this->planId,
                 $this->dateFrom,
                 $this->dateTo,
-                $weekday
+                $weekday,
+                $roleId
             ),
             $filename
         );
@@ -497,6 +518,17 @@ class Index extends Component
             ->orderBy('tb_dutyplan_events.duty_date')
             ->orderBy('tb_dutyplan_roles.sort_order')
             ->select('tb_dutyplan_events.*')
+            ->get();
+    }
+
+    public function getExportableRolesProperty()
+    {
+        if (!$this->planId) {
+            return collect();
+        }
+
+        return \App\Models\DutyPlanRole::where('planID', $this->planId)
+            ->orderBy('sort_order')
             ->get();
     }
 

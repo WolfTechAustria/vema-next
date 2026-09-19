@@ -407,6 +407,31 @@
 
             </div>
 
+            <div>
+
+                <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Dienstbezeichnung
+                </label>
+
+                <select
+                    wire:model="exportRole"
+                    class="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                >
+
+                    <option value="all">
+                        Alle Dienstbezeichnungen
+                    </option>
+
+                    @foreach($this->exportableRoles as $role)
+                        <option value="{{ $role->roleID }}">
+                            {{ $role->name }}
+                        </option>
+                    @endforeach
+
+                </select>
+
+            </div>
+
 
             <button
                 type="button"
