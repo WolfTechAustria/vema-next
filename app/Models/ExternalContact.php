@@ -36,10 +36,14 @@ class ExternalContact extends Model
         )->withTimestamps();
     }
 
-    public function dutyPlanVolunteer()
+    /**
+     * Alle Helfer-Zuordnungen dieses Kontakts über alle Dienstpläne
+     * (je Dienstplan eine eigene Zeile, siehe tb_dutyplan_plan_volunteers).
+     */
+    public function dutyPlanVolunteers(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasOne(
-            DutyPlanExternalVolunteer::class,
+        return $this->hasMany(
+            DutyPlanVolunteer::class,
             'externalContactID',
             'externalContactID'
         );

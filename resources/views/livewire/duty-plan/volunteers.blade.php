@@ -22,7 +22,66 @@
 
     </div>
 
+    @if(session('success'))
+        <div class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
+            {{ session('success') }}
+        </div>
+    @endif
+
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+        <div class="flex flex-wrap items-end gap-4 p-4">
+
+            <div>
+                <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Dienstplan
+                </label>
+
+                <select
+                    wire:change="selectPlan($event.target.value)"
+                    class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                >
+                    @foreach($plans as $plan)
+                        <option value="{{ $plan->planID }}" @selected($plan->planID === $planId)>
+                            {{ $plan->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <p class="text-xs text-slate-500 max-w-sm">
+                Die Helferliste ist je Dienstplan unabhängig. Wähle oben aus, für welchen
+                Dienstplan du Helfer festlegst.
+            </p>
+
+            @if($plans->count() > 1)
+                <div class="ml-auto">
+                    <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">
+                        Helfer von anderem Plan übernehmen
+                    </label>
+
+                    <div class="flex gap-2">
+                        <select id="copy-source-plan" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                            @foreach($plans as $plan)
+                                @if($plan->planID !== $planId)
+                                    <option value="{{ $plan->planID }}">{{ $plan->name }}</option>
+                                @endif
+                            @endforeach
+                        </select>
+
+                        <button
+                            type="button"
+                            x-data
+                            x-on:click="$wire.copyVolunteersFromPlan(document.getElementById('copy-source-plan').value)"
+                            class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                            Übernehmen
+                        </button>
+                    </div>
+                </div>
+            @endif
+
+        </div>
 
         <div class="border-b border-slate-200 p-4">
 
@@ -58,6 +117,10 @@
 
                     @endfor
 
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Fähigkeiten
+                    </th>
+
                 </tr>
                 </thead>
 
@@ -66,7 +129,7 @@
                 @foreach($members as $member)
 
                     @php
-                        $volunteer = $member->dutyVolunteer;
+                        $volunteer = $planVolunteersByMember[$member->memberID] ?? null;
 
                         $active = (bool) ($volunteer?->active ?? false);
 
@@ -138,6 +201,24 @@
 
                         @endfor
 
+                        <td class="px-6 py-4">
+                            @if($member->skills->isEmpty())
+                                <span class="text-xs text-slate-400">–</span>
+                            @else
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach($member->skills as $skill)
+                                        <span class="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
+                                            {{ $skill->name }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <a href="{{ route('members.edit', $member) }}" wire:navigate class="mt-1 block text-xs text-slate-400 underline">
+                                bearbeiten
+                            </a>
+                        </td>
+
                     </tr>
 
                 @endforeach
@@ -188,6 +269,10 @@
 
                     @endfor
 
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Fähigkeiten
+                    </th>
+
                 </tr>
 
                 </thead>
@@ -198,7 +283,7 @@
                 @forelse($externalContacts as $contact)
 
                     @php
-                        $volunteer = $contact->dutyPlanVolunteer;
+                        $volunteer = $planVolunteersByExternal[$contact->externalContactID] ?? null;
 
                         $active =
                             (bool) ($volunteer?->active ?? false);
@@ -286,6 +371,25 @@
 
                         @endfor
 
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap gap-1">
+                                @foreach($skills as $skill)
+                                    @php
+                                        $hasSkill = $contact->skills->contains('skillID', $skill->skillID);
+                                    @endphp
+
+                                    <button
+                                        type="button"
+                                        wire:click="toggleExternalContactSkill({{ $contact->externalContactID }}, {{ $skill->skillID }})"
+                                        class="rounded-full px-2 py-0.5 text-xs font-medium
+                                            {{ $hasSkill ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-400' }}"
+                                    >
+                                        {{ $skill->name }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </td>
+
                     </tr>
 
                 @empty
@@ -293,7 +397,7 @@
                     <tr>
 
                         <td
-                            colspan="9"
+                            colspan="10"
                             class="px-6 py-8 text-center text-sm text-slate-500"
                         >
                             Keine externen Kontakte vorhanden.

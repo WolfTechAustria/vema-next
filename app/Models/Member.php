@@ -61,9 +61,13 @@ class Member extends Model
         );
     }
 
-    public function dutyVolunteer()
+    /**
+     * Alle Helfer-Zuordnungen dieses Mitglieds über alle Dienstpläne
+     * (je Dienstplan eine eigene Zeile, siehe tb_dutyplan_plan_volunteers).
+     */
+    public function dutyPlanVolunteers(): HasMany
     {
-        return $this->hasOne(
+        return $this->hasMany(
             DutyPlanVolunteer::class,
             'memberID',
             'memberID'

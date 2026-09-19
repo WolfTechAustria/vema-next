@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\DutyPlanAbsence;
 use App\Models\DutyPlanAssignment;
 use App\Models\DutyPlanEvent;
-use App\Models\DutyPlanExternalVolunteer;
 use App\Models\DutyPlanVolunteer;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -26,52 +25,39 @@ class DutyPlanAssignmentService
             ->get();
 
         /*
-         * Vereinsmitglieder
+         * Plan-eigene Helferliste (Mitglieder + externe Helfer).
          */
-        $memberVolunteers = DutyPlanVolunteer::query()
-            ->with('member')
+        $planVolunteers = DutyPlanVolunteer::query()
+            ->with(['member', 'externalContact'])
+            ->where('planID', $planID)
             ->where('active', true)
-            ->whereHas(
-                'member',
-                fn ($q) => $q->where('active', true)
-            )
+            ->where(function ($query) {
+                $query
+                    ->whereHas('member', fn ($q) => $q->where('active', true))
+                    ->orWhereHas('externalContact', fn ($q) => $q->where('active', true));
+            })
             ->get();
 
-        /*
-         * Externe Helfer
-         */
-        $externalVolunteers = DutyPlanExternalVolunteer::query()
-            ->with('externalContact')
-            ->where('active', true)
-            ->whereHas(
-                'externalContact',
-                fn ($q) => $q->where('active', true)
-            )
-            ->get();
-
-        /*
-         * Beide Helferpools in ein einheitliches Format bringen.
-         */
         $volunteers = collect();
 
-        foreach ($memberVolunteers as $volunteer) {
-            $volunteers->push([
-                'key' => 'member:' . $volunteer->memberID,
-                'type' => 'member',
-                'memberID' => (int) $volunteer->memberID,
-                'externalContactID' => null,
-                'volunteer' => $volunteer,
-            ]);
-        }
-
-        foreach ($externalVolunteers as $volunteer) {
-            $volunteers->push([
-                'key' => 'external:' . $volunteer->externalContactID,
-                'type' => 'external',
-                'memberID' => null,
-                'externalContactID' => (int) $volunteer->externalContactID,
-                'volunteer' => $volunteer,
-            ]);
+        foreach ($planVolunteers as $volunteer) {
+            if ($volunteer->is_external) {
+                $volunteers->push([
+                    'key' => $volunteer->volunteer_key,
+                    'type' => 'external',
+                    'memberID' => null,
+                    'externalContactID' => (int) $volunteer->externalContactID,
+                    'volunteer' => $volunteer,
+                ]);
+            } else {
+                $volunteers->push([
+                    'key' => $volunteer->volunteer_key,
+                    'type' => 'member',
+                    'memberID' => (int) $volunteer->memberID,
+                    'externalContactID' => null,
+                    'volunteer' => $volunteer,
+                ]);
+            }
         }
 
         $assigned = 0;

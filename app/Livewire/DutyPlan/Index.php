@@ -13,7 +13,6 @@ use App\Exports\DutyPlanExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\DutyPlan;
-use App\Models\DutyPlanExternalVolunteer;
 use Livewire\Attributes\On;
 
 
@@ -117,14 +116,10 @@ class Index extends Component
         ]);
 
         if ($sourcePlanId) {
-            $source = DutyPlan::with('roles')->find($sourcePlanId);
+            $source = DutyPlan::find($sourcePlanId);
 
-            foreach ($source?->roles ?? [] as $role) {
-                $plan->roles()->create(
-                    collect($role->toArray())
-                        ->except(['roleID', 'planID', 'created_at', 'updated_at'])
-                        ->all()
-                );
+            if ($source) {
+                $this->copyRolesAndVolunteers($source, $plan);
             }
         }
 
@@ -135,8 +130,38 @@ class Index extends Component
         session()->flash(
             'success',
             'Dienstplan wurde angelegt.'
-            . ($sourcePlanId ? ' Dienstbezeichnungen wurden vom vorherigen Plan übernommen.' : '')
+            . ($sourcePlanId ? ' Dienstbezeichnungen und Helferliste wurden vom vorherigen Plan übernommen.' : '')
         );
+    }
+
+    /**
+     * Kopiert Dienstbezeichnungen und Helferliste (Mitglieder + externe
+     * Helfer) eines bestehenden Plans in einen neuen/anderen Plan. Termine
+     * und bereits erfolgte Einteilungen werden bewusst NICHT übernommen.
+     */
+    protected function copyRolesAndVolunteers(DutyPlan $source, DutyPlan $target): void
+    {
+        foreach ($source->roles as $role) {
+            $target->roles()->create(
+                collect($role->toArray())
+                    ->except(['roleID', 'planID', 'created_at', 'updated_at'])
+                    ->all()
+            );
+        }
+
+        foreach (DutyPlanVolunteer::where('planID', $source->planID)->get() as $volunteer) {
+            DutyPlanVolunteer::firstOrCreate(
+                [
+                    'planID' => $target->planID,
+                    'memberID' => $volunteer->memberID,
+                    'externalContactID' => $volunteer->externalContactID,
+                ],
+                [
+                    'active' => $volunteer->active,
+                    'weekday_mask' => $volunteer->weekday_mask,
+                ]
+            );
+        }
     }
 
     public function savePlan(): void
@@ -189,7 +214,7 @@ class Index extends Component
             return;
         }
 
-        $source = DutyPlan::with('roles')->findOrFail($this->planId);
+        $source = DutyPlan::findOrFail($this->planId);
 
         $copy = DutyPlan::create([
             'name' => $source->name . ' Kopie',
@@ -198,19 +223,13 @@ class Index extends Component
             'exclude_holidays' => $source->exclude_holidays,
         ]);
 
-        foreach ($source->roles as $role) {
-            $copy->roles()->create(
-                collect($role->toArray())
-                    ->except(['roleID', 'planID', 'created_at', 'updated_at'])
-                    ->all()
-            );
-        }
+        $this->copyRolesAndVolunteers($source, $copy);
 
         $this->selectPlan($copy->planID);
 
         session()->flash(
             'success',
-            'Dienstplan wurde dupliziert. Dienstbezeichnungen wurden übernommen, Termine und Helferzuweisungen nicht.'
+            'Dienstplan wurde dupliziert. Dienstbezeichnungen und Helferliste wurden übernommen, Termine und Einteilungen nicht.'
         );
     }
 
@@ -592,6 +611,8 @@ class Index extends Component
 
         $volunteers = DutyPlanVolunteer::query()
             ->with('member')
+            ->where('planID', $this->planId)
+            ->whereNotNull('memberID')
             ->where('active', 1)
             ->get()
             ->filter(fn ($volunteer) =>
@@ -603,8 +624,10 @@ class Index extends Component
             )
             ->values();
 
-        $externalVolunteers = DutyPlanExternalVolunteer::query()
+        $externalVolunteers = DutyPlanVolunteer::query()
             ->with('externalContact')
+            ->where('planID', $this->planId)
+            ->whereNotNull('externalContactID')
             ->where('active', true)
             ->whereHas(
                 'externalContact',

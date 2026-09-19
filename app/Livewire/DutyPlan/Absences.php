@@ -67,11 +67,13 @@ class Absences extends Component
     {
         $volunteers = DutyPlanVolunteer::query()
             ->with('member')
+            ->whereNotNull('memberID')
             ->where('active', true)
             ->whereHas('member', fn ($query) =>
             $query->where('active', true)
             )
             ->get()
+            ->unique('memberID')
             ->sortBy(fn ($volunteer) =>
                 $volunteer->member?->surname
                 . ' '
