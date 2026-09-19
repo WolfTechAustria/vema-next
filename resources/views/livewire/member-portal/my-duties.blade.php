@@ -20,6 +20,13 @@
                 onclick="this.select()"
                 class="flex-1 rounded-md border-slate-300 bg-slate-50 text-sm"
             >
+            </input>
+            <a
+                href="{{ str_replace(['https://', 'http://'], 'webcal://', $icalUrl) }}"
+                class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+                Zum Kalender hinzufügen
+            </a>
 
             <button
                 type="button"

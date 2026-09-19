@@ -30,7 +30,8 @@ class DutyPlanIcalService
             $calendar->event(
                 Event::create($event->duty_name ?? 'Dienst')
                     ->uniqueIdentifier('duty-assignment-' . $assignment->assignmentID)
-                    ->fullDay($event->duty_date)
+                    ->startsAt($event->duty_date, withTime: false)   // NEU: Datum hier setzen
+                    ->fullDay()                                       // NEU: ohne Parameter
                     ->description(
                         'Dienst "' . ($event->duty_name ?? 'Dienst')
                         . '" für ' . $member->full_name
