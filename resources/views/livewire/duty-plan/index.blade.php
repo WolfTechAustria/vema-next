@@ -1,29 +1,37 @@
-@if(session('success'))
-
-    <div class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
-        {{ session('success') }}
-    </div>
-
-@endif
-
-@if(session('error'))
-
-    <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
-        {{ session('error') }}
-    </div>
-
-@endif
-
-@if(session('warning'))
-
-    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
-        ⚠ {{ session('warning') }}
-    </div>
-
-@endif
-
-
+{{--
+    Wichtig: die Flash-Meldungen müssen INNERHALB dieses einzigen äußeren
+    <div> stehen, nicht davor. Livewire braucht pro Komponente ein stabiles
+    Root-Element — stünden die Meldungen als eigene Geschwister-Elemente vor
+    diesem <div>, würde bei einer erfolgreichen Aktion (z. B. neuer Dienstplan,
+    automatische Einteilung) plötzlich die Meldung selbst zum Root-Element,
+    was Livewires DOM-Abgleich verwirrt und dazu führt, dass der Rest der
+    Seite nach der Aktion leer bleibt, bis man neu lädt.
+--}}
 <div class="space-y-6">
+
+    @if(session('success'))
+
+        <div class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
+            {{ session('success') }}
+        </div>
+
+    @endif
+
+    @if(session('error'))
+
+        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+            {{ session('error') }}
+        </div>
+
+    @endif
+
+    @if(session('warning'))
+
+        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+            ⚠ {{ session('warning') }}
+        </div>
+
+    @endif
 
     {{-- Kopf --}}
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
