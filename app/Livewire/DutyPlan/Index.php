@@ -14,6 +14,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\DutyPlan;
 use App\Models\DutyPlanExternalVolunteer;
+use Livewire\Attributes\On;
 
 
 class Index extends Component
@@ -25,49 +26,20 @@ class Index extends Component
     public string $planName = '';
 
     public bool $showCreatePlan = false;
+    public bool $copyFromCurrentPlan = true;
     public string $dateFrom = '';
     public string $dateTo = '';
 
     public string $exportWeekday = 'all';
     public bool $excludeHolidays = true;
 
-    public array $weekdayRules = [
-        1 => [
-            'active' => true,
-            'name' => 'Training',
-            'required_people' => 1,
-        ],
-        2 => [
-            'active' => false,
-            'name' => 'Dienst',
-            'required_people' => 1,
-        ],
-        3 => [
-            'active' => false,
-            'name' => 'Dienst',
-            'required_people' => 1,
-        ],
-        4 => [
-            'active' => false,
-            'name' => 'Dienst',
-            'required_people' => 1,
-        ],
-        5 => [
-            'active' => true,
-            'name' => 'Saisonabend',
-            'required_people' => 2,
-        ],
-        6 => [
-            'active' => false,
-            'name' => 'Dienst',
-            'required_people' => 1,
-        ],
-        7 => [
-            'active' => false,
-            'name' => 'Dienst',
-            'required_people' => 1,
-        ],
-    ];
+    #[On('duty-plan-roles-updated')]
+    public function refreshAfterRolesUpdated(): void
+    {
+        // Kein eigener Zustand zu aktualisieren — das Neu-Rendern selbst
+        // genügt, damit die Terminliste die aktuellen Rollen-Daten aus der
+        // (bereits im RolesEditor-Kindkomponente gespeicherten) DB liest.
+    }
 
     public function mount(): void
     {
@@ -132,6 +104,8 @@ class Index extends Component
             ],
         ]);
 
+        $sourcePlanId = $this->copyFromCurrentPlan ? $this->planId : null;
+
         $plan = DutyPlan::create([
             'name' => $validated['planName'],
 
@@ -142,13 +116,26 @@ class Index extends Component
                 $validated['excludeHolidays'],
         ]);
 
-        $this->planId = $plan->planID;
+        if ($sourcePlanId) {
+            $source = DutyPlan::with('roles')->find($sourcePlanId);
+
+            foreach ($source?->roles ?? [] as $role) {
+                $plan->roles()->create(
+                    collect($role->toArray())
+                        ->except(['roleID', 'planID', 'created_at', 'updated_at'])
+                        ->all()
+                );
+            }
+        }
+
+        $this->selectPlan($plan->planID);
 
         $this->showCreatePlan = false;
 
         session()->flash(
             'success',
             'Dienstplan wurde angelegt.'
+            . ($sourcePlanId ? ' Dienstbezeichnungen wurden vom vorherigen Plan übernommen.' : '')
         );
     }
 
@@ -202,7 +189,7 @@ class Index extends Component
             return;
         }
 
-        $source = DutyPlan::findOrFail($this->planId);
+        $source = DutyPlan::with('roles')->findOrFail($this->planId);
 
         $copy = DutyPlan::create([
             'name' => $source->name . ' Kopie',
@@ -211,11 +198,19 @@ class Index extends Component
             'exclude_holidays' => $source->exclude_holidays,
         ]);
 
+        foreach ($source->roles as $role) {
+            $copy->roles()->create(
+                collect($role->toArray())
+                    ->except(['roleID', 'planID', 'created_at', 'updated_at'])
+                    ->all()
+            );
+        }
+
         $this->selectPlan($copy->planID);
 
         session()->flash(
             'success',
-            'Dienstplan wurde dupliziert. Termine und Helferzuweisungen wurden nicht übernommen.'
+            'Dienstplan wurde dupliziert. Dienstbezeichnungen wurden übernommen, Termine und Helferzuweisungen nicht.'
         );
     }
 
@@ -405,17 +400,6 @@ class Index extends Component
             'dateFrom' => ['required', 'date'],
             'dateTo' => ['required', 'date', 'after_or_equal:dateFrom'],
 
-            'weekdayRules' => ['array'],
-
-            'weekdayRules.*.active' => ['boolean'],
-            'weekdayRules.*.name' => ['required', 'string', 'max:100'],
-            'weekdayRules.*.required_people' => [
-                'required',
-                'integer',
-                'min:1',
-                'max:20',
-            ],
-
             'excludeHolidays' => ['boolean'],
         ];
     }
@@ -432,16 +416,53 @@ class Index extends Component
 
         return DutyPlanEvent::query()
             ->with([
+                'role.requiredGroup',
+                'role.requiredSkill',
                 'assignments.member',
                 'assignments.externalContact',
             ])
-            ->where('planID', $this->planId)
-            ->whereBetween('duty_date', [
+            ->where('tb_dutyplan_events.planID', $this->planId)
+            ->whereBetween('tb_dutyplan_events.duty_date', [
                 $this->dateFrom,
                 $this->dateTo,
             ])
-            ->orderBy('duty_date')
+            ->join('tb_dutyplan_roles', 'tb_dutyplan_roles.roleID', '=', 'tb_dutyplan_events.roleID')
+            ->orderBy('tb_dutyplan_events.duty_date')
+            ->orderBy('tb_dutyplan_roles.sort_order')
+            ->select('tb_dutyplan_events.*')
             ->get();
+    }
+
+    /**
+     * Meldet, ob einem Termin ein Pflichtgruppen-Mitglied fehlt (Rolle hat
+     * eine Pflichtgruppe, aber keine der Zuteilungen ist Mitglied davon).
+     */
+    public function eventGroupWarning(DutyPlanEvent $event): ?string
+    {
+        $role = $event->role;
+
+        if (!$role || !$role->requiresGroup()) {
+            return null;
+        }
+
+        $groupMemberIDs = $role->requiredGroup
+            ?->members()
+            ->pluck('memberID')
+            ->all() ?? [];
+
+        $matches = $event->assignments
+            ->filter(fn ($assignment) => $assignment->memberID && in_array($assignment->memberID, $groupMemberIDs, true))
+            ->count();
+
+        if ($matches >= $role->required_group_min) {
+            return null;
+        }
+
+        return 'Mindestens '
+            . $role->required_group_min
+            . ' Helfer aus "'
+            . $role->requiredGroup->name
+            . '" fehlt.';
     }
 
     public function autoAssign(
@@ -508,39 +529,43 @@ class Index extends Component
             return;
         }
 
-        $activeRules = collect($this->weekdayRules)
-            ->filter(fn ($rule) => $rule['active'])
-            ->count();
+        $plan = DutyPlan::findOrFail($this->planId);
 
-        if ($activeRules === 0) {
-            $this->addError(
-                'weekdayRules',
-                'Mindestens ein Wochentag muss aktiviert sein.'
+        $activeRoles = $plan->roles()->where('active', true)->count();
+
+        if ($activeRoles === 0) {
+            session()->flash(
+                'error',
+                'Für diesen Dienstplan sind noch keine (aktiven) Dienstbezeichnungen angelegt.'
             );
 
             return;
         }
 
         $result = $generator->generate(
-            $this->planId,
+            $plan,
             $this->dateFrom,
-            $this->dateTo,
-            $this->weekdayRules,
-            $this->excludeHolidays
+            $this->dateTo
         );
 
-        session()->flash(
-            'success',
-            $result['created']
-            . ' Termine wurden erzeugt.'
-            . (
-            $result['skipped_holidays'] > 0
-                ? ' '
-                . $result['skipped_holidays']
-                . ' Feiertagstermine wurden ausgelassen.'
-                : ''
-            )
-        );
+        $message = $result['created']
+            . ' Termine erzeugt, '
+            . $result['updated']
+            . ' aktualisiert.';
+
+        if ($result['skipped_holidays'] > 0) {
+            $message .= ' ' . $result['skipped_holidays'] . ' Feiertagstermine wurden ausgelassen.';
+        }
+
+        if ($result['removed'] > 0) {
+            $message .= ' ' . $result['removed'] . ' verwaiste Termine ohne Einteilung wurden entfernt.';
+        }
+
+        if ($result['orphaned'] > 0) {
+            $message .= ' ' . $result['orphaned'] . ' verwaiste Termine mit bestehenden Einteilungen wurden NICHT entfernt — bitte prüfen.';
+        }
+
+        session()->flash('success', $message);
     }
 
     public function holidayName($date): ?string

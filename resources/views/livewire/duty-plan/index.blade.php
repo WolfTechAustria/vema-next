@@ -193,6 +193,20 @@
 
             </div>
 
+            @if($planId)
+                <label class="mt-4 flex items-center gap-3">
+                    <input
+                        type="checkbox"
+                        wire:model="copyFromCurrentPlan"
+                        class="rounded border-slate-300"
+                    >
+
+                    <span class="text-sm font-medium text-slate-700">
+                        Dienstbezeichnungen (und Helferliste) vom aktuell ausgewählten Dienstplan übernehmen
+                    </span>
+                </label>
+            @endif
+
 
             <div class="mt-5 flex justify-end gap-2">
 
@@ -285,120 +299,10 @@
     </section>
 
 
-    {{-- Wochentage --}}
-    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
-
-        <div class="border-b border-slate-200 px-6 py-4">
-
-            <h3 class="font-semibold text-slate-900">
-                Wochentage
-            </h3>
-
-            <p class="mt-1 text-sm text-slate-500">
-                Lege fest, an welchen Tagen Dienste stattfinden und wie viele Helfer benötigt werden.
-            </p>
-
-        </div>
-
-
-        <div class="divide-y divide-slate-100">
-
-            @foreach($weekdayRules as $weekday => $rule)
-
-                <div
-                    wire:key="weekday-{{ $weekday }}"
-                    class="grid gap-4 p-4 md:grid-cols-[120px_180px_1fr_160px]"
-                >
-
-                    <div class="flex items-center">
-
-                        <label class="flex items-center gap-3">
-
-                            <input
-                                type="checkbox"
-                                wire:model="weekdayRules.{{ $weekday }}.active"
-                                class="rounded border-slate-300"
-                            >
-
-                            <span class="text-sm font-semibold text-slate-900">
-                                {{ $this->weekdayName($weekday) }}
-                            </span>
-
-                        </label>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="text-xs font-medium uppercase tracking-wide text-slate-400 md:hidden">
-                            Aktiv
-                        </div>
-
-                        @if($rule['active'])
-
-                            <span class="inline-flex rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
-                                Dienst aktiv
-                            </span>
-
-                        @else
-
-                            <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
-                                Inaktiv
-                            </span>
-
-                        @endif
-
-                    </div>
-
-
-                    <div>
-
-                        <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">
-                            Bezeichnung
-                        </label>
-
-                        <input
-                            type="text"
-                            wire:model="weekdayRules.{{ $weekday }}.name"
-                            class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                        >
-
-                    </div>
-
-
-                    <div>
-
-                        <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">
-                            Helfer
-                        </label>
-
-                        <input
-                            type="number"
-                            min="1"
-                            max="20"
-                            wire:model="weekdayRules.{{ $weekday }}.required_people"
-                            class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                        >
-
-                    </div>
-
-                </div>
-
-            @endforeach
-
-        </div>
-
-    </section>
-
-
-    @error('weekdayRules')
-
-    <div class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-        {{ $message }}
-    </div>
-
-    @enderror
+    {{-- Dienstbezeichnungen --}}
+    @if($planId)
+        <livewire:duty-plan.roles-editor :plan-id="$planId" :key="'roles-editor-'.$planId" />
+    @endif
 
 
     {{-- Aktionen --}}
@@ -594,6 +498,24 @@
                             <div class="text-sm text-slate-500">
                                 {{ $event->required_helpers }}
                                 Helfer benötigt
+
+                                @if($event->start_time)
+                                    · {{ substr($event->start_time, 0, 5) }}–{{ substr($event->end_time ?? '', 0, 5) }} Uhr
+                                @endif
+                            </div>
+
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                @if($event->role?->requiredGroup)
+                                    <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                                        ≥{{ $event->role->required_group_min }} aus {{ $event->role->requiredGroup->name }}
+                                    </span>
+                                @endif
+
+                                @if($event->role?->requiredSkill)
+                                    <span class="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
+                                        Fähigkeit: {{ $event->role->requiredSkill->name }}
+                                    </span>
+                                @endif
                             </div>
 
                         </td>
@@ -759,6 +681,14 @@
                                     Offen
                                 </span>
 
+                            @endif
+
+                            @if($warning = $this->eventGroupWarning($event))
+                                <div class="mt-1">
+                                    <span class="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
+                                        ⚠ {{ $warning }}
+                                    </span>
+                                </div>
                             @endif
 
                         </td>

@@ -29,4 +29,13 @@ class DutyPlan extends Model
             'planID'
         );
     }
+
+    public function roles()
+    {
+        return $this->hasMany(
+            DutyPlanRole::class,
+            'planID',
+            'planID'
+        )->orderBy('sort_order');
+    }
 }

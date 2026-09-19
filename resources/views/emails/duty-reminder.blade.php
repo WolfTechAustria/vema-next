@@ -26,6 +26,16 @@
                             <p>
                                 du bist am
                                 <strong>{{ $assignment->event->duty_date->translatedFormat('l, d.m.Y') }}</strong>
+
+                                @if($assignment->event->start_time)
+                                    von <strong>{{ substr($assignment->event->start_time, 0, 5) }}</strong>
+                                    @if($assignment->event->end_time)
+                                        bis <strong>{{ substr($assignment->event->end_time, 0, 5) }}</strong> Uhr
+                                    @else
+                                        Uhr
+                                    @endif
+                                @endif
+
                                 für "<strong>{{ $assignment->event->duty_name }}</strong>" eingeteilt.
                             </p>
                         </div>

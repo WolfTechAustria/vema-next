@@ -36,4 +36,13 @@ class DutyPlanEvent extends Model
             'eventID'
         );
     }
+
+    public function role()
+    {
+        return $this->belongsTo(
+            DutyPlanRole::class,
+            'roleID',
+            'roleID'
+        );
+    }
 }
