@@ -38,7 +38,7 @@ Route::middleware('guest')->group(function () {
         ->name('member.magic-login');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active.staff'])->group(function () {
 
     Route::get('/', fn () => redirect()->route('dashboard'));
 
