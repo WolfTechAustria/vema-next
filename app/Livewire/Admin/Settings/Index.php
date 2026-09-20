@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Settings;
 
 use App\Models\Setting;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 
 class Index extends Component
@@ -54,6 +55,11 @@ class Index extends Component
             'phone' => $validated['phone'] ?: null,
             'website' => $validated['website'] ?: null,
         ]);
+
+        ActivityLogger::log(
+            'settings.updated',
+            'Vereinseinstellungen wurden geändert.'
+        );
 
         session()->flash('success', 'Einstellungen wurden gespeichert.');
     }

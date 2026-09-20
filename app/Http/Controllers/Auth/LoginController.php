@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -31,6 +32,11 @@ class LoginController extends Controller
             !$user->enabled ||
             !Hash::check($credentials['password'], $user->password)
         ) {
+            ActivityLogger::log(
+                'user.login_failed',
+                'Fehlgeschlagener Anmeldeversuch für Benutzername "' . $credentials['username'] . '".'
+            );
+
             throw ValidationException::withMessages([
                 'username' => 'Benutzername oder Passwort ist falsch.',
             ]);
@@ -40,11 +46,32 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
+        ActivityLogger::log(
+            'user.login',
+            'Benutzer "' . $user->username . '" hat sich angemeldet.',
+            'User',
+            $user->id
+        );
+
         return redirect()->intended('/dashboard');
     }
 
     public function destroy(Request $request)
     {
+        $user = Auth::user();
+
+        if ($user) {
+            // Vor dem Logout protokollieren, solange der Guard den
+            // Benutzer noch kennt (ActivityLogger ermittelt den Akteur
+            // selbst über den aktiven Guard).
+            ActivityLogger::log(
+                'user.logout',
+                'Benutzer "' . $user->username . '" hat sich abgemeldet.',
+                'User',
+                $user->id
+            );
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();

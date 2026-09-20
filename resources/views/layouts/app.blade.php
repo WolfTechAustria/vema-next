@@ -342,6 +342,18 @@
                         Einstellungen
                     </a>
 
+                    <a
+                        href="{{ route('admin.activity-log.index') }}"
+                        wire:navigate
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                        {{ request()->routeIs('admin.activity-log.*')
+                            ? 'bg-slate-900 text-white'
+                            : 'text-slate-700 hover:bg-slate-100' }}"
+                    >
+                        <span>📋</span>
+                        Aktivitätsprotokoll
+                    </a>
+
                 @endif
 
 

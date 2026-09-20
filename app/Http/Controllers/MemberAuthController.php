@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MemberAccount;
 use App\Models\MemberLoginToken;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,7 +19,21 @@ class MemberAuthController extends Controller
             ->whereNull('used_at')
             ->first();
 
+        if (!$loginToken) {
+            ActivityLogger::log(
+                'member.login_failed',
+                'Anmeldeversuch mit ungültigem oder bereits verwendetem Login-Link.'
+            );
+        }
+
         abort_unless($loginToken, 403, 'Ungültiger oder bereits verwendeter Login-Link.');
+
+        if ($loginToken->isExpired()) {
+            ActivityLogger::log(
+                'member.login_failed',
+                'Anmeldeversuch mit abgelaufenem Login-Link für "' . $loginToken->email . '".'
+            );
+        }
 
         abort_if(
             $loginToken->isExpired(),
@@ -34,6 +49,13 @@ class MemberAuthController extends Controller
             ->orderBy('surname')
             ->orderBy('name')
             ->get();
+
+        if ($members->isEmpty()) {
+            ActivityLogger::log(
+                'member.login_failed',
+                'Login-Link für "' . $loginToken->email . '" verwendet, aber kein aktives Mitglied gefunden.'
+            );
+        }
 
         abort_if(
             $members->isEmpty(),
@@ -72,6 +94,13 @@ class MemberAuthController extends Controller
             'last_login_at' => now(),
         ]);
 
+        ActivityLogger::log(
+            'member.login',
+            'Mitglied "' . $account->email . '" hat sich im Mitgliederbereich angemeldet.',
+            'MemberAccount',
+            $account->accountID
+        );
+
         /*
          * Genau ein Mitglied:
          * direkt dieses Profil aktivieren.
@@ -96,6 +125,17 @@ class MemberAuthController extends Controller
     }
     public function logout(Request $request)
     {
+        $account = Auth::guard('member')->user();
+
+        if ($account) {
+            ActivityLogger::log(
+                'member.logout',
+                'Mitglied "' . $account->email . '" hat sich im Mitgliederbereich abgemeldet.',
+                'MemberAccount',
+                $account->accountID
+            );
+        }
+
         Auth::guard('member')->logout();
 
         $request->session()->invalidate();

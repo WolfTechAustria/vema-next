@@ -6,6 +6,7 @@ use App\Models\Member;
 use App\Models\MemberEmail;
 use App\Models\MemberPhone;
 use App\Models\Skill;
+use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -121,6 +122,13 @@ class Create extends Component
 
             return $member;
         });
+
+        ActivityLogger::log(
+            'member.created',
+            'Mitglied "' . $member->full_name . '" (#' . $member->memberID . ') wurde angelegt.',
+            'Member',
+            $member->memberID
+        );
 
         session()->flash('success', 'Mitglied wurde angelegt.');
 

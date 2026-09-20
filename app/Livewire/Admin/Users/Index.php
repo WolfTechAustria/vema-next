@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Users;
 use App\Mail\StaffPasswordResetMail;
 use App\Models\Member;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
@@ -82,6 +83,13 @@ class Index extends Component
             new StaffPasswordResetMail($user, $token, isNewAccount: true)
         );
 
+        ActivityLogger::log(
+            'user.created',
+            'Benutzer "' . $user->username . '" wurde angelegt' . ($validated['grantAdmin'] ? ' (mit Admin-Rechten)' : '') . '.',
+            'User',
+            $user->id
+        );
+
         $this->cancelInvite();
 
         session()->flash(
@@ -101,6 +109,13 @@ class Index extends Component
         }
 
         $user->update(['enabled' => !$user->enabled]);
+
+        ActivityLogger::log(
+            $user->enabled ? 'user.enabled' : 'user.disabled',
+            'Benutzer "' . $user->username . '" wurde ' . ($user->enabled ? 'entsperrt' : 'gesperrt') . '.',
+            'User',
+            $user->id
+        );
     }
 
     public function toggleAdmin(int $userId): void
@@ -120,8 +135,22 @@ class Index extends Component
             }
 
             $user->removeRole('admin');
+
+            ActivityLogger::log(
+                'user.admin_revoked',
+                'Benutzer "' . $user->username . '" wurden die Admin-Rechte entzogen.',
+                'User',
+                $user->id
+            );
         } else {
             $user->assignRole('admin');
+
+            ActivityLogger::log(
+                'user.admin_granted',
+                'Benutzer "' . $user->username . '" wurden Admin-Rechte vergeben.',
+                'User',
+                $user->id
+            );
         }
     }
 

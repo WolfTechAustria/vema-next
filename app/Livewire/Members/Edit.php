@@ -6,6 +6,7 @@ use App\Models\Member;
 use App\Models\MemberEmail;
 use App\Models\MemberPhone;
 use App\Models\Skill;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 
 class Edit extends Component
@@ -181,6 +182,13 @@ class Edit extends Component
 
         $this->member->skills()->sync(
             array_map('intval', $this->selectedSkills)
+        );
+
+        ActivityLogger::log(
+            'member.updated',
+            'Mitglied "' . $this->member->full_name . '" (#' . $this->member->memberID . ') wurde geändert.',
+            'Member',
+            $this->member->memberID
         );
 
         session()->flash('success', 'Mitglied wurde gespeichert.');
