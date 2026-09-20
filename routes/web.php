@@ -31,6 +31,18 @@ Route::middleware('guest')->group(function () {
 
     Route::post('/login', [LoginController::class, 'store']);
 
+    Route::get('/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'create'])
+        ->name('password.request');
+
+    Route::post('/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'store'])
+        ->name('password.email');
+
+    Route::get('/reset-password/{token}', [\App\Http\Controllers\Auth\ResetPasswordController::class, 'create'])
+        ->name('password.reset');
+
+    Route::post('/reset-password', [\App\Http\Controllers\Auth\ResetPasswordController::class, 'store'])
+        ->name('password.update');
+
     Route::livewire('/member/login',\App\Livewire\MemberAuth\Login::class)
         ->name('member.login');
 

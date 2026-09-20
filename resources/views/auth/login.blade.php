@@ -39,6 +39,12 @@
         {{-- Login --}}
         <div class="px-8 py-7">
 
+            @if(session('success'))
+                <div class="mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                    {{ session('success') }}
+                </div>
+            @endif
+
             <form
                 id="login-form"
                 method="POST"
@@ -72,12 +78,21 @@
 
                 <div>
 
-                    <label
-                        for="password"
-                        class="mb-1.5 block text-sm font-medium text-slate-700"
-                    >
-                        Passwort
-                    </label>
+                    <div class="mb-1.5 flex items-center justify-between">
+                        <label
+                            for="password"
+                            class="block text-sm font-medium text-slate-700"
+                        >
+                            Passwort
+                        </label>
+
+                        <a
+                            href="{{ route('password.request') }}"
+                            class="text-xs font-medium text-slate-500 hover:text-slate-800"
+                        >
+                            Passwort vergessen?
+                        </a>
+                    </div>
 
                     <input
                         id="password"

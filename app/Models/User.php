@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Mail\StaffPasswordResetMail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -30,6 +32,13 @@ class User extends Authenticatable
     public function getAuthPassword(): string
     {
         return $this->password;
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        Mail::to($this->email)->send(
+            new StaffPasswordResetMail($this, $token)
+        );
     }
 
     public function member()
