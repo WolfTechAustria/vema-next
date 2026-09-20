@@ -312,52 +312,6 @@
                     Berichte
                 </a>
 
-                @if($webUser?->hasRole('admin'))
-
-                    <div class="mb-2 mt-4 px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                        Verwaltung
-                    </div>
-
-                    <a
-                        href="{{ route('admin.users.index') }}"
-                        wire:navigate
-                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                        {{ request()->routeIs('admin.users.*')
-                            ? 'bg-slate-900 text-white'
-                            : 'text-slate-700 hover:bg-slate-100' }}"
-                    >
-                        <span>👤</span>
-                        Benutzerverwaltung
-                    </a>
-
-                    <a
-                        href="{{ route('admin.settings.index') }}"
-                        wire:navigate
-                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                        {{ request()->routeIs('admin.settings.*')
-                            ? 'bg-slate-900 text-white'
-                            : 'text-slate-700 hover:bg-slate-100' }}"
-                    >
-                        <span>⚙</span>
-                        Einstellungen
-                    </a>
-
-                    <a
-                        href="{{ route('admin.activity-log.index') }}"
-                        wire:navigate
-                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                        {{ request()->routeIs('admin.activity-log.*')
-                            ? 'bg-slate-900 text-white'
-                            : 'text-slate-700 hover:bg-slate-100' }}"
-                    >
-                        <span>📋</span>
-                        Aktivitätsprotokoll
-                    </a>
-
-                @endif
-
-
-
             @elseif($isMember)
 
                 {{-- =====================================================
@@ -525,6 +479,22 @@
 
 
             @elseif($isInternal)
+
+                @if($webUser?->hasRole('admin'))
+
+                    <a
+                        href="{{ route('admin.settings.index') }}"
+                        wire:navigate
+                        class="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition
+                        {{ request()->routeIs('admin.*')
+                            ? 'bg-slate-100 text-slate-900'
+                            : 'text-slate-700 hover:bg-slate-100' }}"
+                    >
+                        <span>⚙</span>
+                        Einstellungen
+                    </a>
+
+                @endif
 
                 <form
                     method="POST"

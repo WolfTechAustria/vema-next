@@ -2,6 +2,8 @@
 
     @include('partials.flash-messages')
 
+    @include('partials.admin-settings-nav')
+
     <div>
         <h2 class="text-2xl font-bold tracking-tight">
             Einstellungen
