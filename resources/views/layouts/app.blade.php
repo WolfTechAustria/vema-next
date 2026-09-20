@@ -312,7 +312,25 @@
                     Berichte
                 </a>
 
+                @if($webUser?->hasRole('admin'))
 
+                    <div class="mb-2 mt-4 px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Verwaltung
+                    </div>
+
+                    <a
+                        href="{{ route('admin.users.index') }}"
+                        wire:navigate
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                        {{ request()->routeIs('admin.users.*')
+                            ? 'bg-slate-900 text-white'
+                            : 'text-slate-700 hover:bg-slate-100' }}"
+                    >
+                        <span>👤</span>
+                        Benutzerverwaltung
+                    </a>
+
+                @endif
 
 
 

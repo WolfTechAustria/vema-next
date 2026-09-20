@@ -148,7 +148,9 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/skills', \App\Livewire\Skills\Index::class)
         ->name('skills.index');
 
-
+    Route::livewire('/users', \App\Livewire\Admin\Users\Index::class)
+        ->middleware('admin')
+        ->name('admin.users.index');
 
 
 
