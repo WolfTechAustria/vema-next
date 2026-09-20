@@ -1,3 +1,7 @@
+@php
+    $clubSettings = \App\Models\Setting::current();
+@endphp
+
 <table
     width="100%"
     cellpadding="0"
@@ -20,7 +24,7 @@
         >
             <img
                 src="https://vema.sg-angerberg.at/images/logo.png"
-                alt="Schützengilde Angerberg"
+                alt="{{ $clubSettings->name }}"
                 width="120"
                 style="
                     display: block;
@@ -41,32 +45,42 @@
             "
         >
             <strong style="color: #111827;">
-                Schützengilde Angerberg
+                {{ $clubSettings->name }}
             </strong><br>
 
-            Linden 3<br>
-            6320 Angerberg<br>
+            @if($clubSettings->street)
+                {{ $clubSettings->street }}<br>
+            @endif
+
+            @if($clubSettings->zip || $clubSettings->city)
+                {{ trim($clubSettings->zip . ' ' . $clubSettings->city) }}<br>
+            @endif
+
             Österreich<br><br>
 
-            <a
-                href="mailto:vorstand@sg-angerberg.at"
-                style="
-                    color: #4b5563;
-                    text-decoration: none;
-                "
-            >
-                vorstand@sg-angerberg.at
-            </a><br>
+            @if($clubSettings->email)
+                <a
+                    href="mailto:{{ $clubSettings->email }}"
+                    style="
+                        color: #4b5563;
+                        text-decoration: none;
+                    "
+                >
+                    {{ $clubSettings->email }}
+                </a><br>
+            @endif
 
-            <a
-                href="https://www.sg-angerberg.at"
-                style="
-                    color: #4b5563;
-                    text-decoration: none;
-                "
-            >
-                www.sg-angerberg.at
-            </a>
+            @if($clubSettings->website)
+                <a
+                    href="https://{{ $clubSettings->website }}"
+                    style="
+                        color: #4b5563;
+                        text-decoration: none;
+                    "
+                >
+                    {{ $clubSettings->website }}
+                </a>
+            @endif
         </td>
     </tr>
 </table>

@@ -158,7 +158,7 @@
             <div class="text-center">
 
                 <div class="text-sm font-medium text-slate-700">
-                    Mitglied der Schützengilde?
+                    Mitglied von {{ \App\Models\Setting::current()->name }}?
                 </div>
 
                 <p class="mt-1 text-xs text-slate-500">

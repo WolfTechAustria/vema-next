@@ -102,7 +102,7 @@
         <td class="header-logo">
             <img
                 src="{{ public_path('images/logo.jpg') }}"
-                alt="Schützengilde Angerberg"
+                alt="{{ \App\Models\Setting::current()->name }}"
             >
         </td>
     </tr>

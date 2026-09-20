@@ -166,7 +166,7 @@
     {{-- persönliche Anrede --}}
     <div class="salutation">
 
-        Geschätztes Mitglied der Schützengilde Angerberg,
+        Geschätztes Mitglied der {{ \App\Models\Setting::current()->name }},
         {{ $salutation }} {{ $member->name }}!
 
     </div>

@@ -31,5 +31,5 @@
 
 <p>
     Mit freundlichen Grüßen<br>
-    Schützengilde Angerberg
+    {{ \App\Models\Setting::current()->name }}
 </p>

@@ -152,6 +152,10 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
         ->middleware('admin')
         ->name('admin.users.index');
 
+    Route::livewire('/settings', \App\Livewire\Admin\Settings\Index::class)
+        ->middleware('admin')
+        ->name('admin.settings.index');
+
 
 
     Route::post('/logout', [LoginController::class, 'destroy'])
