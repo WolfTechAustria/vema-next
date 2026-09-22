@@ -148,30 +148,6 @@
 
             <div class="space-y-5 p-6">
 
-                <div>
-                    <label class="mb-1 block text-sm font-medium text-slate-700">
-                        Vorstandsfunktion
-                    </label>
-
-                    <input
-                        type="text"
-                        wire:model="board_function"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                    >
-                </div>
-
-                <label class="flex items-center gap-3">
-                    <input
-                        type="checkbox"
-                        wire:model="active"
-                        class="rounded border-slate-300"
-                    >
-
-                    <span class="text-sm font-medium text-slate-700">
-                        Aktives Mitglied
-                    </span>
-                </label>
-
                 <label class="flex items-center gap-3">
                     <input
                         type="checkbox"

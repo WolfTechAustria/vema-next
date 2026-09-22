@@ -7,6 +7,7 @@ use App\Models\MemberEmail;
 use App\Models\MemberPhone;
 use App\Models\Skill;
 use App\Services\ActivityLogger;
+use App\Services\MembershipPeriodService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -19,14 +20,15 @@ class Create extends Component
     public ?string $dateOfJoin = null;
     public string $street = '';
     public string $zip = '';
-    public bool $active = true;
     public bool $competitionMember = false;
     public bool $supportingMember = false;
-    public string $board_function = '';
 
     public array $emails = [];
     public array $phones = [];
     public array $selectedSkills = [];
+
+    public $possibleDuplicates = [];
+    public bool $duplicateWarningDismissed = false;
 
     protected function rules(): array
     {
@@ -38,10 +40,8 @@ class Create extends Component
             'dateOfJoin' => ['nullable', 'date'],
             'street' => ['nullable', 'string', 'max:255'],
             'zip' => ['nullable', 'string', 'regex:/^\d{4}$/', 'max:20'],
-            'active' => ['boolean'],
             'competitionMember' => ['boolean'],
             'supportingMember' => ['boolean'],
-            'board_function' => ['nullable', 'string', 'max:100'],
 
             'emails' => ['array'],
             'emails.*.email' => ['required', 'email', 'max:255'],
@@ -53,6 +53,36 @@ class Create extends Component
             'selectedSkills' => ['array'],
             'selectedSkills.*' => ['integer'],
         ];
+    }
+
+    public function updatedName(): void
+    {
+        $this->searchForDuplicates();
+    }
+
+    public function updatedSurname(): void
+    {
+        $this->searchForDuplicates();
+    }
+
+    private function searchForDuplicates(): void
+    {
+        $this->duplicateWarningDismissed = false;
+
+        if (strlen($this->name) < 2 || strlen($this->surname) < 2) {
+            $this->possibleDuplicates = [];
+
+            return;
+        }
+
+        $this->possibleDuplicates = app(MembershipPeriodService::class)
+            ->searchInactiveByName($this->name, $this->surname)
+            ->all();
+    }
+
+    public function dismissDuplicateWarning(): void
+    {
+        $this->duplicateWarningDismissed = true;
     }
 
     public function addEmail(): void
@@ -95,11 +125,14 @@ class Create extends Component
                 'dateOfJoin' => $validated['dateOfJoin'] ?: null,
                 'street' => $validated['street'],
                 'zip' => $validated['zip'],
-                'active' => $validated['active'],
                 'competitionMember' => $validated['competitionMember'],
                 'supportingMember' => $validated['supportingMember'],
-                'board_function' => $validated['board_function'] ?: null,
             ]);
+
+            app(MembershipPeriodService::class)->openInitialPeriod(
+                $member,
+                $validated['dateOfJoin'] ?: null
+            );
 
             foreach ($this->emails as $email) {
                 MemberEmail::create([

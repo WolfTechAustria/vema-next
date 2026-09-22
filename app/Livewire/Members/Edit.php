@@ -25,13 +25,9 @@ class Edit extends Component
 
     public string $zip = '';
 
-    public bool $active = true;
-
     public bool $competitionMember = false;
 
     public bool $supportingMember = false;
-
-    public string $board_function = '';
 
     public array $emails = [];
 
@@ -49,10 +45,8 @@ class Edit extends Component
         $this->dateOfJoin = $member->dateOfJoin?->format('Y-m-d');
         $this->street = $member->street ?? '';
         $this->zip = $this->sanitizeZip($member->zip ?? '');
-        $this->active = (bool) $member->active;
         $this->competitionMember = (bool) $member->competitionMember;
         $this->supportingMember = (bool) $member->supportingMember;
-        $this->board_function = $member->board_function ?? '';
 
         $this->emails = $member->emails
             ->map(fn ($email) => [
@@ -87,10 +81,8 @@ class Edit extends Component
             'dateOfJoin' => ['nullable', 'date'],
             'street' => ['nullable', 'string', 'max:255'],
             'zip' => ['nullable', 'string', 'regex:/^\d{4}$/'],
-            'active' => ['boolean'],
             'competitionMember' => ['boolean'],
             'supportingMember' => ['boolean'],
-            'board_function' => ['nullable', 'string', 'max:100'],
 
             'emails' => ['array'],
             'emails.*.email' => ['required', 'email', 'max:255'],
@@ -171,10 +163,8 @@ class Edit extends Component
             'dateOfJoin' => $validated['dateOfJoin'] ?: null,
             'street' => $validated['street'] ?: null,
             'zip' => $validated['zip'] ?: null,
-            'active' => $validated['active'],
             'competitionMember' => $validated['competitionMember'],
             'supportingMember' => $validated['supportingMember'],
-            'board_function' => $validated['board_function'] ?: null,
         ]);
 
         $this->syncEmails();

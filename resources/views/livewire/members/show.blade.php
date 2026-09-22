@@ -52,6 +52,24 @@
                 Zurück
             </a>
 
+            @if($member->active)
+                <button
+                    type="button"
+                    wire:click="openResignModal"
+                    class="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100"
+                >
+                    Austritt erfassen
+                </button>
+            @else
+                <button
+                    type="button"
+                    wire:click="openReenterModal"
+                    class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+                >
+                    Wiedereintritt erfassen
+                </button>
+            @endif
+
             <a
                 href="{{ route('members.edit', $member) }}"
                 wire:navigate
@@ -148,11 +166,53 @@
                             </div>
 
                             <div class="mt-1 text-sm font-medium text-slate-900">
-                                {{ $member->deactiveSince?->format('d.m.Y') ?? '–' }}
+                                {{ $member->membershipPeriods->first()?->date_to?->format('d.m.Y') ?? '–' }}
                             </div>
                         </div>
 
                     @endif
+
+                </div>
+
+            </section>
+
+
+            {{-- Vereinszugehörigkeit --}}
+            <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+                <div class="border-b border-slate-200 px-6 py-4">
+                    <h3 class="font-semibold text-slate-900">
+                        Vereinszugehörigkeit
+                    </h3>
+                </div>
+
+                <div class="divide-y divide-slate-100">
+
+                    @forelse($member->membershipPeriods as $period)
+
+                        <div class="flex items-center justify-between px-6 py-3 text-sm">
+
+                            <div class="text-slate-700">
+                                {{ $period->date_from?->format('d.m.Y') ?? 'unbekannt' }}
+                                –
+                                {{ $period->date_to?->format('d.m.Y') ?? 'laufend' }}
+                            </div>
+
+                            @if($period->note)
+                                <div class="text-xs text-slate-400">
+                                    {{ $period->note }}
+                                </div>
+                            @endif
+
+                        </div>
+
+                    @empty
+
+                        <div class="px-6 py-4 text-sm text-slate-500">
+                            Keine Zeiträume erfasst.
+                        </div>
+
+                    @endforelse
 
                 </div>
 
@@ -278,26 +338,98 @@
             </section>
 
 
-            {{-- Vereinsdaten --}}
+            {{-- Vorstandsfunktionen --}}
             <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
-                <div class="border-b border-slate-200 px-6 py-4">
+                <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
                     <h3 class="font-semibold text-slate-900">
-                        Verein
+                        Vorstandsfunktionen
                     </h3>
+
+                    <button
+                        type="button"
+                        wire:click="openAssignFunctionModal"
+                        class="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                    >
+                        + Funktion hinzufügen
+                    </button>
                 </div>
 
-                <div class="space-y-4 p-6">
+                <div class="divide-y divide-slate-100">
 
-                    <div>
-                        <div class="text-xs font-medium uppercase tracking-wide text-slate-400">
-                            Funktion
+                    @forelse($currentFunctions as $entry)
+
+                        <div class="flex items-center justify-between px-6 py-3">
+
+                            <div>
+                                <div class="text-sm font-medium text-slate-900">
+                                    {{ $entry['boardFunction']->name }}
+
+                                    @if($entry['derived'])
+                                        <span class="ml-1 text-xs font-normal text-slate-400">
+                                            (automatisch)
+                                        </span>
+                                    @endif
+                                </div>
+
+                                @if($entry['assignment']?->date_from)
+                                    <div class="text-xs text-slate-400">
+                                        seit {{ $entry['assignment']->date_from->format('d.m.Y') }}
+                                    </div>
+                                @endif
+                            </div>
+
+                            @if(!$entry['derived'])
+
+                                @if($endingAssignmentID === $entry['assignment']->assignmentID)
+
+                                    <div class="flex items-center gap-2">
+                                        <input
+                                            type="date"
+                                            wire:model="endFunctionDate"
+                                            class="rounded-lg border border-slate-300 px-2 py-1 text-xs"
+                                        >
+
+                                        <button
+                                            type="button"
+                                            wire:click="endFunction"
+                                            class="text-xs font-semibold text-red-600 hover:text-red-800"
+                                        >
+                                            Bestätigen
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            wire:click="$set('endingAssignmentID', null)"
+                                            class="text-xs text-slate-400 hover:text-slate-700"
+                                        >
+                                            Abbrechen
+                                        </button>
+                                    </div>
+
+                                @else
+
+                                    <button
+                                        type="button"
+                                        wire:click="openEndFunctionModal({{ $entry['assignment']->assignmentID }})"
+                                        class="text-xs font-semibold text-slate-500 hover:text-red-700"
+                                    >
+                                        Beenden
+                                    </button>
+
+                                @endif
+
+                            @endif
+
                         </div>
 
-                        <div class="mt-1 text-sm font-medium text-slate-900">
-                            {{ $member->board_function ?: 'Keine Funktion' }}
+                    @empty
+
+                        <div class="px-6 py-4 text-sm text-slate-500">
+                            Keine Funktion.
                         </div>
-                    </div>
+
+                    @endforelse
 
                 </div>
 
@@ -815,6 +947,238 @@
                         </div>
 
                     @endif
+
+                </div>
+
+            </div>
+
+        </div>
+
+    @endif
+
+
+    {{-- Modal Austritt --}}
+    @if($showResignModal)
+
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+
+            <div class="w-full max-w-md rounded-xl bg-white shadow-xl">
+
+                <div class="border-b border-slate-200 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-slate-900">
+                        Austritt erfassen
+                    </h3>
+                </div>
+
+                <div class="space-y-4 p-6">
+
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">
+                            Austrittsdatum
+                        </label>
+
+                        <input
+                            type="date"
+                            wire:model="resignDate"
+                            class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        >
+
+                        @error('resignDate')
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">
+                            Vermerk (optional)
+                        </label>
+
+                        <input
+                            type="text"
+                            wire:model="resignNote"
+                            class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        >
+                    </div>
+
+                </div>
+
+                <div class="flex justify-end gap-2 border-t border-slate-200 px-6 py-4">
+
+                    <button
+                        type="button"
+                        wire:click="$set('showResignModal', false)"
+                        class="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                    >
+                        Abbrechen
+                    </button>
+
+                    <button
+                        type="button"
+                        wire:click="resign"
+                        class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                    >
+                        Austritt speichern
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    @endif
+
+
+    {{-- Modal Wiedereintritt --}}
+    @if($showReenterModal)
+
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+
+            <div class="w-full max-w-md rounded-xl bg-white shadow-xl">
+
+                <div class="border-b border-slate-200 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-slate-900">
+                        Wiedereintritt erfassen
+                    </h3>
+                </div>
+
+                <div class="space-y-4 p-6">
+
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">
+                            Wiedereintrittsdatum
+                        </label>
+
+                        <input
+                            type="date"
+                            wire:model="reenterDate"
+                            class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        >
+
+                        @error('reenterDate')
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">
+                            Vermerk (optional)
+                        </label>
+
+                        <input
+                            type="text"
+                            wire:model="reenterNote"
+                            class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        >
+                    </div>
+
+                </div>
+
+                <div class="flex justify-end gap-2 border-t border-slate-200 px-6 py-4">
+
+                    <button
+                        type="button"
+                        wire:click="$set('showReenterModal', false)"
+                        class="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                    >
+                        Abbrechen
+                    </button>
+
+                    <button
+                        type="button"
+                        wire:click="reenter"
+                        class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                    >
+                        Wiedereintritt speichern
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    @endif
+
+
+    {{-- Modal Funktion zuweisen --}}
+    @if($showAssignFunctionModal)
+
+        @php
+            $assignableFunctions = $boardFunctions->whereNotIn(
+                'boardFunctionID',
+                $member->boardFunctionAssignments->whereNull('date_to')->pluck('boardFunctionID')
+            );
+        @endphp
+
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+
+            <div class="w-full max-w-md rounded-xl bg-white shadow-xl">
+
+                <div class="border-b border-slate-200 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-slate-900">
+                        Funktion hinzufügen
+                    </h3>
+                </div>
+
+                <div class="space-y-4 p-6">
+
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">
+                            Funktion
+                        </label>
+
+                        <select
+                            wire:model="newBoardFunctionID"
+                            class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        >
+                            <option value="">– Bitte wählen –</option>
+
+                            @foreach($assignableFunctions as $function)
+                                <option value="{{ $function->boardFunctionID }}">{{ $function->name }}</option>
+                            @endforeach
+                        </select>
+
+                        @error('newBoardFunctionID')
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">
+                            Beginn
+                        </label>
+
+                        <input
+                            type="date"
+                            wire:model="newBoardFunctionDate"
+                            class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        >
+
+                        @error('newBoardFunctionDate')
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                </div>
+
+                <div class="flex justify-end gap-2 border-t border-slate-200 px-6 py-4">
+
+                    <button
+                        type="button"
+                        wire:click="$set('showAssignFunctionModal', false)"
+                        class="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                    >
+                        Abbrechen
+                    </button>
+
+                    <button
+                        type="button"
+                        wire:click="assignFunction"
+                        class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                    >
+                        Zuweisen
+                    </button>
 
                 </div>
 

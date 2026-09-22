@@ -26,8 +26,14 @@ class Member extends Model
         'supportingMember' => 'boolean',
         'dateOfBirth' => 'date',
         'dateOfJoin' => 'date',
+        /** @deprecated Wird von keinem App-Code mehr beschrieben, siehe membershipPeriods(). */
         'deactiveSince' => 'date',
     ];
+
+    /*
+     * @deprecated tb_members.board_function (rohes int-Feld, kein Cast) wird
+     * von keinem App-Code mehr beschrieben, siehe boardFunctionAssignments().
+     */
 
     public function getFullNameAttribute(): string
     {
@@ -248,5 +254,41 @@ class Member extends Model
     {
         // Standard: aktiviert, solange kein Datensatz existiert.
         return $this->dutySettings?->duty_reminder_enabled ?? true;
+    }
+
+    public function membershipPeriods(): HasMany
+    {
+        return $this->hasMany(
+            MemberMembershipPeriod::class,
+            'memberID',
+            'memberID'
+        );
+    }
+
+    public function currentMembershipPeriod(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(
+            MemberMembershipPeriod::class,
+            'memberID',
+            'memberID'
+        )->whereNull('date_to');
+    }
+
+    public function boardFunctionAssignments(): HasMany
+    {
+        return $this->hasMany(
+            MemberBoardFunctionAssignment::class,
+            'memberID',
+            'memberID'
+        );
+    }
+
+    public function currentBoardFunctionAssignments(): HasMany
+    {
+        return $this->hasMany(
+            MemberBoardFunctionAssignment::class,
+            'memberID',
+            'memberID'
+        )->whereNull('date_to');
     }
 }
