@@ -6,6 +6,7 @@ use App\Mail\StaffPasswordResetMail;
 use App\Models\Member;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\ImapSentMailService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
@@ -41,7 +42,7 @@ class Index extends Component
         $member = Member::findOrFail($memberId);
 
         $this->selectedMemberId = $member->memberID;
-        $this->newUsername = Str::slug($member->name . '.' . $member->surname, '');
+        $this->newUsername = Str::slug($member->name.'.'.$member->surname, '');
         $this->newEmail = $member->emails->first()?->email ?? '';
         $this->showInviteForm = true;
         $this->memberSearch = '';
@@ -79,13 +80,38 @@ class Index extends Component
 
         $token = Password::getRepository()->create($user);
 
-        Mail::to($user->email)->send(
-            new StaffPasswordResetMail($user, $token, isNewAccount: true)
+        $mail = new StaffPasswordResetMail($user, $token, isNewAccount: true);
+
+        $rawMessage = null;
+
+        $mail->withSymfonyMessage(
+            function ($message) use (&$rawMessage) {
+                $rawMessage = $message->toString();
+            }
         );
+
+        Mail::to($user->email)->send($mail);
+
+        if ($rawMessage) {
+            try {
+                app(ImapSentMailService::class)->append(
+                    $rawMessage
+                );
+            } catch (\Throwable $imapException) {
+
+                \Log::warning(
+                    'Passwort-Link wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
+                    [
+                        'userID' => $user->id,
+                        'error' => $imapException->getMessage(),
+                    ]
+                );
+            }
+        }
 
         ActivityLogger::log(
             'user.created',
-            'Benutzer "' . $user->username . '" wurde angelegt' . ($validated['grantAdmin'] ? ' (mit Admin-Rechten)' : '') . '.',
+            'Benutzer "'.$user->username.'" wurde angelegt'.($validated['grantAdmin'] ? ' (mit Admin-Rechten)' : '').'.',
             'User',
             $user->id
         );
@@ -94,7 +120,7 @@ class Index extends Component
 
         session()->flash(
             'success',
-            'Benutzer "' . $user->username . '" wurde angelegt. Eine E-Mail zum Festlegen des Passworts wurde verschickt.'
+            'Benutzer "'.$user->username.'" wurde angelegt. Eine E-Mail zum Festlegen des Passworts wurde verschickt.'
         );
     }
 
@@ -108,11 +134,11 @@ class Index extends Component
             return;
         }
 
-        $user->update(['enabled' => !$user->enabled]);
+        $user->update(['enabled' => ! $user->enabled]);
 
         ActivityLogger::log(
             $user->enabled ? 'user.enabled' : 'user.disabled',
-            'Benutzer "' . $user->username . '" wurde ' . ($user->enabled ? 'entsperrt' : 'gesperrt') . '.',
+            'Benutzer "'.$user->username.'" wurde '.($user->enabled ? 'entsperrt' : 'gesperrt').'.',
             'User',
             $user->id
         );
@@ -138,7 +164,7 @@ class Index extends Component
 
             ActivityLogger::log(
                 'user.admin_revoked',
-                'Benutzer "' . $user->username . '" wurden die Admin-Rechte entzogen.',
+                'Benutzer "'.$user->username.'" wurden die Admin-Rechte entzogen.',
                 'User',
                 $user->id
             );
@@ -147,7 +173,7 @@ class Index extends Component
 
             ActivityLogger::log(
                 'user.admin_granted',
-                'Benutzer "' . $user->username . '" wurden Admin-Rechte vergeben.',
+                'Benutzer "'.$user->username.'" wurden Admin-Rechte vergeben.',
                 'User',
                 $user->id
             );
@@ -163,7 +189,7 @@ class Index extends Component
 
             ActivityLogger::log(
                 'user.kassier_revoked',
-                'Benutzer "' . $user->username . '" wurden die Kassier-Rechte entzogen.',
+                'Benutzer "'.$user->username.'" wurden die Kassier-Rechte entzogen.',
                 'User',
                 $user->id
             );
@@ -172,7 +198,7 @@ class Index extends Component
 
             ActivityLogger::log(
                 'user.kassier_granted',
-                'Benutzer "' . $user->username . '" wurden Kassier-Rechte vergeben.',
+                'Benutzer "'.$user->username.'" wurden Kassier-Rechte vergeben.',
                 'User',
                 $user->id
             );
@@ -185,11 +211,36 @@ class Index extends Component
 
         $token = Password::getRepository()->create($user);
 
-        Mail::to($user->email)->send(
-            new StaffPasswordResetMail($user, $token, isNewAccount: false)
+        $mail = new StaffPasswordResetMail($user, $token, isNewAccount: false);
+
+        $rawMessage = null;
+
+        $mail->withSymfonyMessage(
+            function ($message) use (&$rawMessage) {
+                $rawMessage = $message->toString();
+            }
         );
 
-        session()->flash('success', 'Link zum Zurücksetzen des Passworts wurde erneut an ' . $user->email . ' verschickt.');
+        Mail::to($user->email)->send($mail);
+
+        if ($rawMessage) {
+            try {
+                app(ImapSentMailService::class)->append(
+                    $rawMessage
+                );
+            } catch (\Throwable $imapException) {
+
+                \Log::warning(
+                    'Passwort-Link wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
+                    [
+                        'userID' => $user->id,
+                        'error' => $imapException->getMessage(),
+                    ]
+                );
+            }
+        }
+
+        session()->flash('success', 'Link zum Zurücksetzen des Passworts wurde erneut an '.$user->email.' verschickt.');
     }
 
     public function render()
@@ -208,8 +259,8 @@ class Index extends Component
                 ->whereNotIn('memberID', $existingMemberIds)
                 ->where(function ($query) {
                     $query
-                        ->where('name', 'like', '%' . $this->memberSearch . '%')
-                        ->orWhere('surname', 'like', '%' . $this->memberSearch . '%');
+                        ->where('name', 'like', '%'.$this->memberSearch.'%')
+                        ->orWhere('surname', 'like', '%'.$this->memberSearch.'%');
                 })
                 ->orderBy('surname')
                 ->orderBy('name')

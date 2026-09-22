@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Mail\DutyReminderMail;
 use App\Models\DutyPlanAssignment;
 use App\Models\DutyReminderSent;
+use App\Services\ImapSentMailService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 
@@ -35,11 +36,11 @@ class SendDutyReminders extends Command
         foreach ($assignments as $assignment) {
             $member = $assignment->member;
 
-            if (!$member || !$member->active) {
+            if (! $member || ! $member->active) {
                 continue;
             }
 
-            if (!$member->dutyReminderEnabled()) {
+            if (! $member->dutyReminderEnabled()) {
                 continue;
             }
 
@@ -53,15 +54,43 @@ class SendDutyReminders extends Command
 
             $email = $member->emails->first()?->email;
 
-            if (!$email) {
+            if (! $email) {
                 $this->warn(
-                    'Keine E-Mail-Adresse für ' . $member->full_name . ' hinterlegt — übersprungen.'
+                    'Keine E-Mail-Adresse für '.$member->full_name.' hinterlegt — übersprungen.'
                 );
 
                 continue;
             }
 
-            Mail::to($email)->send(new DutyReminderMail($assignment));
+            $mail = new DutyReminderMail($assignment);
+
+            $rawMessage = null;
+
+            $mail->withSymfonyMessage(
+                function ($message) use (&$rawMessage) {
+                    $rawMessage = $message->toString();
+                }
+            );
+
+            Mail::to($email)->send($mail);
+
+            if ($rawMessage) {
+                try {
+                    app(ImapSentMailService::class)->append(
+                        $rawMessage
+                    );
+                } catch (\Throwable $imapException) {
+
+                    \Log::warning(
+                        'Dienst-Erinnerung wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
+                        [
+                            'assignmentID' => $assignment->assignmentID,
+                            'memberID' => $member->memberID,
+                            'error' => $imapException->getMessage(),
+                        ]
+                    );
+                }
+            }
 
             DutyReminderSent::query()->create([
                 'assignmentID' => $assignment->assignmentID,
@@ -71,7 +100,7 @@ class SendDutyReminders extends Command
             $sent++;
         }
 
-        $this->info($sent . ' Dienst-Erinnerung(en) verschickt.');
+        $this->info($sent.' Dienst-Erinnerung(en) verschickt.');
 
         return self::SUCCESS;
     }

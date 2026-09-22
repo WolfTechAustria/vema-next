@@ -3,11 +3,12 @@
 namespace App\Console\Commands;
 
 use App\Mail\BirthdayReminderMail;
-use App\Models\Member;
 use App\Models\BirthdayReminderSent;
+use App\Models\Member;
+use App\Services\BirthdayRecipientService;
+use App\Services\ImapSentMailService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
-use App\Services\BirthdayRecipientService;
 
 class SendBirthdayReminders extends Command
 {
@@ -41,8 +42,8 @@ class SendBirthdayReminders extends Command
         if ($recipients->isEmpty()) {
             $this->warn(
                 'Keine Empfänger in der Gruppe "'
-                . config('birthday.recipient_group')
-                . '" gefunden — es wurde keine Mail verschickt.'
+                .config('birthday.recipient_group')
+                .'" gefunden — es wurde keine Mail verschickt.'
             );
 
             return self::FAILURE;
@@ -51,7 +52,7 @@ class SendBirthdayReminders extends Command
         foreach ($members as $member) {
             $age = $member->ageOn($today);
 
-            if (!$member->isRoundOrHalfRoundBirthday($age)) {
+            if (! $member->isRoundOrHalfRoundBirthday($age)) {
                 continue;
             }
 
@@ -74,7 +75,32 @@ class SendBirthdayReminders extends Command
                 isRound: $member->isRoundBirthday($age)
             );
 
+            $rawMessage = null;
+
+            $mail->withSymfonyMessage(
+                function ($message) use (&$rawMessage) {
+                    $rawMessage = $message->toString();
+                }
+            );
+
             Mail::to($recipients->all())->send($mail);
+
+            if ($rawMessage) {
+                try {
+                    app(ImapSentMailService::class)->append(
+                        $rawMessage
+                    );
+                } catch (\Throwable $imapException) {
+
+                    \Log::warning(
+                        'Geburtstags-Erinnerung wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
+                        [
+                            'memberID' => $member->memberID,
+                            'error' => $imapException->getMessage(),
+                        ]
+                    );
+                }
+            }
 
             BirthdayReminderSent::query()->create([
                 'memberID' => $member->memberID,
@@ -84,8 +110,8 @@ class SendBirthdayReminders extends Command
             ]);
 
             $this->info(
-                'Reminder verschickt für ' . $member->full_name
-                . ' (' . $age . ' Jahre).'
+                'Reminder verschickt für '.$member->full_name
+                .' ('.$age.' Jahre).'
             );
         }
 

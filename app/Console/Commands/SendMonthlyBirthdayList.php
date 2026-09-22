@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use App\Mail\BirthdayListMail;
 use App\Models\Member;
 use App\Services\BirthdayRecipientService;
+use App\Services\ImapSentMailService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 
@@ -50,14 +52,14 @@ class SendMonthlyBirthdayList extends Command
         if ($recipients->isEmpty()) {
             $this->warn(
                 'Keine Empfänger in der Gruppe "'
-                . config('birthday.recipient_group')
-                . '" gefunden — es wurde keine Mail verschickt.'
+                .config('birthday.recipient_group')
+                .'" gefunden — es wurde keine Mail verschickt.'
             );
 
             return self::FAILURE;
         }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        $pdf = Pdf::loadView(
             'pdf.members-birthdays',
             [
                 'members' => $members,
@@ -66,8 +68,8 @@ class SendMonthlyBirthdayList extends Command
         )->setPaper('a4', 'portrait');
 
         $pdfFileName = 'Geburtstagsliste_'
-            . now()->format('m_Y')
-            . '.pdf';
+            .now()->format('m_Y')
+            .'.pdf';
 
         $mail = new BirthdayListMail(
             monthName: $monthName,
@@ -76,12 +78,37 @@ class SendMonthlyBirthdayList extends Command
             pdfFileName: $pdfFileName
         );
 
+        $rawMessage = null;
+
+        $mail->withSymfonyMessage(
+            function ($message) use (&$rawMessage) {
+                $rawMessage = $message->toString();
+            }
+        );
+
         Mail::to($recipients->all())->send($mail);
 
+        if ($rawMessage) {
+            try {
+                app(ImapSentMailService::class)->append(
+                    $rawMessage
+                );
+            } catch (\Throwable $imapException) {
+
+                \Log::warning(
+                    'Geburtstagsliste wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
+                    [
+                        'monthName' => $monthName,
+                        'error' => $imapException->getMessage(),
+                    ]
+                );
+            }
+        }
+
         $this->info(
-            'Geburtstagsliste ' . $monthName
-            . ' an ' . $recipients->count()
-            . ' Empfänger verschickt (' . $members->count() . ' Mitglieder).'
+            'Geburtstagsliste '.$monthName
+            .' an '.$recipients->count()
+            .' Empfänger verschickt ('.$members->count().' Mitglieder).'
         );
 
         return self::SUCCESS;

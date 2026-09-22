@@ -191,12 +191,39 @@ class CircularController extends Controller
             'Dieser Empfänger hat keine gültige E-Mail-Adresse.'
         );
 
-        Mail::to($recipient->email)->send(
-            new CircularMail(
-                $circular,
-                $recipient
-            )
+        $rawMessage = null;
+
+        $mail = new CircularMail(
+            $circular,
+            $recipient
         );
+
+        $mail->withSymfonyMessage(
+            function ($message) use (&$rawMessage) {
+                $rawMessage = $message->toString();
+            }
+        );
+
+        Mail::to($recipient->email)->send($mail);
+
+        if ($rawMessage) {
+            try {
+                app(ImapSentMailService::class)->append(
+                    $rawMessage
+                );
+            } catch (\Throwable $imapException) {
+
+                \Log::warning(
+                    'Rundschreiben-Testmail wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
+                    [
+                        'circularID' => $circular->circularID,
+                        'recipientID' => $recipient->recipientID,
+                        'email' => $recipient->email,
+                        'error' => $imapException->getMessage(),
+                    ]
+                );
+            }
+        }
 
         return back()->with(
             'success',

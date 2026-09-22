@@ -2,47 +2,59 @@
 
 namespace App\Livewire\MembershipFees;
 
-use App\Models\MembershipFeeEntry;
-use App\Models\MembershipFeeYear;
-use Livewire\Component;
-use Illuminate\Validation\Rule;
 use App\Mail\MembershipFeePrescriptionMail;
+use App\Models\Member;
+use App\Models\MembershipFeeEntry;
+use App\Models\MembershipFeePrescription;
+use App\Models\MembershipFeeYear;
 use App\Models\Template;
+use App\Services\ImapSentMailService;
 use App\Services\PdfLetterheadService;
 use App\Services\TemplateRendererService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use App\Models\MembershipFeePrescription;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Url;
-
+use Livewire\Component;
 
 class Index extends Component
 {
-
     #[Url]
     public string $statusFilter = 'all';
+
     #[Url]
     public string $reminderFilter = 'all';
 
     public int $firstReminderAfterDays = 14;
+
     public int $reminderIntervalDays = 14;
+
     public int $maxReminders = 3;
+
     public bool $showReminderConfirmDialog = false;
 
     public bool $showResendDialog = false;
 
     public ?int $resendEntryID = null;
+
     #[Url]
     public string $emailFilter = 'all';
+
     public array $selectedEntries = [];
+
     public bool $showCreateYear = false;
 
     public ?int $newYear = null;
+
     public string $newYearName = '';
+
     public ?string $newYearAmount = null;
+
     public ?string $newYearDueDate = null;
+
     public ?string $defaultAmount = null;
+
     public ?int $yearId = null;
 
     public string $search = '';
@@ -52,7 +64,6 @@ class Index extends Component
         $year = MembershipFeeYear::query()
             ->orderByDesc('year')
             ->first();
-
 
         $this->yearId = $year?->yearID;
 
@@ -101,25 +112,22 @@ class Index extends Component
 
     public function selectAllOpen(): void
     {
-        if (!$this->yearId) {
+        if (! $this->yearId) {
             return;
         }
 
-        $this->selectedEntries = \App\Models\MembershipFeeEntry::query()
+        $this->selectedEntries = MembershipFeeEntry::query()
             ->where('yearId', $this->yearId)
             ->where('status', 'open')
-            ->whereHas('member', fn ($query) =>
-            $query->where('active', 1)
+            ->whereHas('member', fn ($query) => $query->where('active', 1)
             )
             ->when(
                 $this->emailFilter === 'with_email',
-                fn ($query) =>
-                $query->whereHas('member.emails')
+                fn ($query) => $query->whereHas('member.emails')
             )
             ->when(
                 $this->emailFilter === 'without_email',
-                fn ($query) =>
-                $query->whereDoesntHave('member.emails')
+                fn ($query) => $query->whereDoesntHave('member.emails')
             )
             ->pluck('entryID')
             ->map(fn ($id) => (string) $id)
@@ -132,7 +140,7 @@ class Index extends Component
             return 0;
         }
 
-        return \App\Models\MembershipFeeEntry::query()
+        return MembershipFeeEntry::query()
             ->whereIn('entryID', $this->selectedEntries)
             ->whereHas('member.emails')
             ->count();
@@ -175,7 +183,7 @@ class Index extends Component
 
             $email = $member->emails->first()?->email;
 
-            if (!$email) {
+            if (! $email) {
                 continue;
             }
 
@@ -215,14 +223,14 @@ class Index extends Component
 
             $tempDirectory = storage_path('app/temp');
 
-            if (!is_dir($tempDirectory)) {
+            if (! is_dir($tempDirectory)) {
                 mkdir($tempDirectory, 0775, true);
             }
 
             $tempPdf = $tempDirectory
-                . '/mail_prescription_'
-                . $entry->entryID
-                . '.pdf';
+                .'/mail_prescription_'
+                .$entry->entryID
+                .'.pdf';
 
             file_put_contents(
                 $tempPdf,
@@ -242,22 +250,22 @@ class Index extends Component
 
             $filename =
                 'Mitgliedsbeitrag_'
-                . $year->year
-                . '_'
-                . $member->surname
-                . '_'
-                . $member->memberID
-                . '.pdf';
+                .$year->year
+                .'_'
+                .$member->surname
+                .'_'
+                .$member->memberID
+                .'.pdf';
 
             $storagePath =
                 'membership-fees/'
-                . $year->year
-                . '/'
-                . $member->memberID
-                . '/'
-                . now()->format('Ymd_His')
-                . '_'
-                . $filename;
+                .$year->year
+                .'/'
+                .$member->memberID
+                .'/'
+                .now()->format('Ymd_His')
+                .'_'
+                .$filename;
 
             Storage::disk('local')->put(
                 $storagePath,
@@ -266,10 +274,10 @@ class Index extends Component
 
             $filename =
                 'Mitgliedsbeitrag_'
-                . $year->year
-                . '_'
-                . $member->surname
-                . '.pdf';
+                .$year->year
+                .'_'
+                .$member->surname
+                .'.pdf';
 
             $alreadySent = MembershipFeePrescription::query()
                 ->where('entryID', $entry->entryID)
@@ -285,16 +293,42 @@ class Index extends Component
                 return;
             }
 
-            Mail::to($email)->send(
-                new MembershipFeePrescriptionMail(
-                    memberName: trim(
-                        $member->name . ' ' . $member->surname
-                    ),
-                    year: (int) $year->year,
-                    pdfContent: $finalPdf,
-                    pdfFilename: $filename
-                )
+            $mail = new MembershipFeePrescriptionMail(
+                memberName: trim(
+                    $member->name.' '.$member->surname
+                ),
+                year: (int) $year->year,
+                pdfContent: $finalPdf,
+                pdfFilename: $filename
             );
+
+            $rawMessage = null;
+
+            $mail->withSymfonyMessage(
+                function ($message) use (&$rawMessage) {
+                    $rawMessage = $message->toString();
+                }
+            );
+
+            Mail::to($email)->send($mail);
+
+            if ($rawMessage) {
+                try {
+                    app(ImapSentMailService::class)->append(
+                        $rawMessage
+                    );
+                } catch (\Throwable $imapException) {
+
+                    \Log::warning(
+                        'Beitragsvorschreibung wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
+                        [
+                            'entryID' => $entry->entryID,
+                            'memberID' => $member->memberID,
+                            'error' => $imapException->getMessage(),
+                        ]
+                    );
+                }
+            }
 
             MembershipFeePrescription::create([
                 'entryID' => $entry->entryID,
@@ -313,7 +347,7 @@ class Index extends Component
 
         session()->flash(
             'success',
-            $sent . ' Beitragsvorschreibung(en) wurden per E-Mail versendet.'
+            $sent.' Beitragsvorschreibung(en) wurden per E-Mail versendet.'
         );
     }
 
@@ -351,13 +385,15 @@ class Index extends Component
                 ->whereNotNull('sent_at')
                 ->isNotEmpty();
 
-            if (!$hasPrescription) {
+            if (! $hasPrescription) {
                 $skipped++;
+
                 continue;
             }
 
-            if (!$entry->isReminderDue()) {
+            if (! $entry->isReminderDue()) {
                 $skipped++;
+
                 continue;
             }
 
@@ -378,9 +414,9 @@ class Index extends Component
 
         session()->flash(
             'success',
-            $sent . ' Erinnerung(en) wurden versendet.'
-            . ($skipped > 0
-                ? ' ' . $skipped . ' Beitrag/Beiträge wurden übersprungen, da noch keine Vorschreibung versendet wurde.'
+            $sent.' Erinnerung(en) wurden versendet.'
+            .($skipped > 0
+                ? ' '.$skipped.' Beitrag/Beiträge wurden übersprungen, da noch keine Vorschreibung versendet wurde.'
                 : '')
         );
     }
@@ -411,7 +447,7 @@ class Index extends Component
 
     public function selectAllDueReminders(): void
     {
-        if (!$this->yearId) {
+        if (! $this->yearId) {
             return;
         }
 
@@ -423,8 +459,7 @@ class Index extends Component
             ])
             ->where('yearID', $this->yearId)
             ->where('status', 'open')
-            ->whereHas('member', fn ($query) =>
-            $query->where('active', 1)
+            ->whereHas('member', fn ($query) => $query->where('active', 1)
             )
             ->whereHas('member.emails')
             ->get();
@@ -519,7 +554,7 @@ class Index extends Component
 
         $email = $member->emails->first()?->email;
 
-        if (!$email) {
+        if (! $email) {
             throw new \RuntimeException(
                 'Für dieses Mitglied ist keine E-Mail-Adresse hinterlegt.'
             );
@@ -578,14 +613,14 @@ class Index extends Component
 
         $tempDirectory = storage_path('app/temp');
 
-        if (!is_dir($tempDirectory)) {
+        if (! is_dir($tempDirectory)) {
             mkdir($tempDirectory, 0775, true);
         }
 
         $tempPdf = $tempDirectory
-            . '/mail_prescription_'
-            . $entry->entryID
-            . '.pdf';
+            .'/mail_prescription_'
+            .$entry->entryID
+            .'.pdf';
 
         file_put_contents(
             $tempPdf,
@@ -605,40 +640,66 @@ class Index extends Component
 
         $filename =
             'Mitgliedsbeitrag_'
-            . $year->year
-            . '_'
-            . $member->surname
-            . '_'
-            . $member->memberID
-            . '.pdf';
+            .$year->year
+            .'_'
+            .$member->surname
+            .'_'
+            .$member->memberID
+            .'.pdf';
 
         $storagePath =
             'membership-fees/'
-            . $year->year
-            . '/'
-            . $member->memberID
-            . '/'
-            . now()->format('Ymd_His')
-            . '_'
-            . $filename;
+            .$year->year
+            .'/'
+            .$member->memberID
+            .'/'
+            .now()->format('Ymd_His')
+            .'_'
+            .$filename;
 
         Storage::disk('local')->put(
             $storagePath,
             $finalPdf
         );
 
-        Mail::to($email)->send(
-            new MembershipFeePrescriptionMail(
-                memberName: trim(
-                    $member->name . ' ' . $member->surname
-                ),
-                year: (int) $year->year,
-                pdfContent: $finalPdf,
-                pdfFilename: $filename,
-                type: $type,
-                reminderLevel: $reminderLevel
-            )
+        $mail = new MembershipFeePrescriptionMail(
+            memberName: trim(
+                $member->name.' '.$member->surname
+            ),
+            year: (int) $year->year,
+            pdfContent: $finalPdf,
+            pdfFilename: $filename,
+            type: $type,
+            reminderLevel: $reminderLevel
         );
+
+        $rawMessage = null;
+
+        $mail->withSymfonyMessage(
+            function ($message) use (&$rawMessage) {
+                $rawMessage = $message->toString();
+            }
+        );
+
+        Mail::to($email)->send($mail);
+
+        if ($rawMessage) {
+            try {
+                app(ImapSentMailService::class)->append(
+                    $rawMessage
+                );
+            } catch (\Throwable $imapException) {
+
+                \Log::warning(
+                    'Beitragsvorschreibung/Erinnerung wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
+                    [
+                        'entryID' => $entry->entryID,
+                        'memberID' => $member->memberID,
+                        'error' => $imapException->getMessage(),
+                    ]
+                );
+            }
+        }
 
         MembershipFeePrescription::create([
             'entryID' => $entry->entryID,
@@ -658,7 +719,7 @@ class Index extends Component
 
     public function resendAsPrescription(): void
     {
-        if (!$this->resendEntryID) {
+        if (! $this->resendEntryID) {
             return;
         }
 
@@ -679,7 +740,7 @@ class Index extends Component
 
     public function sendAsReminder(): void
     {
-        if (!$this->resendEntryID) {
+        if (! $this->resendEntryID) {
             return;
         }
 
@@ -702,10 +763,11 @@ class Index extends Component
         session()->flash(
             'success',
             'Die '
-            . $nextLevel
-            . '. Erinnerung wurde versendet.'
+            .$nextLevel
+            .'. Erinnerung wurde versendet.'
         );
     }
+
     public function clearSelection(): void
     {
         $this->selectedEntries = [];
@@ -731,12 +793,13 @@ class Index extends Component
 
         $normalizedAmount = str_replace(',', '.', (string) $validated['newYearAmount']);
 
-        if (!is_numeric($normalizedAmount)) {
+        if (! is_numeric($normalizedAmount)) {
             $this->addError('newYearAmount', 'Bitte einen gültigen Betrag eingeben.');
+
             return;
         }
 
-        $year = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $normalizedAmount) {
+        $year = DB::transaction(function () use ($validated, $normalizedAmount) {
             $year = MembershipFeeYear::create([
                 'year' => $validated['newYear'],
                 'name' => $validated['newYearName'],
@@ -745,7 +808,7 @@ class Index extends Component
                 'active' => true,
             ]);
 
-            $members = \App\Models\Member::query()
+            $members = Member::query()
                 ->where('active', 1)
                 ->get();
 
@@ -779,13 +842,13 @@ class Index extends Component
 
     public function toggleYearActive(): void
     {
-        if (!$this->yearId) {
+        if (! $this->yearId) {
             return;
         }
 
         $year = MembershipFeeYear::findOrFail($this->yearId);
 
-        $year->active = !$year->active;
+        $year->active = ! $year->active;
         $year->save();
 
         $this->firstReminderAfterDays =
@@ -807,7 +870,7 @@ class Index extends Component
 
     protected function selectedYearIsEditable(): bool
     {
-        if (!$this->yearId) {
+        if (! $this->yearId) {
             return false;
         }
 
@@ -817,7 +880,7 @@ class Index extends Component
 
     public function saveDefaultAmount(): void
     {
-        if (!$this->selectedYearIsEditable()) {
+        if (! $this->selectedYearIsEditable()) {
             session()->flash(
                 'error',
                 'Dieses Beitragsjahr ist abgeschlossen und kann nicht mehr verändert werden.'
@@ -826,13 +889,13 @@ class Index extends Component
             return;
         }
 
-        if (!$this->yearId) {
+        if (! $this->yearId) {
             return;
         }
 
         $normalized = str_replace(',', '.', (string) $this->defaultAmount);
 
-        if (!is_numeric($normalized)) {
+        if (! is_numeric($normalized)) {
             $this->addError(
                 'defaultAmount',
                 'Bitte einen gültigen Betrag eingeben.'
@@ -854,7 +917,7 @@ class Index extends Component
 
     public function applyDefaultAmount(): void
     {
-        if (!$this->selectedYearIsEditable()) {
+        if (! $this->selectedYearIsEditable()) {
             session()->flash(
                 'error',
                 'Dieses Beitragsjahr ist abgeschlossen und kann nicht mehr verändert werden.'
@@ -863,7 +926,7 @@ class Index extends Component
             return;
         }
 
-        if (!$this->yearId) {
+        if (! $this->yearId) {
             return;
         }
 
@@ -881,8 +944,7 @@ class Index extends Component
         MembershipFeeEntry::query()
             ->where('yearID', $year->yearID)
             ->where('status', 'open')
-            ->whereHas('member', fn ($query) =>
-            $query->where('active', 1)
+            ->whereHas('member', fn ($query) => $query->where('active', 1)
             )
             ->update([
                 'amount' => $year->default_amount,
@@ -893,9 +955,10 @@ class Index extends Component
             'Standardbetrag wurde auf alle offenen Beiträge angewendet.'
         );
     }
+
     public function updateStatus(int $entryId, string $status): void
     {
-        if (!$this->selectedYearIsEditable()) {
+        if (! $this->selectedYearIsEditable()) {
             session()->flash(
                 'error',
                 'Dieses Beitragsjahr ist abgeschlossen und kann nicht mehr verändert werden.'
@@ -904,7 +967,7 @@ class Index extends Component
             return;
         }
 
-        if (!in_array($status, ['open', 'paid', 'exempt'], true)) {
+        if (! in_array($status, ['open', 'paid', 'exempt'], true)) {
             return;
         }
 
@@ -920,6 +983,7 @@ class Index extends Component
 
         $entry->save();
     }
+
     public function saveReminderSettings(): void
     {
         $year = MembershipFeeYear::findOrFail(
@@ -946,14 +1010,11 @@ class Index extends Component
         ]);
 
         $year->update([
-            'first_reminder_after_days' =>
-                $this->firstReminderAfterDays,
+            'first_reminder_after_days' => $this->firstReminderAfterDays,
 
-            'reminder_interval_days' =>
-                $this->reminderIntervalDays,
+            'reminder_interval_days' => $this->reminderIntervalDays,
 
-            'max_reminders' =>
-                $this->maxReminders,
+            'max_reminders' => $this->maxReminders,
         ]);
 
         session()->flash(
@@ -964,7 +1025,7 @@ class Index extends Component
 
     public function updateAmount(int $entryId, $amount): void
     {
-        if (!$this->selectedYearIsEditable()) {
+        if (! $this->selectedYearIsEditable()) {
             session()->flash(
                 'error',
                 'Dieses Beitragsjahr ist abgeschlossen und kann nicht mehr verändert werden.'
@@ -984,7 +1045,7 @@ class Index extends Component
 
         $normalized = str_replace(',', '.', (string) $amount);
 
-        if (!is_numeric($normalized)) {
+        if (! is_numeric($normalized)) {
             return;
         }
 
@@ -1006,8 +1067,7 @@ class Index extends Component
 
         if ($selectedYear) {
             $entries = MembershipFeeEntry::query()
-                ->whereHas('member', fn ($query) =>
-                $query->where('active', 1)
+                ->whereHas('member', fn ($query) => $query->where('active', 1)
                 )
                 ->with([
                     'member',
@@ -1025,26 +1085,23 @@ class Index extends Component
                     function ($query) {
                         $query->whereHas('member', function ($query) {
                             $query
-                                ->where('name', 'like', '%' . $this->search . '%')
-                                ->orWhere('surname', 'like', '%' . $this->search . '%');
+                                ->where('name', 'like', '%'.$this->search.'%')
+                                ->orWhere('surname', 'like', '%'.$this->search.'%');
                         });
                     }
                 )
                 ->when(
                     $this->emailFilter === 'with_email',
-                    fn ($query) =>
-                    $query->whereHas('member.emails')
+                    fn ($query) => $query->whereHas('member.emails')
                 )
                 ->when(
                     $this->emailFilter === 'without_email',
-                    fn ($query) =>
-                    $query->whereDoesntHave('member.emails')
+                    fn ($query) => $query->whereDoesntHave('member.emails')
                 )
                 ->get()
-                ->sortBy(fn ($entry) =>
-                    ($entry->member?->surname ?? '')
-                    . ' '
-                    . ($entry->member?->name ?? '')
+                ->sortBy(fn ($entry) => ($entry->member?->surname ?? '')
+                    .' '
+                    .($entry->member?->name ?? '')
                 )
                 ->values();
 
@@ -1056,8 +1113,7 @@ class Index extends Component
 
             if ($this->reminderFilter === 'sent') {
                 $entries = $entries
-                    ->filter(fn ($entry) =>
-                    $entry->prescriptions
+                    ->filter(fn ($entry) => $entry->prescriptions
                         ->where('type', 'reminder')
                         ->whereNotNull('sent_at')
                         ->isNotEmpty()

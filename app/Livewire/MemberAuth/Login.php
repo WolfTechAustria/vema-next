@@ -2,12 +2,13 @@
 
 namespace App\Livewire\MemberAuth;
 
-use App\Models\Member;
-use Livewire\Component;
 use App\Mail\MemberMagicLoginMail;
+use App\Models\Member;
 use App\Models\MemberLoginToken;
+use App\Services\ImapSentMailService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Livewire\Component;
 
 class Login extends Component
 {
@@ -36,7 +37,7 @@ class Login extends Component
          * Keine Information darüber preisgeben,
          * ob die Adresse tatsächlich existiert.
          */
-        if (!$member) {
+        if (! $member) {
             $this->message =
                 'Wenn diese E-Mail-Adresse bei uns hinterlegt ist, wurde ein Login-Link versendet.';
 
@@ -64,16 +65,42 @@ class Login extends Component
             'expires_at' => now()->addMinutes(30),
         ]);
 
-        Mail::to($this->email)->send(
-            new MemberMagicLoginMail(
-                member: $member,
-                token: $plainToken,
-            )
+        $mail = new MemberMagicLoginMail(
+            member: $member,
+            token: $plainToken,
         );
+
+        $rawMessage = null;
+
+        $mail->withSymfonyMessage(
+            function ($message) use (&$rawMessage) {
+                $rawMessage = $message->toString();
+            }
+        );
+
+        Mail::to($this->email)->send($mail);
+
+        if ($rawMessage) {
+            try {
+                app(ImapSentMailService::class)->append(
+                    $rawMessage
+                );
+            } catch (\Throwable $imapException) {
+
+                \Log::warning(
+                    'Login-Link wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
+                    [
+                        'memberID' => $member->memberID,
+                        'error' => $imapException->getMessage(),
+                    ]
+                );
+            }
+        }
 
         $this->message =
             'Wenn diese E-Mail-Adresse bei uns hinterlegt ist, wurde ein Login-Link versendet.';
     }
+
     public function render()
     {
         return view('livewire.member-auth.login')
