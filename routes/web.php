@@ -20,6 +20,13 @@ use App\Http\Controllers\MemberAuthController;
 
 use App\Livewire\Templates\Index as TemplatesIndex;
 
+use App\Http\Controllers\InvoiceController;
+use App\Livewire\Invoices\Index as InvoicesIndex;
+use App\Livewire\Invoices\Create as InvoicesCreate;
+use App\Livewire\Invoices\Show as InvoicesShow;
+use App\Livewire\Invoices\Recipients\Index as InvoiceRecipientsIndex;
+use App\Livewire\Invoices\Articles\Index as InvoiceArticlesIndex;
+
 
 
 
@@ -159,6 +166,34 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/activity-log', \App\Livewire\Admin\ActivityLog\Index::class)
         ->middleware('admin')
         ->name('admin.activity-log.index');
+
+    Route::livewire('/invoices', InvoicesIndex::class)
+        ->middleware('invoices')
+        ->name('invoices.index');
+
+    Route::livewire('/invoices/create', InvoicesCreate::class)
+        ->middleware('invoices')
+        ->name('invoices.create');
+
+    Route::livewire('/invoices/{invoice}/edit', InvoicesCreate::class)
+        ->middleware('invoices')
+        ->name('invoices.edit');
+
+    Route::livewire('/invoices/{invoice}', InvoicesShow::class)
+        ->middleware('invoices')
+        ->name('invoices.show');
+
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])
+        ->middleware('invoices')
+        ->name('invoices.pdf');
+
+    Route::livewire('/invoice-recipients', InvoiceRecipientsIndex::class)
+        ->middleware('invoices')
+        ->name('invoice-recipients.index');
+
+    Route::livewire('/invoice-articles', InvoiceArticlesIndex::class)
+        ->middleware('invoices')
+        ->name('invoice-articles.index');
 
 
 

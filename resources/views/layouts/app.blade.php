@@ -185,13 +185,19 @@
                 </a>
 
 
-                <a
-                    href="#"
-                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
-                >
-                    <span>▧</span>
-                    Rechnungen
-                </a>
+                @if($webUser?->hasAnyRole(['admin', 'kassier']))
+                    <a
+                        href="{{ route('invoices.index') }}"
+                        wire:navigate
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                        {{ request()->routeIs('invoices.*', 'invoice-recipients.*', 'invoice-articles.*')
+                            ? 'bg-slate-900 text-white'
+                            : 'text-slate-700 hover:bg-slate-100' }}"
+                    >
+                        <span>▧</span>
+                        Rechnungen
+                    </a>
+                @endif
 
 
                 <div

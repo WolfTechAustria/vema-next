@@ -154,6 +154,31 @@ class Index extends Component
         }
     }
 
+    public function toggleKassier(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+
+        if ($user->hasRole('kassier')) {
+            $user->removeRole('kassier');
+
+            ActivityLogger::log(
+                'user.kassier_revoked',
+                'Benutzer "' . $user->username . '" wurden die Kassier-Rechte entzogen.',
+                'User',
+                $user->id
+            );
+        } else {
+            $user->assignRole('kassier');
+
+            ActivityLogger::log(
+                'user.kassier_granted',
+                'Benutzer "' . $user->username . '" wurden Kassier-Rechte vergeben.',
+                'User',
+                $user->id
+            );
+        }
+    }
+
     public function resendInvite(int $userId): void
     {
         $user = User::findOrFail($userId);

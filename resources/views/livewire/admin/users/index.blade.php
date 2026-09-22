@@ -144,6 +144,7 @@
                     <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">E-Mail</th>
                     <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
                     <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Admin</th>
+                    <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Kassier</th>
                     <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500"></th>
                 </tr>
                 </thead>
@@ -189,6 +190,17 @@
                                 {{ $user->hasRole('admin') ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500' }}"
                             >
                                 {{ $user->hasRole('admin') ? 'Admin' : 'Mitarbeiter' }}
+                            </button>
+                        </td>
+
+                        <td class="px-6 py-4 text-center">
+                            <button
+                                type="button"
+                                wire:click="toggleKassier({{ $user->id }})"
+                                class="inline-flex rounded-full px-3 py-1 text-xs font-semibold
+                                {{ $user->hasRole('kassier') ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500' }}"
+                            >
+                                {{ $user->hasRole('kassier') ? 'Kassier' : '–' }}
                             </button>
                         </td>
 
