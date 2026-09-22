@@ -3,9 +3,9 @@
 namespace App\Livewire\Dashboard;
 
 use App\Models\Member;
-use Livewire\Component;
 use App\Models\MembershipFeeEntry;
 use App\Models\MembershipFeeYear;
+use Livewire\Component;
 
 class Index extends Component
 {
@@ -13,13 +13,12 @@ class Index extends Component
     {
         return view('livewire.dashboard.index', [
             'activeMembers' => Member::where('active', 1)->count(),
-            'allMembers' => Member::count(),
+            'newMembersThisYear' => Member::whereYear('dateOfJoin', now()->year)->count(),
         ])->layout('layouts.app', [
             'title' => 'Dashboard | VEMA',
             'heading' => 'Dashboard',
         ]);
     }
-
 
     public function membershipFeeActions(): array
     {
@@ -27,7 +26,7 @@ class Index extends Component
             ->orderByDesc('year')
             ->first();
 
-        if (!$year) {
+        if (! $year) {
             return [
                 'reminder_due' => 0,
                 'open_without_email' => 0,
@@ -42,8 +41,7 @@ class Index extends Component
             ])
             ->where('yearID', $year->yearID)
             ->where('status', 'open')
-            ->whereHas('member', fn ($query) =>
-            $query->where('active', 1)
+            ->whereHas('member', fn ($query) => $query->where('active', 1)
             )
             ->get();
 
@@ -53,19 +51,19 @@ class Index extends Component
                 ->count(),
 
             'open_without_email' => $entries
-                ->filter(fn ($entry) =>
-                $entry->member?->emails?->isEmpty()
+                ->filter(fn ($entry) => $entry->member?->emails?->isEmpty()
                 )
                 ->count(),
         ];
     }
+
     public function membershipFeeStats(): array
     {
         $year = MembershipFeeYear::query()
             ->orderByDesc('year')
             ->first();
 
-        if (!$year) {
+        if (! $year) {
             return [
                 'year' => null,
                 'open' => 0,
@@ -84,8 +82,7 @@ class Index extends Component
                 'prescriptions',
             ])
             ->where('yearID', $year->yearID)
-            ->whereHas('member', fn ($query) =>
-            $query->where('active', 1)
+            ->whereHas('member', fn ($query) => $query->where('active', 1)
             )
             ->get();
 
@@ -105,14 +102,12 @@ class Index extends Component
                 ->count(),
 
             'reminder_due' => $entries
-                ->filter(fn ($entry) =>
-                $entry->isReminderDue()
+                ->filter(fn ($entry) => $entry->isReminderDue()
                 )
                 ->count(),
 
             'reminded' => $entries
-                ->filter(fn ($entry) =>
-                $entry->prescriptions
+                ->filter(fn ($entry) => $entry->prescriptions
                     ->where('type', 'reminder')
                     ->isNotEmpty()
                 )

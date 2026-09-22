@@ -24,11 +24,11 @@
 
         <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="text-sm font-medium text-slate-500">
-                Mitglieder gesamt
+                Neue Mitglieder seit {{ now()->year }}
             </div>
 
             <div class="mt-2 text-3xl font-bold">
-                {{ $allMembers }}
+                {{ $newMembersThisYear }}
             </div>
         </div>
 
