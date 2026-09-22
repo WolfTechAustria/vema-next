@@ -7,6 +7,7 @@ use App\Models\MemberEmail;
 use App\Models\MemberPhone;
 use App\Models\Skill;
 use App\Services\ActivityLogger;
+use App\Services\MembershipFeeEntryService;
 use App\Services\MembershipPeriodService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -133,6 +134,8 @@ class Create extends Component
                 $member,
                 $validated['dateOfJoin'] ?: null
             );
+
+            app(MembershipFeeEntryService::class)->ensureEntriesForMember($member);
 
             foreach ($this->emails as $email) {
                 MemberEmail::create([

@@ -7,6 +7,7 @@ use App\Models\Member;
 use App\Models\MemberBoardFunctionAssignment;
 use App\Services\ActivityLogger;
 use App\Services\BoardFunctionService;
+use App\Services\MembershipFeeEntryService;
 use App\Services\MembershipPeriodService;
 use Livewire\Component;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -137,6 +138,8 @@ class Show extends Component
 
             return;
         }
+
+        app(MembershipFeeEntryService::class)->ensureEntriesForMember($this->member);
 
         ActivityLogger::log(
             'member.reentered',
