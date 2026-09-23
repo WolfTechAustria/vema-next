@@ -26,6 +26,13 @@ class ResetPasswordController extends Controller
             'token' => ['required'],
             'email' => ['required', 'email'],
             'password' => ['required', 'confirmed', PasswordRule::min(8)],
+        ], [
+            'token.required' => 'Der Link ist unvollständig. Bitte fordere einen neuen Link an.',
+            'email.required' => 'Bitte gib deine E-Mail-Adresse ein.',
+            'email.email' => 'Bitte gib eine gültige E-Mail-Adresse ein.',
+            'password.required' => 'Bitte gib ein neues Passwort ein.',
+            'password.confirmed' => 'Die beiden Passwörter stimmen nicht überein.',
+            'password.min' => 'Das Passwort muss mindestens 8 Zeichen lang sein.',
         ]);
 
         $status = Password::reset(
@@ -41,7 +48,12 @@ class ResetPasswordController extends Controller
 
         if ($status !== Password::PASSWORD_RESET) {
             return back()
-                ->withErrors(['email' => __($status)])
+                ->withErrors(['email' => match ($status) {
+                    Password::INVALID_TOKEN => 'Dieser Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.',
+                    Password::INVALID_USER => 'Zu dieser E-Mail-Adresse wurde kein Benutzer gefunden.',
+                    Password::RESET_THROTTLED => 'Bitte warte kurz, bevor du es erneut versuchst.',
+                    default => 'Das Passwort konnte nicht zurückgesetzt werden.',
+                }])
                 ->withInput($request->only('email'));
         }
 

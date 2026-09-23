@@ -23,7 +23,11 @@
 
 
         {{-- Login --}}
-        <div class="px-8 py-7">
+        <form
+            wire:submit="requestLoginLink"
+            novalidate
+            class="px-6 py-7 sm:px-8"
+        >
 
             <div>
 
@@ -37,15 +41,25 @@
                 <input
                     id="member-email"
                     type="email"
-                    wire:model="email"
-                    wire:keydown.enter="requestLoginLink"
+                    inputmode="email"
+                    wire:model.live.blur="email"
                     autocomplete="email"
+                    autocapitalize="none"
+                    spellcheck="false"
+                    placeholder="name@beispiel.at"
                     autofocus
-                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                    @error('email')
+                        aria-invalid="true"
+                        aria-describedby="member-email-error"
+                    @enderror
+                    class="w-full rounded-lg border bg-white px-3 py-2.5 text-base text-slate-900 outline-none transition focus:ring-2
+                    {{ $errors->has('email')
+                        ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
+                        : 'border-slate-300 focus:border-slate-500 focus:ring-slate-200' }}"
                 >
 
                 @error('email')
-                <p class="mt-1 text-xs text-red-600">
+                <p id="member-email-error" class="mt-1.5 text-sm text-red-600">
                     {{ $message }}
                 </p>
                 @enderror
@@ -54,8 +68,7 @@
 
 
             <button
-                type="button"
-                wire:click="requestLoginLink"
+                type="submit"
                 wire:loading.attr="disabled"
                 wire:target="requestLoginLink"
                 class="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
@@ -102,15 +115,18 @@
             </button>
 
 
-            @if($message)
+            @if($statusMessage)
 
-                <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    {{ $message }}
+                <div class="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status">
+                    {{ $statusMessage }}
+                    <span class="mt-1 block text-xs text-emerald-700">
+                        Der Link ist 30 Minuten gültig. Bitte auch den Spam-Ordner prüfen.
+                    </span>
                 </div>
 
             @endif
 
-        </div>
+        </form>
 
 
         {{-- Interner Zugang --}}

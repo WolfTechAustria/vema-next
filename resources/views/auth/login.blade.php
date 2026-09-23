@@ -69,8 +69,15 @@
                         name="username"
                         value="{{ old('username') }}"
                         autocomplete="username"
-                        autofocus
-                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                        autocapitalize="none"
+                        spellcheck="false"
+                        required
+                        @if(!old('username')) autofocus @endif
+                        @error('username') aria-invalid="true" @enderror
+                        class="w-full rounded-lg border bg-white px-3 py-2.5 text-base text-slate-900 outline-none transition focus:ring-2
+                        {{ $errors->has('username')
+                            ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
+                            : 'border-slate-300 focus:border-slate-500 focus:ring-slate-200' }}"
                     >
 
                 </div>
@@ -99,19 +106,27 @@
                         type="password"
                         name="password"
                         autocomplete="current-password"
-                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                        required
+                        @if(old('username')) autofocus @endif
+                        @error('password') aria-invalid="true" @enderror
+                        class="w-full rounded-lg border bg-white px-3 py-2.5 text-base text-slate-900 outline-none transition focus:ring-2
+                        {{ $errors->has('password')
+                            ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
+                            : 'border-slate-300 focus:border-slate-500 focus:ring-slate-200' }}"
                     >
 
                 </div>
 
 
-                @error('username')
+                @if($errors->any())
 
-                <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    {{ $message }}
+                <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                    @foreach($errors->all() as $error)
+                        <div>{{ $error }}</div>
+                    @endforeach
                 </div>
 
-                @enderror
+                @endif
 
 
                 <button

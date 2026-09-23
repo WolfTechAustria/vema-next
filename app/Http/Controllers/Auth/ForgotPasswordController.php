@@ -16,7 +16,11 @@ class ForgotPasswordController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'email:rfc,filter', 'max:255'],
+        ], [
+            'email.required' => 'Bitte gib deine E-Mail-Adresse ein.',
+            'email.email' => 'Bitte gib eine gültige E-Mail-Adresse ein (z. B. name@beispiel.at).',
+            'email.max' => 'Die E-Mail-Adresse darf höchstens 255 Zeichen lang sein.',
         ]);
 
         // Absichtlich keine Rückmeldung, ob die E-Mail existiert

@@ -8,10 +8,17 @@ use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
+    /**
+     * Fehlversuche je Benutzername und IP, bevor für fünf Minuten gesperrt wird.
+     */
+    private const MAX_LOGIN_ATTEMPTS = 5;
+
     public function create()
     {
         return view('auth.login');
@@ -19,22 +26,42 @@ class LoginController extends Controller
 
     public function store(Request $request)
     {
-        $credentials = $request->validate([
-            'username' => ['required', 'string'],
-            'password' => ['required', 'string'],
+        $request->merge([
+            'username' => trim((string) $request->input('username')),
         ]);
+
+        $credentials = $request->validate([
+            'username' => ['required', 'string', 'max:255'],
+            'password' => ['required', 'string'],
+        ], [
+            'username.required' => 'Bitte gib deinen Benutzernamen ein.',
+            'username.max' => 'Der Benutzername darf höchstens 255 Zeichen lang sein.',
+            'password.required' => 'Bitte gib dein Passwort ein.',
+        ]);
+
+        $throttleKey = 'login:'.Str::lower($credentials['username']).'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_LOGIN_ATTEMPTS)) {
+            $minutes = (int) ceil(RateLimiter::availableIn($throttleKey) / 60);
+
+            throw ValidationException::withMessages([
+                'username' => 'Zu viele fehlgeschlagene Anmeldeversuche. Bitte versuche es in '.$minutes.' '.($minutes === 1 ? 'Minute' : 'Minuten').' erneut.',
+            ]);
+        }
 
         $user = User::where('username', $credentials['username'])
             ->first();
 
         if (
-            !$user ||
-            !$user->enabled ||
-            !Hash::check($credentials['password'], $user->password)
+            ! $user ||
+            ! $user->enabled ||
+            ! Hash::check($credentials['password'], $user->password)
         ) {
+            RateLimiter::hit($throttleKey, 300);
+
             ActivityLogger::log(
                 'user.login_failed',
-                'Fehlgeschlagener Anmeldeversuch für Benutzername "' . $credentials['username'] . '".'
+                'Fehlgeschlagener Anmeldeversuch für Benutzername "'.$credentials['username'].'".'
             );
 
             throw ValidationException::withMessages([
@@ -42,13 +69,15 @@ class LoginController extends Controller
             ]);
         }
 
+        RateLimiter::clear($throttleKey);
+
         Auth::login($user);
 
         $request->session()->regenerate();
 
         ActivityLogger::log(
             'user.login',
-            'Benutzer "' . $user->username . '" hat sich angemeldet.',
+            'Benutzer "'.$user->username.'" hat sich angemeldet.',
             'User',
             $user->id
         );
@@ -66,7 +95,7 @@ class LoginController extends Controller
             // selbst über den aktiven Guard).
             ActivityLogger::log(
                 'user.logout',
-                'Benutzer "' . $user->username . '" hat sich abgemeldet.',
+                'Benutzer "'.$user->username.'" hat sich abgemeldet.',
                 'User',
                 $user->id
             );
