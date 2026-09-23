@@ -12,17 +12,19 @@
             </p>
         </div>
 
+        <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+
         <a
             href="{{ route('members.pdf.overview') }}"
             target="_blank"
-            class="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            class="inline-flex justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
             PDF Mitgliederliste
         </a>
 
         <a href="{{ route('members.birthdays') }}"
            target="_blank"
-           class="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+           class="inline-flex justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Geburtstagsliste
         </a>
@@ -30,10 +32,12 @@
         <a
             href="{{ route('members.create') }}"
             wire:navigate
-            class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+            class="col-span-2 rounded-lg bg-slate-900 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
         >
             + Mitglied hinzufügen
         </a>
+
+        </div>
 
     </div>
 
@@ -46,14 +50,14 @@
                     type="search"
                     wire:model.live.debounce.300ms="search"
                     placeholder="Mitglied suchen ..."
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200 sm:py-2 sm:text-sm"
                 >
             </div>
 
             <div>
                 <select
                     wire:model.live="status"
-                    class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:border-slate-500 focus:outline-none sm:w-auto sm:py-2 sm:text-sm"
                 >
                     <option value="active">Aktive Mitglieder</option>
                     <option value="inactive">Inaktive Mitglieder</option>
@@ -65,9 +69,9 @@
 
         <div class="overflow-x-auto">
 
-            <table class="min-w-full divide-y divide-slate-200">
+            <table class="block min-w-full md:table md:divide-y md:divide-slate-200">
 
-                <thead class="bg-slate-50">
+                <thead class="hidden bg-slate-50 md:table-header-group">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Mitglied
@@ -85,27 +89,34 @@
                 </tr>
                 </thead>
 
-                <tbody class="divide-y divide-slate-100 bg-white">
+                <tbody class="block divide-y divide-slate-100 bg-white md:table-row-group">
 
                 @forelse($members as $member)
 
-                    <tr class="hover:bg-slate-50">
+                    <tr
+                        wire:key="member-row-{{ $member->memberID }}"
+                        class="relative flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-slate-50 active:bg-slate-100 md:table-row md:p-0"
+                    >
 
-                        <td class="whitespace-nowrap px-6 py-4">
+                        <td class="order-1 min-w-0 flex-1 md:order-none md:table-cell md:whitespace-nowrap md:px-6 md:py-4">
+                            {{-- Am Handy ist die ganze Karte über diesen Link antippbar --}}
                             <a
                                 href="{{ route('members.show', $member) }}"
                                 wire:navigate
-                                class="font-medium text-slate-900 hover:text-blue-600"
+                                class="block truncate font-medium text-slate-900 after:absolute after:inset-0 hover:text-blue-600 md:after:hidden"
                             >
                                 {{ $member->surname }} {{ $member->name }}
                             </a>
 
                             <div class="text-sm text-slate-500">
                                 #{{ $member->memberID }}
+                                <span class="md:hidden">
+                                    · Eintritt {{ $member->dateOfJoin?->format('d.m.Y') ?? '–' }}
+                                </span>
                             </div>
                         </td>
 
-                        <td class="whitespace-nowrap px-6 py-4">
+                        <td class="order-2 md:order-none md:table-cell md:whitespace-nowrap md:px-6 md:py-4">
 
                             @if($member->active)
                                 <span class="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
@@ -119,11 +130,15 @@
 
                         </td>
 
-                        <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                        <td class="hidden whitespace-nowrap px-6 py-4 text-sm text-slate-600 md:table-cell">
                             {{ $member->dateOfJoin?->format('d.m.Y') ?? '–' }}
                         </td>
 
-                        <td class="whitespace-nowrap px-6 py-4 text-right">
+                        <td class="order-3 text-lg text-slate-400 md:hidden" aria-hidden="true">
+                            ›
+                        </td>
+
+                        <td class="hidden whitespace-nowrap px-6 py-4 text-right md:table-cell">
 
                             <a
                                 href="{{ route('members.show', $member) }}"
@@ -139,10 +154,10 @@
 
                 @empty
 
-                    <tr>
+                    <tr class="block md:table-row">
                         <td
                             colspan="4"
-                            class="px-6 py-12 text-center text-sm text-slate-500"
+                            class="block px-6 py-12 text-center text-sm text-slate-500 md:table-cell"
                         >
                             Keine Mitglieder gefunden.
                         </td>

@@ -1,6 +1,6 @@
 <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
-    <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+    <div class="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
 
         <div>
             <h3 class="font-semibold text-slate-900">
@@ -29,7 +29,7 @@
 
     @if($showForm)
 
-        <div class="border-b border-slate-200 bg-slate-50 p-6">
+        <div class="border-b border-slate-200 bg-slate-50 p-4 sm:p-6">
 
             <h4 class="mb-4 font-semibold text-slate-900">
                 {{ $editingRoleID ? 'Dienstbezeichnung bearbeiten' : 'Neue Dienstbezeichnung' }}
@@ -192,7 +192,7 @@
                 @enderror
             </div>
 
-            <div class="mt-5 flex justify-end gap-2">
+            <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <button
                     type="button"
                     wire:click="cancelEdit"
@@ -218,10 +218,10 @@
 
         @forelse($roles as $role)
 
-            <div wire:key="role-{{ $role->roleID }}" class="flex items-center justify-between gap-4 p-4">
+            <div wire:key="role-{{ $role->roleID }}" class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
 
                 <div class="min-w-0">
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                         <span class="font-medium text-slate-900">
                             {{ $role->name }}
                         </span>
@@ -263,13 +263,13 @@
                     </div>
                 </div>
 
-                <div class="flex shrink-0 items-center gap-2">
+                <div class="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 sm:gap-2">
 
-                    <button type="button" wire:click="moveRoleUp({{ $role->roleID }})" class="text-slate-400 hover:text-slate-700" title="Nach oben">
+                    <button type="button" wire:click="moveRoleUp({{ $role->roleID }})" class="px-1 text-lg text-slate-400 hover:text-slate-700 sm:px-0 sm:text-base" title="Nach oben">
                         ↑
                     </button>
 
-                    <button type="button" wire:click="moveRoleDown({{ $role->roleID }})" class="text-slate-400 hover:text-slate-700" title="Nach unten">
+                    <button type="button" wire:click="moveRoleDown({{ $role->roleID }})" class="px-1 text-lg text-slate-400 hover:text-slate-700 sm:px-0 sm:text-base" title="Nach unten">
                         ↓
                     </button>
 

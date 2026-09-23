@@ -24,12 +24,12 @@
             </p>
         </div>
 
-        <div class="flex gap-2">
+        <div class="grid grid-cols-2 gap-2 sm:flex">
 
             <a
                 href="{{ route('duty-plan.volunteers') }}"
                 wire:navigate
-                class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                class="rounded-lg text-center border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
                 Helfer verwalten
             </a>
@@ -37,7 +37,7 @@
             <a
                 href="{{ route('duty-plan.absences') }}"
                 wire:navigate
-                class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                class="rounded-lg text-center border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
                 Abwesenheiten
             </a>
@@ -50,7 +50,7 @@
     {{-- Dienstplan Auswahl --}}
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
-        <div class="flex flex-col gap-4 p-6 lg:flex-row lg:items-end">
+        <div class="flex flex-col gap-4 p-4 sm:p-6 lg:flex-row lg:items-end">
 
             <div class="flex-1">
 
@@ -95,7 +95,7 @@
             </button>
 
 
-            <div class="flex flex-wrap gap-2">
+            <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
 
                 <button
                     type="button"
@@ -132,7 +132,7 @@
     {{-- Neuer Dienstplan --}}
     @if($showCreatePlan)
 
-        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
 
             <h3 class="mb-5 font-semibold">
                 Neuen Dienstplan erstellen
@@ -202,7 +202,7 @@
             @endif
 
 
-            <div class="mt-5 flex justify-end gap-2">
+            <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 
                 <button
                     type="button"
@@ -230,7 +230,7 @@
     {{-- Zeitraum --}}
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
-        <div class="border-b border-slate-200 px-6 py-4">
+        <div class="border-b border-slate-200 px-4 py-4 sm:px-6">
 
             <h3 class="font-semibold text-slate-900">
                 Zeitraum
@@ -238,7 +238,7 @@
 
         </div>
 
-        <div class="grid gap-6 p-6 md:grid-cols-3">
+        <div class="grid grid-cols-2 gap-4 p-4 sm:gap-6 sm:p-6 md:grid-cols-3">
 
             <div>
 
@@ -270,7 +270,7 @@
             </div>
 
 
-            <div class="flex items-end">
+            <div class="col-span-2 flex items-end md:col-span-1">
 
                 <label class="flex items-center gap-3 pb-2">
 
@@ -300,7 +300,7 @@
 
 
     {{-- Aktionen --}}
-    <div class="flex flex-wrap gap-3">
+    <div class="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:gap-3">
 
         <button
             type="button"
@@ -346,7 +346,7 @@
     {{-- Diensttermine --}}
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
-        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
 
             <div>
 
@@ -364,7 +364,7 @@
 
 
         {{-- Export --}}
-        <div class="flex flex-wrap items-end gap-3 p-6">
+        <div class="grid grid-cols-2 gap-3 p-4 sm:flex sm:flex-wrap sm:items-end sm:p-6">
 
             <div>
 
@@ -374,7 +374,7 @@
 
                 <select
                     wire:model="exportWeekday"
-                    class="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
                 >
 
                     <option value="all">
@@ -401,7 +401,7 @@
 
                 <select
                     wire:model="exportRole"
-                    class="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
                 >
 
                     <option value="all">
@@ -446,9 +446,9 @@
         {{-- Tabelle --}}
         <div class="overflow-x-auto">
 
-            <table class="min-w-full divide-y divide-slate-200">
+            <table class="block min-w-full md:table md:divide-y md:divide-slate-200">
 
-                <thead class="bg-slate-50">
+                <thead class="hidden bg-slate-50 md:table-header-group">
 
                 <tr>
 
@@ -473,14 +473,14 @@
                 </thead>
 
 
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="block divide-y divide-slate-100 md:table-row-group">
 
                 @forelse($this->events as $event)
 
-                    <tr class="hover:bg-slate-50">
+                    <tr wire:key="event-row-{{ $event->eventID }}" class="flex flex-wrap items-start gap-3 p-4 hover:bg-slate-50 md:table-row md:p-0">
 
                         {{-- Datum --}}
-                        <td class="whitespace-nowrap px-6 py-4">
+                        <td class="order-1 flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 md:order-none md:table-cell md:whitespace-nowrap md:px-6 md:py-4">
 
                             <div class="font-medium text-slate-900">
                                 {{ $event->duty_date->format('d.m.Y') }}
@@ -494,7 +494,7 @@
 
                             @if($holiday = $this->holidayName($event->duty_date))
 
-                                <div class="mt-1">
+                                <div class="w-full md:mt-1 md:w-auto">
 
                                     <span class="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
                                         {{ $holiday }}
@@ -508,7 +508,7 @@
 
 
                         {{-- Dienst --}}
-                        <td class="px-6 py-4">
+                        <td class="order-3 w-full md:order-none md:w-auto md:table-cell md:px-6 md:py-4">
 
                             <div class="font-medium text-slate-900">
                                 {{ $event->duty_name }}
@@ -541,7 +541,7 @@
 
 
                         {{-- Helfer --}}
-                        <td class="px-6 py-4">
+                        <td class="order-4 w-full md:order-none md:w-auto md:table-cell md:px-6 md:py-4">
 
                             <div class="space-y-2">
 
@@ -574,7 +574,7 @@
 
                                     <div class="flex items-center gap-2">
 
-                                        <div class="w-16 shrink-0 text-xs font-medium text-slate-400">
+                                        <div class="w-14 shrink-0 text-xs font-medium text-slate-400 md:w-16">
                                             Helfer {{ $slot }}
                                         </div>
 
@@ -586,7 +586,7 @@
                                                 {{ $slot }},
                                                 $event.target.value || null
                                             )"
-                                            class="min-w-60 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                                            class="w-full min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base md:w-auto md:min-w-60 md:flex-none md:py-2 md:text-sm"
                                         >
 
                                             <option value="">
@@ -687,7 +687,7 @@
 
 
                         {{-- Status --}}
-                        <td class="whitespace-nowrap px-6 py-4 text-right">
+                        <td class="order-2 flex flex-col items-end gap-1 md:order-none md:table-cell md:whitespace-nowrap md:px-6 md:py-4 md:text-right">
 
                             @if(
                                 $event->assignments->count()
@@ -713,7 +713,7 @@
                             @endif
 
                             @if($warning = $this->eventGroupWarning($event))
-                                <div class="mt-1">
+                                <div class="md:mt-1 md:block">
                                     <span class="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
                                         ⚠ {{ $warning }}
                                     </span>
@@ -726,11 +726,11 @@
 
                 @empty
 
-                    <tr>
+                    <tr class="block md:table-row">
 
                         <td
                             colspan="4"
-                            class="px-6 py-12 text-center text-sm text-slate-500"
+                            class="block px-6 py-12 text-center text-sm text-slate-500 md:table-cell"
                         >
                             Für diesen Zeitraum wurden noch keine Diensttermine angelegt.
                         </td>
