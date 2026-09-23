@@ -26,7 +26,7 @@
     @include('partials.flash-messages')
 
 
-    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
 
         <table class="min-w-full divide-y divide-slate-200">
 
@@ -605,7 +605,7 @@
 
                             </div>
 
-                            <div class="max-h-72 overflow-y-auto rounded-lg border border-slate-200">
+                            <div class="max-h-72 overflow-auto rounded-lg border border-slate-200">
 
                                 <table class="min-w-full divide-y divide-slate-200">
 
@@ -694,7 +694,7 @@
 
                             </div>
 
-                            <div class="max-h-60 overflow-y-auto rounded-lg border border-slate-200">
+                            <div class="max-h-60 overflow-auto rounded-lg border border-slate-200">
 
                                 <table class="min-w-full divide-y divide-slate-200">
 

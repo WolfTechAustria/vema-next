@@ -12,7 +12,7 @@
         </p>
     </div>
 
-    <div>
+    <div class="flex flex-wrap items-center gap-2">
         @if($selectedYear->active)
             <span class="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
                 Offen
@@ -66,7 +66,7 @@
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
 
-        <div class="grid gap-4 p-6 md:grid-cols-4">
+        <div class="grid grid-cols-2 gap-4 p-4 sm:p-6 md:grid-cols-4 md:items-end">
             <div>
 
                 <label class="mb-1 block text-sm font-medium text-slate-700">
@@ -91,7 +91,7 @@
                 </label>
 
                 <select
-                    wire:model.live="status"
+                    wire:model.live="statusFilter"
                     class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
                 >
                     <option value="all">Alle</option>
@@ -101,7 +101,7 @@
                 </select>
             </div>
 
-            <div>
+            <div class="col-span-2 md:col-span-1">
                 <label class="mb-1 block text-sm font-medium text-slate-700">
                     Suche
                 </label>
@@ -114,12 +114,11 @@
                 >
             </div>
 
-            <div>
-                <br>
+            <div class="col-span-2 md:col-span-1">
                 <button
                     type="button"
                     wire:click="$set('showCreateYear', true)"
-                    class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                    class="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 md:w-auto"
                 >
                     + Beitragsjahr anlegen
                 </button>
@@ -130,8 +129,21 @@
 
         @if($yearId)
 
-            <div class="mt-6 rounded-xl border-slate-200 bg-white p-6 shadow-sm">
+            <div
+                x-data="{ open: window.matchMedia('(min-width: 768px)').matches }"
+                class="border-t border-slate-200 p-4 sm:p-6"
+            >
 
+                <button
+                    type="button"
+                    @click="open = !open"
+                    class="flex w-full items-center justify-between text-left text-sm font-semibold text-slate-900"
+                >
+                    Erinnerungseinstellungen
+                    <span x-text="open ? '▴' : '▾'" class="text-slate-500"></span>
+                </button>
+
+                <div x-show="open" x-collapse>
 
                 <div class="mt-4 grid gap-4 md:grid-cols-3">
 
@@ -203,6 +215,8 @@
                     >
                         Erinnerungseinstellungen speichern
                     </button>
+                </div>
+
                 </div>
 
             </div>
@@ -299,19 +313,30 @@
 
     @endif
 
-    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+    <section
+        x-data="{ open: window.matchMedia('(min-width: 768px)').matches }"
+        class="rounded-xl border border-slate-200 bg-white shadow-sm"
+    >
 
-        <div class="border-b border-slate-200 px-6 py-4">
-            <h3 class="font-semibold text-slate-900">
-                Standardbeitrag
-            </h3>
+        <button
+            type="button"
+            @click="open = !open"
+            class="flex w-full items-center justify-between border-b border-slate-200 px-4 py-4 text-left sm:px-6"
+        >
+            <span>
+                <span class="block font-semibold text-slate-900">
+                    Standardbeitrag
+                </span>
 
-            <p class="mt-1 text-sm text-slate-500">
-                Standardbetrag für das ausgewählte Beitragsjahr.
-            </p>
-        </div>
+                <span class="mt-1 block text-sm text-slate-500">
+                    Standardbetrag für das ausgewählte Beitragsjahr.
+                </span>
+            </span>
 
-        <div class="flex flex-col gap-4 p-6 sm:flex-row sm:items-end">
+            <span x-text="open ? '▴' : '▾'" class="text-slate-500"></span>
+        </button>
+
+        <div x-show="open" x-collapse class="flex flex-col gap-4 p-4 sm:flex-row sm:flex-wrap sm:items-end sm:p-6">
 
             <div>
                 <label class="mb-1 block text-sm font-medium text-slate-700">
@@ -379,34 +404,34 @@
 
     @if($selectedYear)
 
-        <div class="grid gap-4 sm:grid-cols-3">
+        <div class="grid grid-cols-3 gap-2 sm:gap-4">
 
-            <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div class="text-sm text-slate-500">
+            <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
+                <div class="text-xs text-slate-500 sm:text-sm">
                     Offen
                 </div>
 
-                <div class="mt-1 text-3xl font-bold">
+                <div class="mt-1 text-xl font-bold sm:text-3xl">
                     {{ $openCount }}
                 </div>
             </div>
 
-            <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div class="text-sm text-slate-500">
+            <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
+                <div class="text-xs text-slate-500 sm:text-sm">
                     Bezahlt
                 </div>
 
-                <div class="mt-1 text-3xl font-bold">
+                <div class="mt-1 text-xl font-bold sm:text-3xl">
                     {{ $paidCount }}
                 </div>
             </div>
 
-            <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div class="text-sm text-slate-500">
+            <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
+                <div class="text-xs text-slate-500 sm:text-sm">
                     Standardbeitrag
                 </div>
 
-                <div class="mt-1 text-3xl font-bold">
+                <div class="mt-1 text-xl font-bold sm:text-3xl">
                     @if($selectedYear->default_amount !== null)
                         {{ number_format((float) $selectedYear->default_amount, 2, ',', '.') }} €
                     @else
@@ -419,9 +444,26 @@
 
         <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
-            <div class="overflow-x-auto">
+            <div>
 
-                <div class="grid gap-4 p-6 md:grid-cols-4">
+                <div
+                    x-data="{ open: window.matchMedia('(min-width: 768px)').matches }"
+                    class="border-b border-slate-200"
+                >
+
+                <button
+                    type="button"
+                    @click="open = !open"
+                    class="flex w-full items-center justify-between px-4 py-4 text-left text-sm font-semibold text-slate-900 md:hidden"
+                >
+                    <span>
+                        Versand &amp; Auswahl
+                        <span class="ml-1 font-normal text-slate-500">({{ count($selectedEntries) }} ausgewählt)</span>
+                    </span>
+                    <span x-text="open ? '▴' : '▾'" class="text-slate-500"></span>
+                </button>
+
+                <div x-show="open" x-collapse class="grid grid-cols-1 gap-2 px-4 pb-4 sm:grid-cols-2 md:grid-cols-4 md:gap-4 md:p-6">
                     <button
                         type="button"
                         wire:click="selectAllOpen"
@@ -536,7 +578,9 @@
 
                 </div>
 
-                <div class="p-6 flex items-center gap-2">
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 p-4 md:p-6">
 
                     <button
                         type="button"
@@ -576,6 +620,8 @@
 
                 </div>
 
+                <div class="hidden overflow-x-auto md:block">
+
                 <table class="min-w-full divide-y divide-slate-200">
 
                     <thead class="bg-slate-50">
@@ -614,7 +660,7 @@
 
                     @forelse($entries as $entry)
 
-                        <tr class="hover:bg-slate-50">
+                        <tr wire:key="entry-row-{{ $entry->entryID }}" class="hover:bg-slate-50">
 
                             <td class="px-6 py-4">
 
@@ -830,7 +876,7 @@
 
                         <tr>
                             <td
-                                colspan="4"
+                                colspan="8"
                                 class="px-6 py-12 text-center text-sm text-slate-500"
                             >
                                 Keine Beiträge für dieses Jahr gefunden.
@@ -844,6 +890,166 @@
 
                 </table>
 
+                </div>
+
+                {{-- Mobile: Kartenansicht mit großen Schaltflächen zum Bezahlt-Markieren --}}
+                <div class="divide-y divide-slate-100 md:hidden">
+
+                    @forelse($entries as $entry)
+
+                        @php
+                            $hasReminder = $entry->prescriptions
+                                ->where('type', 'reminder')
+                                ->whereNotNull('sent_at')
+                                ->isNotEmpty();
+
+                            $hasPrescription = $entry->prescriptions
+                                ->where('type', 'prescription')
+                                ->whereNotNull('sent_at')
+                                ->isNotEmpty();
+                        @endphp
+
+                        <div
+                            wire:key="entry-card-{{ $entry->entryID }}"
+                            class="p-4 {{ $entry->status === 'paid' ? 'bg-emerald-50/60' : '' }}"
+                        >
+
+                            <div class="flex items-start gap-3">
+
+                                <input
+                                    type="checkbox"
+                                    wire:model.live="selectedEntries"
+                                    value="{{ $entry->entryID }}"
+                                    class="mt-1 h-5 w-5 shrink-0 rounded border-slate-300"
+                                    aria-label="Auswählen"
+                                >
+
+                                <div class="min-w-0 flex-1">
+
+                                    <div class="flex items-start justify-between gap-2">
+
+                                        <div class="min-w-0">
+                                            <div class="truncate font-medium text-slate-900">
+                                                {{ $entry->member?->surname }}
+                                                {{ $entry->member?->name }}
+                                            </div>
+
+                                            <div class="text-xs text-slate-400">
+                                                #{{ $entry->memberID }}
+                                            </div>
+                                        </div>
+
+                                        <div class="shrink-0 text-right">
+                                            <div class="font-semibold text-slate-900">
+                                                {{ $entry->amount !== null
+                                                    ? number_format((float) $entry->amount, 2, ',', '.').' €'
+                                                    : '–' }}
+                                            </div>
+
+                                            @if($entry->status === 'paid')
+                                                <span class="text-xs font-medium text-emerald-700">
+                                                    Bezahlt {{ $entry->paid_at?->format('d.m.Y') }}
+                                                </span>
+                                            @elseif($entry->status === 'exempt')
+                                                <span class="text-xs font-medium text-slate-500">
+                                                    Befreit
+                                                </span>
+                                            @else
+                                                <span class="text-xs font-medium text-amber-700">
+                                                    Offen
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                    </div>
+
+                                    <div class="mt-2 flex flex-wrap gap-1.5">
+                                        @if($hasReminder)
+                                            <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                                                Erinnert
+                                            </span>
+                                        @elseif($hasPrescription)
+                                            <span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                                                Vorschreibung versendet
+                                            </span>
+                                        @else
+                                            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                                                Noch nicht versendet
+                                            </span>
+                                        @endif
+
+                                        @if($entry->status === 'open' && $entry->isReminderDue())
+                                            <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                                                Erinnerung fällig
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            @if($selectedYear->active)
+
+                                <div class="mt-3 flex gap-2">
+
+                                    @if($entry->status === 'open')
+
+                                        <button
+                                            type="button"
+                                            wire:click="updateStatus({{ $entry->entryID }}, 'paid')"
+                                            class="flex-1 whitespace-nowrap rounded-lg bg-emerald-600 px-4 py-3 text-base font-semibold text-white active:bg-emerald-700"
+                                        >
+                                            ✓ Bezahlt
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            wire:click="updateStatus({{ $entry->entryID }}, 'exempt')"
+                                            wire:confirm="{{ $entry->member?->full_name }} vom Beitrag befreien?"
+                                            class="rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-medium text-slate-700 active:bg-slate-100"
+                                        >
+                                            Befreien
+                                        </button>
+
+                                    @else
+
+                                        <button
+                                            type="button"
+                                            wire:click="updateStatus({{ $entry->entryID }}, 'open')"
+                                            wire:confirm="Beitrag von {{ $entry->member?->full_name }} wieder auf offen setzen?"
+                                            class="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 active:bg-slate-100"
+                                        >
+                                            Zurück auf offen
+                                        </button>
+
+                                    @endif
+
+                                    <a
+                                        href="{{ route('membership-fees.prescription', $entry->entryID) }}"
+                                        target="_blank"
+                                        class="rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-medium text-slate-700 active:bg-slate-100"
+                                        aria-label="Vorschreibung PDF"
+                                    >
+                                        PDF
+                                    </a>
+
+                                </div>
+
+                            @endif
+
+                        </div>
+
+                    @empty
+
+                        <p class="px-4 py-12 text-center text-sm text-slate-500">
+                            Keine Beiträge für dieses Jahr gefunden.
+                        </p>
+
+                    @endforelse
+
+                </div>
+
             </div>
 
         </section>
@@ -851,7 +1057,7 @@
     @endif
 
     @if($showResendDialog)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
 
                 <h3 class="text-lg font-semibold text-slate-900">
@@ -899,7 +1105,7 @@
             $summary = $this->reminderSelectionSummary();
         @endphp
 
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
 
                 <h3 class="text-lg font-semibold text-slate-900">

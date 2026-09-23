@@ -66,7 +66,7 @@
 @endphp
 
 
-<body class="bg-slate-100 text-slate-900">
+<body class="overflow-x-hidden bg-slate-100 text-slate-900">
 
 <div
     x-data="{ sidebarOpen: false }"
@@ -90,7 +90,7 @@
     >
 
         {{-- Logo --}}
-        <div class="flex h-16 shrink-0 items-center border-b border-slate-200 px-6">
+        <div class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-6">
 
             <div>
 
@@ -109,6 +109,15 @@
                 </div>
 
             </div>
+
+            <button
+                type="button"
+                class="-mr-2 rounded-lg p-2 text-xl leading-none text-slate-500 hover:bg-slate-100 lg:hidden"
+                @click="sidebarOpen = false"
+                aria-label="Navigation schließen"
+            >
+                ✕
+            </button>
 
         </div>
 
@@ -342,24 +351,30 @@
                 </a>
 
 
-                {{-- Diese Bereiche bauen wir danach auf das eigene Mitglied beschränkt aus --}}
-
-                <div
-                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
-                    title="Wird noch freigeschaltet"
+                <a
+                    href="{{ route('member.fees') }}"
+                    wire:navigate
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                    {{ request()->routeIs('member.fees*')
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
                 >
                     <span>€</span>
                     Meine Beiträge
-                </div>
+                </a>
 
 
-                <div
-                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
-                    title="Wird noch freigeschaltet"
+                <a
+                    href="{{ route('member.circulars') }}"
+                    wire:navigate
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                    {{ request()->routeIs('member.circulars*')
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
                 >
                     <span>✉</span>
                     Meine Rundschreiben
-                </div>
+                </a>
 
 
                 <a
@@ -533,16 +548,17 @@
 
             <button
                 type="button"
-                class="mr-4 rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
+                class="-ml-2 mr-2 rounded-lg p-2 text-xl leading-none text-slate-600 hover:bg-slate-100 lg:hidden"
                 @click="sidebarOpen = true"
+                aria-label="Navigation öffnen"
             >
                 ☰
             </button>
 
 
-            <div class="flex-1">
+            <div class="min-w-0 flex-1">
 
-                <h1 class="text-lg font-semibold">
+                <h1 class="truncate text-lg font-semibold">
                     {{ $heading ?? 'VEMA' }}
                 </h1>
 
@@ -560,7 +576,7 @@
                 @endif
 
 
-                <div class="text-sm text-slate-500">
+                <div class="hidden text-sm text-slate-500 sm:block">
                     {{ now()->format('d.m.Y') }}
                 </div>
 
@@ -570,7 +586,7 @@
 
 
         {{-- Page Content --}}
-        <main class="p-4 sm:p-6 lg:p-8">
+        <main class="px-3 py-4 sm:p-6 lg:p-8">
 
             {{ $slot }}
 

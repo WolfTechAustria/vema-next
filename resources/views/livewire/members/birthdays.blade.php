@@ -37,6 +37,7 @@
             Keine Geburtstage aktiver Mitglieder in diesem Monat.
         </p>
     @else
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead>
             <tr class="text-left text-gray-500">
@@ -79,6 +80,7 @@
             @endforeach
             </tbody>
         </table>
+        </div>
     @endif
 
 </div>

@@ -971,7 +971,10 @@ class Index extends Component
             return;
         }
 
-        $entry = MembershipFeeEntry::findOrFail($entryId);
+        $entry = MembershipFeeEntry::query()
+            ->whereKey($entryId)
+            ->where('yearID', $this->yearId)
+            ->firstOrFail();
 
         $entry->status = $status;
 

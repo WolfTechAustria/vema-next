@@ -7,6 +7,7 @@ use App\Models\Circular;
 use App\Models\CircularAttachment;
 use App\Models\CircularRecipient;
 use App\Models\Member;
+use App\Services\CircularPdfService;
 use App\Services\ImapSentMailService;
 use App\Services\PdfLetterheadService;
 use App\Services\TemplateRendererService;
@@ -19,65 +20,14 @@ class CircularController extends Controller
     public function previewRecipient(
         Circular $circular,
         Member $member,
-        TemplateRendererService $renderer,
-        PdfLetterheadService $letterheadService
+        CircularPdfService $circularPdfService
     ) {
-        $member->loadMissing('city');
-
-        $body = $renderer->circular(
-            $circular->body_html ?? '',
-            $member
-        );
-
-        $pdf = Pdf::loadView(
-            'pdf.circular',
-            [
-                'circular' => $circular,
-                'member' => $member,
-                'body' => $body,
-            ]
-        )->setPaper('a4');
-
-        $contentPdf = $pdf->output();
-
-        $contentPath = tempnam(
-            sys_get_temp_dir(),
-            'circular_'
-        ).'.pdf';
-
-        file_put_contents(
-            $contentPath,
-            $contentPdf
-        );
-
-        $letterheadPath = storage_path(
-            'app/templates/briefpapier.pdf'
-        );
-
-        try {
-            $finalPdf = $letterheadService->apply(
-                $contentPath,
-                $letterheadPath
-            );
-        } finally {
-            if (is_file($contentPath)) {
-                unlink($contentPath);
-            }
-        }
-
-        $fileName =
-            'Rundschreiben_'
-            .$circular->circularID
-            .'_'
-            .$member->memberID
-            .'.pdf';
-
         return response(
-            $finalPdf,
+            $circularPdfService->renderForMember($circular, $member),
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="'.$fileName.'"',
+                'Content-Disposition' => 'inline; filename="'.$circularPdfService->fileNameFor($circular, $member).'"',
             ]
         );
     }
