@@ -8,7 +8,6 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-
 // täglich morgens: rund/halbrund-Reminder
 Schedule::command('birthdays:send-reminders')
     ->dailyAt('07:00')
@@ -21,4 +20,9 @@ Schedule::command('birthdays:send-monthly-list')
 
 Schedule::command('duty:send-reminders')
     ->dailyAt('07:00')
+    ->withoutOverlapping();
+
+// Testmodus: Test-DB nachts auf Live-Stand (nur wenn in den Einstellungen gewählt)
+Schedule::command('demo:reset --if-nightly')
+    ->dailyAt(config('demo.reset_time'))
     ->withoutOverlapping();

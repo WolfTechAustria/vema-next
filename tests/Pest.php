@@ -83,6 +83,7 @@ function setUpCashBookSchema(): void
             'database/migrations/2026_09_25_031630_create_cash_book_years_table.php',
             'database/migrations/2026_09_25_031632_create_cash_book_entries_table.php',
             'database/migrations/2026_09_25_031634_create_cash_book_attachments_table.php',
+            'database/migrations/2026_09_25_184245_add_demo_mode_to_settings_table.php',
         ],
     ])->assertSuccessful();
 }

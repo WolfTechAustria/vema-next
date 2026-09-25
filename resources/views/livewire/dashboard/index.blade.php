@@ -1,5 +1,7 @@
 <div>
 
+    @include('partials.flash-messages')
+
     <div class="mb-8">
         <h2 class="text-2xl font-bold tracking-tight">
             Willkommen bei VEMA

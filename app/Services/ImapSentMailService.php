@@ -9,7 +9,12 @@ class ImapSentMailService
     public function append(
         string $rawMessage
     ): void {
-        $cm = new ClientManager();
+        // Testmodus: nichts in den echten Gesendet-Ordner legen.
+        if (app(DemoMode::class)->isActive()) {
+            return;
+        }
+
+        $cm = new ClientManager;
 
         $client = $cm->make([
             'host' => env('IMAP_HOST'),
@@ -34,9 +39,9 @@ class ImapSentMailService
                 $sentFolderPath
             );
 
-            if (!$folder) {
+            if (! $folder) {
                 throw new \RuntimeException(
-                    'IMAP Sent-Ordner wurde nicht gefunden: '. $sentFolderPath
+                    'IMAP Sent-Ordner wurde nicht gefunden: '.$sentFolderPath
                 );
             }
 

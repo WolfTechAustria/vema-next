@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\CashBookController;
 use App\Http\Controllers\CircularController;
+use App\Http\Controllers\DemoModeController;
 use App\Http\Controllers\DutyPlanIcalController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MemberAuthController;
@@ -66,6 +67,12 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'active.staff'])->group(function () {
 
     Route::get('/', fn () => redirect()->route('dashboard'));
+
+    Route::post('/demo/enter', [DemoModeController::class, 'enter'])
+        ->name('demo.enter');
+
+    Route::post('/demo/leave', [DemoModeController::class, 'leave'])
+        ->name('demo.leave');
 
     Route::livewire('/dashboard', DashboardIndex::class)
         ->name('dashboard');

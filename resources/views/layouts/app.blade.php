@@ -63,6 +63,10 @@
         $displaySubline = '';
 
     }
+
+    $demoMode = app(\App\Services\DemoMode::class);
+    $isDemoActive = $isInternal && $demoMode->isActive();
+    $isDemoAvailable = $isInternal && ! $isMember && ! $isDemoActive && $demoMode->isAvailable();
 @endphp
 
 
@@ -523,6 +527,26 @@
 
                 @endif
 
+                @if($isDemoAvailable)
+
+                    <form
+                        method="POST"
+                        action="{{ route('demo.enter') }}"
+                    >
+                        @csrf
+
+                        <button
+                            type="submit"
+                            class="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-amber-700 hover:bg-amber-50"
+                        >
+                            <span>🧪</span>
+                            Testmodus starten
+                        </button>
+
+                    </form>
+
+                @endif
+
                 <form
                     method="POST"
                     action="{{ route('logout') }}"
@@ -589,6 +613,35 @@
             </div>
 
         </header>
+
+
+        @if($isDemoActive)
+
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-amber-300 bg-amber-100 px-4 py-2.5 text-sm text-amber-900 sm:px-6 lg:px-8">
+
+                <p class="min-w-0 flex-1">
+                    <span class="font-bold">🧪 TESTMODUS</span>
+                    – Änderungen betreffen nicht die Live-Daten. Mails gehen nur an dich.
+                </p>
+
+                <form
+                    method="POST"
+                    action="{{ route('demo.leave') }}"
+                >
+                    @csrf
+
+                    <button
+                        type="submit"
+                        class="rounded-lg bg-amber-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-800"
+                    >
+                        Testmodus verlassen
+                    </button>
+
+                </form>
+
+            </div>
+
+        @endif
 
 
         {{-- Page Content --}}

@@ -2,31 +2,56 @@
 
 namespace App\Livewire\Admin\Settings;
 
+use App\Enums\DemoResetMode;
 use App\Models\Setting;
 use App\Services\ActivityLogger;
+use App\Services\DemoDatabaseResetter;
+use App\Services\DemoMode;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Throwable;
 
 class Index extends Component
 {
     public string $name = '';
+
     public string $street = '';
+
     public string $zip = '';
+
     public string $city = '';
+
     public string $email = '';
+
     public string $phone = '';
+
     public string $website = '';
 
     public string $bank_name = '';
+
     public string $iban = '';
+
     public string $bic = '';
+
     public string $vat_id = '';
+
     public bool $small_business_default = true;
+
     public string $invoice_default_tax_rate = '20';
+
     public string $invoice_footer_text = '';
 
-    public function mount(): void
+    public bool $demo_enabled = false;
+
+    public string $demo_reset_mode = 'nightly';
+
+    public function mount(DemoMode $demoMode): void
     {
         $setting = Setting::current();
+
+        $demoSettings = $demoMode->settings();
+        $this->demo_enabled = (bool) $demoSettings->demo_enabled;
+        $this->demo_reset_mode = ($demoSettings->demo_reset_mode ?? DemoResetMode::Nightly)->value;
 
         $this->name = $setting->name ?? '';
         $this->street = $setting->street ?? '';
@@ -72,7 +97,7 @@ class Index extends Component
 
         $normalizedTaxRate = str_replace(',', '.', (string) $validated['invoice_default_tax_rate']);
 
-        if (!is_numeric($normalizedTaxRate)) {
+        if (! is_numeric($normalizedTaxRate)) {
             $this->addError('invoice_default_tax_rate', 'Bitte einen gültigen USt.-Satz eingeben.');
 
             return;
@@ -104,9 +129,61 @@ class Index extends Component
         session()->flash('success', 'Einstellungen wurden gespeichert.');
     }
 
-    public function render()
+    /**
+     * Die Testmodus-Einstellungen liegen immer in der Live-DB und sind aus
+     * dem Testmodus heraus nicht änderbar.
+     */
+    public function saveDemoSettings(DemoMode $demoMode): void
     {
-        return view('livewire.admin.settings.index')
+        if ($demoMode->isActive()) {
+            return;
+        }
+
+        $validated = $this->validate([
+            'demo_enabled' => ['boolean'],
+            'demo_reset_mode' => ['required', Rule::enum(DemoResetMode::class)],
+        ]);
+
+        $demoMode->settings()->update($validated);
+
+        ActivityLogger::log(
+            'settings.demo_updated',
+            'Testmodus-Einstellungen wurden geändert.'
+        );
+
+        session()->flash('success', 'Testmodus-Einstellungen wurden gespeichert.');
+    }
+
+    public function resetDemoData(DemoMode $demoMode, DemoDatabaseResetter $resetter): void
+    {
+        if ($demoMode->isActive()) {
+            return;
+        }
+
+        try {
+            $resetter->reset();
+        } catch (Throwable $exception) {
+            report($exception);
+            session()->flash('error', 'Zurücksetzen fehlgeschlagen: '.$exception->getMessage());
+
+            return;
+        }
+
+        ActivityLogger::log(
+            'settings.demo_reset',
+            'Testdaten wurden auf den Live-Stand zurückgesetzt.'
+        );
+
+        session()->flash('success', 'Testdaten wurden auf den Live-Stand zurückgesetzt.');
+    }
+
+    public function render(DemoMode $demoMode)
+    {
+        return view('livewire.admin.settings.index', [
+            'isDemoActive' => $demoMode->isActive(),
+            'demoLastResetAt' => $demoMode->settings()->demo_last_reset_at,
+            'demoResetModes' => DemoResetMode::cases(),
+        ])
             ->layout('layouts.app', [
                 'title' => 'Einstellungen | VEMA',
                 'heading' => 'Einstellungen',
