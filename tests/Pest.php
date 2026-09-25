@@ -1,6 +1,11 @@
 <?php
 
+use App\Models\User;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /*
@@ -47,4 +52,57 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Baut nur das für das Kassabuch nötige Schema auf. Die vollständige
+ * Migrationskette setzt die Legacy-Tabellen (tb_user, tb_members, ...) voraus,
+ * die von keiner Migration angelegt werden — RefreshDatabase scheitert daher.
+ */
+function setUpCashBookSchema(): void
+{
+    Schema::create('tb_user', function (Blueprint $table) {
+        $table->increments('id');
+        $table->string('username')->nullable();
+        $table->string('email')->nullable();
+        $table->string('password')->nullable();
+        $table->boolean('enabled')->default(true);
+        $table->unsignedBigInteger('memberID')->nullable();
+    });
+
+    Schema::create('tb_member_accounts', function (Blueprint $table) {
+        $table->bigIncrements('accountID');
+    });
+
+    test()->artisan('migrate', [
+        '--path' => [
+            'database/migrations/2026_09_20_122656_create_permission_tables.php',
+            'database/migrations/2026_09_20_130000_create_settings_table.php',
+            'database/migrations/2026_09_20_140000_create_activity_log_table.php',
+            'database/migrations/2026_09_21_090500_add_invoice_fields_to_settings_table.php',
+            'database/migrations/2026_09_25_031630_create_cash_book_years_table.php',
+            'database/migrations/2026_09_25_031632_create_cash_book_entries_table.php',
+            'database/migrations/2026_09_25_031634_create_cash_book_attachments_table.php',
+        ],
+    ])->assertSuccessful();
+}
+
+/**
+ * @param  array<int, string>  $roles
+ */
+function createStaffUser(array $roles = ['kassier']): User
+{
+    $user = User::create([
+        'username' => 'kassier-'.Str::random(6),
+        'email' => fake()->unique()->safeEmail(),
+        'password' => bcrypt('password'),
+        'enabled' => true,
+    ]);
+
+    foreach ($roles as $role) {
+        Role::findOrCreate($role, 'web');
+        $user->assignRole($role);
+    }
+
+    return $user;
 }

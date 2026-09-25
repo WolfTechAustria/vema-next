@@ -185,13 +185,19 @@
                 </a>
 
 
-                <a
-                    href="#"
-                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
-                >
-                    <span>▣</span>
-                    Finanzen
-                </a>
+                @if($webUser?->hasAnyRole(['admin', 'kassier']))
+                    <a
+                        href="{{ route('cash-book.index') }}"
+                        wire:navigate
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                        {{ request()->routeIs('cash-book.*')
+                            ? 'bg-slate-900 text-white'
+                            : 'text-slate-700 hover:bg-slate-100' }}"
+                    >
+                        <span>▣</span>
+                        Kassabuch
+                    </a>
+                @endif
 
 
                 @if($webUser?->hasAnyRole(['admin', 'kassier']))

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\CashBookController;
 use App\Http\Controllers\CircularController;
 use App\Http\Controllers\DutyPlanIcalController;
 use App\Http\Controllers\InvoiceController;
@@ -10,6 +11,8 @@ use App\Http\Controllers\MemberAuthController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberPortalDocumentController;
 use App\Http\Controllers\MembershipFeePrescriptionController;
+use App\Livewire\CashBook\Index as CashBookIndex;
+use App\Livewire\CashBook\Years as CashBookYears;
 use App\Livewire\Dashboard\Index as DashboardIndex;
 use App\Livewire\DutyPlan\Absences as DutyPlanAbsences;
 use App\Livewire\DutyPlan\Index as DutyPlanIndex;
@@ -168,6 +171,22 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/activity-log', App\Livewire\Admin\ActivityLog\Index::class)
         ->middleware('admin')
         ->name('admin.activity-log.index');
+
+    Route::livewire('/cash-book', CashBookIndex::class)
+        ->middleware('invoices')
+        ->name('cash-book.index');
+
+    Route::livewire('/cash-book/years', CashBookYears::class)
+        ->middleware('invoices')
+        ->name('cash-book.years');
+
+    Route::get('/cash-book/years/{year}/report', [CashBookController::class, 'report'])
+        ->middleware('invoices')
+        ->name('cash-book.report');
+
+    Route::get('/cash-book/attachments/{attachment}', [CashBookController::class, 'showAttachment'])
+        ->middleware('invoices')
+        ->name('cash-book.attachments.show');
 
     Route::livewire('/invoices', InvoicesIndex::class)
         ->middleware('invoices')
