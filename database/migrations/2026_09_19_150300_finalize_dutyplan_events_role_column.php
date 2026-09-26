@@ -12,9 +12,9 @@ return new class extends Migration
         $unassigned = DB::table('tb_dutyplan_events')->whereNull('roleID')->count();
 
         if ($unassigned > 0) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 "Abbruch: {$unassigned} tb_dutyplan_events-Zeile(n) haben noch keine roleID. "
-                . 'Die Backfill-Migration (2026_09_19_150200) muss zuerst erfolgreich durchlaufen sein.'
+                .'Die Backfill-Migration (2026_09_19_150200) muss zuerst erfolgreich durchlaufen sein.'
             );
         }
 
@@ -25,13 +25,15 @@ return new class extends Migration
             ->count();
 
         if ($duplicates > 0) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 "Abbruch: {$duplicates} doppelte (planID, duty_date, roleID)-Kombination(en) in "
-                . 'tb_dutyplan_events gefunden — der neue Unique-Index würde fehlschlagen.'
+                .'tb_dutyplan_events gefunden — der neue Unique-Index würde fehlschlagen.'
             );
         }
 
-        DB::statement('ALTER TABLE tb_dutyplan_events DROP INDEX uq_dutyplan_plan_date_type');
+        Schema::table('tb_dutyplan_events', function (Blueprint $table) {
+            $table->dropUnique('uq_dutyplan_plan_date_type');
+        });
 
         Schema::table('tb_dutyplan_events', function (Blueprint $table) {
             $table->unsignedBigInteger('roleID')->nullable(false)->change();
@@ -60,7 +62,7 @@ return new class extends Migration
                     DB::table('tb_dutyplan_events')
                         ->where('eventID', $row->eventID)
                         ->update([
-                            'duty_type' => 'role_' . $row->roleID,
+                            'duty_type' => 'role_'.$row->roleID,
                         ]);
                 }
             }, 'eventID');
@@ -71,8 +73,8 @@ return new class extends Migration
             $table->unsignedBigInteger('roleID')->nullable()->change();
         });
 
-        DB::statement(
-            'ALTER TABLE tb_dutyplan_events ADD UNIQUE KEY uq_dutyplan_plan_date_type (planID, duty_date, duty_type)'
-        );
+        Schema::table('tb_dutyplan_events', function (Blueprint $table) {
+            $table->unique(['planID', 'duty_date', 'duty_type'], 'uq_dutyplan_plan_date_type');
+        });
     }
 };

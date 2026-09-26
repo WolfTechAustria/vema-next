@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Mail\BirthdayListMail;
 use App\Models\Member;
+use App\Models\Setting;
 use App\Services\BirthdayRecipientService;
 use App\Services\ImapSentMailService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -52,7 +53,7 @@ class SendMonthlyBirthdayList extends Command
         if ($recipients->isEmpty()) {
             $this->warn(
                 'Keine Empfänger in der Gruppe "'
-                .config('birthday.recipient_group')
+                .Setting::current()->birthdayRecipientGroupName()
                 .'" gefunden — es wurde keine Mail verschickt.'
             );
 

@@ -100,10 +100,16 @@
         </td>
 
         <td class="header-logo">
-            <img
-                src="{{ public_path('images/logo.jpg') }}"
-                alt="{{ \App\Models\Setting::current()->name }}"
-            >
+            @php
+                $clubLogoPath = app(\App\Services\ClubBranding::class)->logoPath();
+            @endphp
+
+            @if($clubLogoPath)
+                <img
+                    src="{{ $clubLogoPath }}"
+                    alt="{{ \App\Models\Setting::current()->name }}"
+                >
+            @endif
         </td>
     </tr>
 </table>

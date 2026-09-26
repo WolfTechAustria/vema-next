@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -22,22 +21,11 @@ return new class extends Migration
         });
 
         /*
-         * Einmalige Zeile mit den bisher hart codierten Werten aus
-         * resources/views/emails/partials/signature.blade.php & Co. —
-         * ändert sich also am Erscheinungsbild vorerst nichts, bis ein
-         * Admin die Einstellungen-Seite tatsächlich bearbeitet.
+         * Die Vereinsdaten der bestehenden Installation wurden hier einmalig
+         * eingefügt (Migration ist dort bereits gelaufen). Neue Installationen
+         * starten ohne Zeile — Setting::current() legt sie beim ersten Zugriff
+         * an, die Daten pflegt ein Admin unter „Einstellungen“.
          */
-        DB::table('tb_settings')->insert([
-            'name' => 'Schützengilde Angerberg',
-            'street' => 'Linden 3',
-            'zip' => '6320',
-            'city' => 'Angerberg',
-            'email' => 'vorstand@sg-angerberg.at',
-            'phone' => null,
-            'website' => 'www.sg-angerberg.at',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
     }
 
     public function down(): void

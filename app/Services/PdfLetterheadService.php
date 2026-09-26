@@ -3,14 +3,41 @@
 namespace App\Services;
 
 use setasign\Fpdi\Fpdi;
+use setasign\Fpdi\PdfParser\StreamReader;
 
 class PdfLetterheadService
 {
+    public function __construct(
+        public ClubBranding $branding,
+    ) {}
+
+    /**
+     * Legt das Briefpapier des Vereins unter jede Seite des übergebenen PDFs
+     * (Inhalt als String, z. B. DomPDF-output()). Ohne hinterlegtes
+     * Briefpapier wird das PDF unverändert zurückgegeben.
+     */
+    public function applyClubLetterhead(string $contentPdf): string
+    {
+        $letterheadPdf = $this->branding->letterheadPath();
+
+        if ($letterheadPdf === null) {
+            return $contentPdf;
+        }
+
+        return $this->apply(
+            StreamReader::createByString($contentPdf),
+            $letterheadPdf
+        );
+    }
+
+    /**
+     * @param  string|StreamReader  $contentPdf  Dateipfad oder PDF-Stream
+     */
     public function apply(
-        string $contentPdf,
+        string|StreamReader $contentPdf,
         string $letterheadPdf
     ): string {
-        $output = new Fpdi();
+        $output = new Fpdi;
 
         /*
          * Briefpapier laden.
@@ -26,22 +53,15 @@ class PdfLetterheadService
         $letterheadTemplate = $output->importPage(1);
 
         /*
-         * Beitragsvorschreibung laden.
+         * Inhalt laden.
          */
-        $content = new Fpdi();
-
-        $contentPages = $content->setSourceFile(
-            $contentPdf
-        );
+        $contentPages = $output->setSourceFile($contentPdf);
 
         for ($page = 1; $page <= $contentPages; $page++) {
 
-            $contentTemplate =
-                $content->importPage($page);
+            $pageTemplate = $output->importPage($page);
 
-            $size = $content->getTemplateSize(
-                $contentTemplate
-            );
+            $size = $output->getTemplateSize($pageTemplate);
 
             $orientation =
                 $size['width'] > $size['height']
@@ -57,7 +77,7 @@ class PdfLetterheadService
             );
 
             /*
-             * Briefpapier zuerst.
+             * Briefpapier zuerst, Inhalt darüber.
              */
             $output->useTemplate(
                 $letterheadTemplate,
@@ -66,16 +86,6 @@ class PdfLetterheadService
                 $size['width'],
                 $size['height']
             );
-
-            /*
-             * Inhalt darüber.
-             */
-            $output->setSourceFile(
-                $contentPdf
-            );
-
-            $pageTemplate =
-                $output->importPage($page);
 
             $output->useTemplate(
                 $pageTemplate,

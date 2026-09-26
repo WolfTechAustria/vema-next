@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\MemberAuth\Login;
+use App\Services\ClubBranding;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -10,6 +11,13 @@ use Tests\TestCase;
  * bevor eine Abfrage ausgeführt wird.
  */
 uses(TestCase::class);
+
+beforeEach(function () {
+    // Das Logo käme aus den Vereinseinstellungen (DB) — hier ohne Belang.
+    $this->mock(ClubBranding::class)
+        ->shouldReceive('logoUrl')
+        ->andReturnNull();
+});
 
 describe('member login', function () {
     it('requires an email address', function () {

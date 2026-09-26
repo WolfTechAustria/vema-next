@@ -15,7 +15,11 @@ return new class extends Migration
 
             $table->index('externalContactID');
 
-            $table->unsignedBigInteger('memberID')
+            /*
+             * Typ bleibt signed int wie tb_members.memberID — sonst scheitert
+             * MySQL am bestehenden Fremdschlüssel fk_dutyplan_assignment_member.
+             */
+            $table->integer('memberID')
                 ->nullable()
                 ->change();
         });
@@ -27,7 +31,7 @@ return new class extends Migration
             $table->dropIndex(['externalContactID']);
             $table->dropColumn('externalContactID');
 
-            $table->unsignedBigInteger('memberID')
+            $table->integer('memberID')
                 ->nullable(false)
                 ->change();
         });

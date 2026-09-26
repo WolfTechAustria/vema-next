@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\CashBookController;
 use App\Http\Controllers\CircularController;
 use App\Http\Controllers\DemoModeController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\MemberAuthController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberPortalDocumentController;
 use App\Http\Controllers\MembershipFeePrescriptionController;
+use App\Livewire\Admin\Settings\Documents;
 use App\Livewire\CashBook\Index as CashBookIndex;
 use App\Livewire\CashBook\Years as CashBookYears;
 use App\Livewire\Dashboard\Index as DashboardIndex;
@@ -175,6 +177,10 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
         ->middleware('admin')
         ->name('admin.settings.index');
 
+    Route::livewire('/settings/documents', Documents::class)
+        ->middleware('admin')
+        ->name('admin.settings.documents');
+
     Route::livewire('/activity-log', App\Livewire\Admin\ActivityLog\Index::class)
         ->middleware('admin')
         ->name('admin.activity-log.index');
@@ -258,3 +264,6 @@ Route::middleware('auth:member')->group(function () {
 
 Route::get('/calendar/duty/{token}.ics', [DutyPlanIcalController::class, 'show'])
     ->name('duty-plan.ical');
+
+Route::get('/branding/logo', [BrandingController::class, 'logo'])
+    ->name('branding.logo');

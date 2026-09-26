@@ -85,30 +85,9 @@ class CircularController extends Controller
             ]
         )->setPaper('a4');
 
-        $contentPath = tempnam(
-            sys_get_temp_dir(),
-            'circular_batch_'
-        ).'.pdf';
-
-        file_put_contents(
-            $contentPath,
+        $finalPdf = $letterheadService->applyClubLetterhead(
             $pdf->output()
         );
-
-        $letterheadPath = storage_path(
-            'app/templates/briefpapier.pdf'
-        );
-
-        try {
-            $finalPdf = $letterheadService->apply(
-                $contentPath,
-                $letterheadPath
-            );
-        } finally {
-            if (is_file($contentPath)) {
-                unlink($contentPath);
-            }
-        }
 
         $fileName =
             'Rundschreiben_'

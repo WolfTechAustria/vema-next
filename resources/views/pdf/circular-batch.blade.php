@@ -128,7 +128,7 @@
                 @endif
 
                 <div class="date">
-                    Angerberg, am {{ now()->format('d.m.Y') }}
+                    {{ \App\Models\Setting::current()->letterDateLine() }}
                 </div>
 
             </div>
@@ -137,43 +137,7 @@
                 {!! $page['body'] !!}
             </div>
 
-            <table class="signatures">
-
-                <tr>
-
-                    <td>
-
-                        Der Oberschützenmeister<br>
-
-                        <img
-                            class="signature-image"
-                            src="{{ public_path('images/letterhead/signatureOSM.JPG') }}"
-                        >
-
-                        <br>
-
-                        (OBERHAUSER Wolfgang)
-
-                    </td>
-
-                    <td>
-
-                        Der Schriftführer<br>
-
-                        <img
-                            class="signature-image"
-                            src="{{ public_path('images/letterhead/signatureSF.JPG') }}"
-                        >
-
-                        <br>
-
-                        (OBRIST Wolfgang)
-
-                    </td>
-
-                </tr>
-
-            </table>
+            @include('pdf.partials.signatures')
 
         </div>
 

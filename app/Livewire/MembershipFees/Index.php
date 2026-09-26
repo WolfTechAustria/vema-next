@@ -221,32 +221,8 @@ class Index extends Component
                 ]
             )->setPaper('a4', 'portrait');
 
-            $tempDirectory = storage_path('app/temp');
-
-            if (! is_dir($tempDirectory)) {
-                mkdir($tempDirectory, 0775, true);
-            }
-
-            $tempPdf = $tempDirectory
-                .'/mail_prescription_'
-                .$entry->entryID
-                .'.pdf';
-
-            file_put_contents(
-                $tempPdf,
-                $pdf->output()
-            );
-
-            $letterheadPdf = storage_path(
-                'app/templates/briefpapier.pdf'
-            );
-
-            $finalPdf = app(PdfLetterheadService::class)->apply(
-                $tempPdf,
-                $letterheadPdf
-            );
-
-            @unlink($tempPdf);
+            $finalPdf = app(PdfLetterheadService::class)
+                ->applyClubLetterhead($pdf->output());
 
             $filename =
                 'Mitgliedsbeitrag_'
@@ -611,32 +587,8 @@ class Index extends Component
             ]
         )->setPaper('a4', 'portrait');
 
-        $tempDirectory = storage_path('app/temp');
-
-        if (! is_dir($tempDirectory)) {
-            mkdir($tempDirectory, 0775, true);
-        }
-
-        $tempPdf = $tempDirectory
-            .'/mail_prescription_'
-            .$entry->entryID
-            .'.pdf';
-
-        file_put_contents(
-            $tempPdf,
-            $pdf->output()
-        );
-
-        $letterheadPdf = storage_path(
-            'app/templates/briefpapier.pdf'
-        );
-
-        $finalPdf = app(PdfLetterheadService::class)->apply(
-            $tempPdf,
-            $letterheadPdf
-        );
-
-        @unlink($tempPdf);
+        $finalPdf = app(PdfLetterheadService::class)
+            ->applyClubLetterhead($pdf->output());
 
         $filename =
             'Mitgliedsbeitrag_'

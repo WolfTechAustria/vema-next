@@ -4,11 +4,22 @@
         href="{{ route('admin.settings.index') }}"
         wire:navigate
         class="whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition
-        {{ request()->routeIs('admin.settings.*')
+        {{ request()->routeIs('admin.settings.index')
             ? 'border-slate-900 text-slate-900'
             : 'border-transparent text-slate-500 hover:text-slate-800' }}"
     >
         Vereinseinstellungen
+    </a>
+
+    <a
+        href="{{ route('admin.settings.documents') }}"
+        wire:navigate
+        class="whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition
+        {{ request()->routeIs('admin.settings.documents')
+            ? 'border-slate-900 text-slate-900'
+            : 'border-transparent text-slate-500 hover:text-slate-800' }}"
+    >
+        Briefpapier & E-Mail
     </a>
 
     <a

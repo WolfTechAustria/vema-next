@@ -3,10 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\MembershipFeeEntry;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\MembershipFeePrescription;
+use App\Models\MembershipFeeYear;
 use App\Models\Template;
-use App\Services\TemplateRendererService;
 use App\Services\PdfLetterheadService;
+use App\Services\TemplateRendererService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use setasign\Fpdi\Fpdi;
+use setasign\Fpdi\PdfParser\StreamReader;
 
 class MembershipFeePrescriptionController extends Controller
 {
@@ -20,7 +26,7 @@ class MembershipFeePrescriptionController extends Controller
             ->where('active', true)
             ->first();
 
-        if (!$template) {
+        if (! $template) {
             dd('Template membership_fee_prescription wurde nicht gefunden.');
         }
 
@@ -74,33 +80,8 @@ class MembershipFeePrescriptionController extends Controller
             'body' => $body,
         ])->setPaper('a4', 'portrait');
 
-        $tempDirectory = storage_path('app/temp');
-
-        if (!is_dir($tempDirectory)) {
-            mkdir($tempDirectory, 0775, true);
-        }
-
-        $tempPdf = $tempDirectory
-            . '/prescription_'
-            . $entry->entryID
-            . '.pdf';
-
-        file_put_contents(
-            $tempPdf,
-            $pdf->output()
-        );
-
-        $letterheadPdf = storage_path(
-            'app/templates/briefpapier.pdf'
-        );
-
         $finalPdf = app(PdfLetterheadService::class)
-            ->apply(
-                $tempPdf,
-                $letterheadPdf
-            );
-
-        @unlink($tempPdf);
+            ->applyClubLetterhead($pdf->output());
 
         $filename = sprintf(
             '%d_Mitgliedsbeitragsvorschreibung_%d.pdf',
@@ -113,22 +94,20 @@ class MembershipFeePrescriptionController extends Controller
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' =>
-                    'attachment; filename="' . $filename . '"',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             ]
         );
     }
 
-    public function preview(\App\Models\Template $template)
+    public function preview(Template $template)
     {
-        $entry = \App\Models\MembershipFeeEntry::query()
+        $entry = MembershipFeeEntry::query()
             ->with([
                 'member.city',
                 'member.emails',
                 'year',
             ])
-            ->whereHas('member', fn ($query) =>
-            $query->where('active', 1)
+            ->whereHas('member', fn ($query) => $query->where('active', 1)
             )
             ->orderByDesc('entryID')
             ->firstOrFail();
@@ -136,10 +115,8 @@ class MembershipFeePrescriptionController extends Controller
         $member = $entry->member;
         $year = $entry->year;
 
-
-
         $renderer = app(
-            \App\Services\TemplateRendererService::class
+            TemplateRendererService::class
         );
 
         if ($template->key === 'membership_fee_reminder') {
@@ -179,7 +156,7 @@ class MembershipFeePrescriptionController extends Controller
 
         $email = $member->emails->first()?->email;
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        $pdf = Pdf::loadView(
             'pdf.membership-fee-prescription',
             [
                 'entry' => $entry,
@@ -194,31 +171,8 @@ class MembershipFeePrescriptionController extends Controller
             ]
         )->setPaper('a4', 'portrait');
 
-        $tempDirectory = storage_path('app/temp');
-
-        if (!is_dir($tempDirectory)) {
-            mkdir($tempDirectory, 0775, true);
-        }
-
-        $tempPdf = $tempDirectory . '/preview_membership_fee.pdf';
-
-        file_put_contents(
-            $tempPdf,
-            $pdf->output()
-        );
-
-        $letterheadPdf = storage_path(
-            'app/templates/briefpapier.pdf'
-        );
-
-        $finalPdf = app(
-            \App\Services\PdfLetterheadService::class
-        )->apply(
-            $tempPdf,
-            $letterheadPdf
-        );
-
-        @unlink($tempPdf);
+        $finalPdf = app(PdfLetterheadService::class)
+            ->applyClubLetterhead($pdf->output());
 
         $previewFilename = $template->key === 'membership_fee_reminder'
             ? 'Vorschau_Erinnerung.pdf'
@@ -229,16 +183,15 @@ class MembershipFeePrescriptionController extends Controller
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' =>    'inline; filename="' . $previewFilename . '"',
+                'Content-Disposition' => 'inline; filename="'.$previewFilename.'"',
             ]
         );
     }
 
-
     public function downloadAll(
-    \App\Models\MembershipFeeYear $year
+        MembershipFeeYear $year
     ) {
-        $entries = \App\Models\MembershipFeeEntry::query()
+        $entries = MembershipFeeEntry::query()
             ->with([
                 'member.city',
                 'member.emails',
@@ -246,14 +199,12 @@ class MembershipFeePrescriptionController extends Controller
             ])
             ->where('yearID', $year->yearID)
             ->where('status', 'open')
-            ->whereHas('member', fn ($query) =>
-            $query->where('active', 1)
+            ->whereHas('member', fn ($query) => $query->where('active', 1)
             )
             ->get()
-            ->sortBy(fn ($entry) =>
-                ($entry->member?->surname ?? '')
-                . ' '
-                . ($entry->member?->name ?? '')
+            ->sortBy(fn ($entry) => ($entry->member?->surname ?? '')
+                .' '
+                .($entry->member?->name ?? '')
             )
             ->values();
 
@@ -263,13 +214,13 @@ class MembershipFeePrescriptionController extends Controller
             'Keine offenen Beiträge vorhanden.'
         );
 
-        $template = \App\Models\Template::query()
+        $template = Template::query()
             ->where('key', 'membership_fee_prescription')
             ->where('active', true)
             ->firstOrFail();
 
         $renderer = app(
-            \App\Services\TemplateRendererService::class
+            TemplateRendererService::class
         );
 
         $pages = $entries->map(function ($entry) use (
@@ -296,26 +247,23 @@ class MembershipFeePrescriptionController extends Controller
                 'member' => $member,
                 'year' => $year,
 
-                'amount' =>
-                    $entry->amount
+                'amount' => $entry->amount
                     ?? $year->default_amount,
 
                 'salutation' => $salutation,
 
-                'email' =>
-                    $member->emails
-                        ->first()?->email,
+                'email' => $member->emails
+                    ->first()?->email,
 
-                'body' =>
-                    $renderer
-                        ->membershipFeePrescription(
-                            $template,
-                            $entry
-                        ),
+                'body' => $renderer
+                    ->membershipFeePrescription(
+                        $template,
+                        $entry
+                    ),
             ];
         });
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        $pdf = Pdf::loadView(
             'pdf.membership-fee-prescriptions-batch',
             [
                 'pages' => $pages,
@@ -323,39 +271,13 @@ class MembershipFeePrescriptionController extends Controller
             ]
         )->setPaper('a4', 'portrait');
 
-        $tempDirectory = storage_path('app/temp');
-
-        if (!is_dir($tempDirectory)) {
-            mkdir($tempDirectory, 0775, true);
-        }
-
-        $tempPdf = $tempDirectory
-            . '/membership_fee_batch_'
-            . $year->year
-            . '.pdf';
-
-        file_put_contents(
-            $tempPdf,
-            $pdf->output()
-        );
-
-        $letterheadPdf = storage_path(
-            'app/templates/briefpapier.pdf'
-        );
-
-        $finalPdf = app(
-            \App\Services\PdfLetterheadService::class
-        )->apply(
-            $tempPdf,
-            $letterheadPdf
-        );
-
-        @unlink($tempPdf);
+        $finalPdf = app(PdfLetterheadService::class)
+            ->applyClubLetterhead($pdf->output());
 
         $filename =
             'Beitragsvorschreibungen_'
-            . $year->year
-            . '.pdf';
+            .$year->year
+            .'.pdf';
 
         return response(
             $finalPdf,
@@ -363,15 +285,14 @@ class MembershipFeePrescriptionController extends Controller
             [
                 'Content-Type' => 'application/pdf',
 
-                'Content-Disposition' =>
-                    'attachment; filename="'
-                    . $filename
-                    . '"',
+                'Content-Disposition' => 'attachment; filename="'
+                    .$filename
+                    .'"',
             ]
         );
     }
 
-    public function downloadSelected(\Illuminate\Http\Request $request)
+    public function downloadSelected(Request $request)
     {
         $entryIds = collect(
             explode(',', (string) $request->query('entries'))
@@ -387,21 +308,19 @@ class MembershipFeePrescriptionController extends Controller
             'Keine Beiträge ausgewählt.'
         );
 
-        $entries = \App\Models\MembershipFeeEntry::query()
+        $entries = MembershipFeeEntry::query()
             ->with([
                 'member.city',
                 'member.emails',
                 'year',
             ])
             ->whereIn('entryID', $entryIds)
-            ->whereHas('member', fn ($query) =>
-            $query->where('active', 1)
+            ->whereHas('member', fn ($query) => $query->where('active', 1)
             )
             ->get()
-            ->sortBy(fn ($entry) =>
-                ($entry->member?->surname ?? '')
-                . ' '
-                . ($entry->member?->name ?? '')
+            ->sortBy(fn ($entry) => ($entry->member?->surname ?? '')
+                .' '
+                .($entry->member?->name ?? '')
             )
             ->values();
 
@@ -411,13 +330,13 @@ class MembershipFeePrescriptionController extends Controller
             'Keine gültigen Beiträge gefunden.'
         );
 
-        $template = \App\Models\Template::query()
+        $template = Template::query()
             ->where('key', 'membership_fee_prescription')
             ->where('active', true)
             ->firstOrFail();
 
         $renderer = app(
-            \App\Services\TemplateRendererService::class
+            TemplateRendererService::class
         );
 
         $pages = $entries->map(function ($entry) use (
@@ -443,21 +362,18 @@ class MembershipFeePrescriptionController extends Controller
                 'entry' => $entry,
                 'member' => $member,
                 'year' => $year,
-                'amount' =>
-                    $entry->amount
+                'amount' => $entry->amount
                     ?? $year->default_amount,
                 'salutation' => $salutation,
-                'email' =>
-                    $member->emails->first()?->email,
-                'body' =>
-                    $renderer->membershipFeePrescription(
-                        $template,
-                        $entry
-                    ),
+                'email' => $member->emails->first()?->email,
+                'body' => $renderer->membershipFeePrescription(
+                    $template,
+                    $entry
+                ),
             ];
         });
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        $pdf = Pdf::loadView(
             'pdf.membership-fee-prescriptions-batch',
             [
                 'pages' => $pages,
@@ -465,34 +381,8 @@ class MembershipFeePrescriptionController extends Controller
             ]
         )->setPaper('a4', 'portrait');
 
-        $tempDirectory = storage_path('app/temp');
-
-        if (!is_dir($tempDirectory)) {
-            mkdir($tempDirectory, 0775, true);
-        }
-
-        $tempPdf = $tempDirectory
-            . '/membership_fee_selected_'
-            . uniqid()
-            . '.pdf';
-
-        file_put_contents(
-            $tempPdf,
-            $pdf->output()
-        );
-
-        $letterheadPdf = storage_path(
-            'app/templates/briefpapier.pdf'
-        );
-
-        $finalPdf = app(
-            \App\Services\PdfLetterheadService::class
-        )->apply(
-            $tempPdf,
-            $letterheadPdf
-        );
-
-        @unlink($tempPdf);
+        $finalPdf = app(PdfLetterheadService::class)
+            ->applyClubLetterhead($pdf->output());
 
         $filename = 'Beitragsvorschreibungen_Auswahl.pdf';
 
@@ -501,15 +391,15 @@ class MembershipFeePrescriptionController extends Controller
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' =>
-                    'attachment; filename="' . $filename . '"',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             ]
         );
     }
+
     public function showStoredPdf(
-        \App\Models\MembershipFeePrescription $prescription
+        MembershipFeePrescription $prescription
     ) {
-        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+        $disk = Storage::disk('local');
 
         abort_unless(
             $disk->exists($prescription->file_path),
@@ -522,14 +412,13 @@ class MembershipFeePrescriptionController extends Controller
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' =>
-                    'inline; filename="' . $prescription->file_name . '"',
+                'Content-Disposition' => 'inline; filename="'.$prescription->file_name.'"',
             ]
         );
     }
 
     public function downloadSelectedReminders(
-        \Illuminate\Http\Request $request
+        Request $request
     ) {
         $entryIds = collect(
             explode(',', (string) $request->query('entries'))
@@ -545,7 +434,7 @@ class MembershipFeePrescriptionController extends Controller
             'Keine Beiträge ausgewählt.'
         );
 
-        $entries = \App\Models\MembershipFeeEntry::query()
+        $entries = MembershipFeeEntry::query()
             ->with([
                 'member.city',
                 'member.emails',
@@ -554,12 +443,10 @@ class MembershipFeePrescriptionController extends Controller
             ])
             ->whereIn('entryID', $entryIds)
             ->where('status', 'open')
-            ->whereHas('member', fn ($query) =>
-            $query->where('active', 1)
+            ->whereHas('member', fn ($query) => $query->where('active', 1)
             )
             ->get()
-            ->filter(fn ($entry) =>
-            $entry->isReminderDue()
+            ->filter(fn ($entry) => $entry->isReminderDue()
             )
             ->values();
 
@@ -569,13 +456,13 @@ class MembershipFeePrescriptionController extends Controller
             'Keine fälligen Erinnerungen gefunden.'
         );
 
-        $template = \App\Models\Template::query()
+        $template = Template::query()
             ->where('key', 'membership_fee_reminder')
             ->where('active', true)
             ->firstOrFail();
 
         $renderer = app(
-            \App\Services\TemplateRendererService::class
+            TemplateRendererService::class
         );
 
         $pages = $entries->map(function ($entry) use (
@@ -597,26 +484,22 @@ class MembershipFeePrescriptionController extends Controller
                 'member' => $member,
                 'year' => $year,
 
-                'amount' =>
-                    $entry->amount
+                'amount' => $entry->amount
                     ?? $year->default_amount,
 
-                'email' =>
-                    $member->emails->first()?->email,
+                'email' => $member->emails->first()?->email,
 
-                'reminderLevel' =>
-                    $nextReminderLevel,
+                'reminderLevel' => $nextReminderLevel,
 
-                'body' =>
-                    $renderer->membershipFeeReminder(
-                        $template,
-                        $entry,
-                        $nextReminderLevel
-                    ),
+                'body' => $renderer->membershipFeeReminder(
+                    $template,
+                    $entry,
+                    $nextReminderLevel
+                ),
             ];
         });
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        $pdf = Pdf::loadView(
             'pdf.membership-fee-prescriptions-batch',
             [
                 'pages' => $pages,
@@ -624,40 +507,8 @@ class MembershipFeePrescriptionController extends Controller
             ]
         )->setPaper('a4', 'portrait');
 
-        $tempDirectory = storage_path('app/temp');
-
-        if (!is_dir($tempDirectory)) {
-            mkdir($tempDirectory, 0775, true);
-        }
-
-        $tempPdf = $tempDirectory
-            . '/membership_fee_reminders_'
-            . uniqid()
-            . '.pdf';
-
-        file_put_contents(
-            $tempPdf,
-            $pdf->output()
-        );
-
-        $finalPdf = app(
-            \App\Services\PdfLetterheadService::class
-        )->apply(
-            $tempPdf,
-            storage_path('app/templates/briefpapier.pdf')
-        );
-
-        @unlink($tempPdf);
-
-        $tempFinalPdf = $tempDirectory
-            . '/final_reminders_'
-            . uniqid()
-            . '.pdf';
-
-        file_put_contents(
-            $tempFinalPdf,
-            $finalPdf
-        );
+        $finalPdf = app(PdfLetterheadService::class)
+            ->applyClubLetterhead($pdf->output());
 
         foreach ($pages->values() as $index => $pageData) {
 
@@ -670,9 +521,11 @@ class MembershipFeePrescriptionController extends Controller
              * Die entsprechende Seite aus dem Sammel-PDF
              * als eigenes PDF herauslösen.
              */
-            $singlePdf = new \setasign\Fpdi\Fpdi();
+            $singlePdf = new Fpdi;
 
-            $singlePdf->setSourceFile($tempFinalPdf);
+            $singlePdf->setSourceFile(
+                StreamReader::createByString($finalPdf)
+            );
 
             $templateId = $singlePdf->importPage(
                 $index + 1
@@ -709,26 +562,26 @@ class MembershipFeePrescriptionController extends Controller
              */
             $filename =
                 'Mitgliedsbeitrag_'
-                . $year->year
-                . '_Erinnerung_'
-                . $reminderLevel
-                . '_'
-                . $member->surname
-                . '_'
-                . $member->memberID
-                . '.pdf';
+                .$year->year
+                .'_Erinnerung_'
+                .$reminderLevel
+                .'_'
+                .$member->surname
+                .'_'
+                .$member->memberID
+                .'.pdf';
 
             $storagePath =
                 'membership-fees/'
-                . $year->year
-                . '/'
-                . $member->memberID
-                . '/'
-                . now()->format('Ymd_His')
-                . '_'
-                . $filename;
+                .$year->year
+                .'/'
+                .$member->memberID
+                .'/'
+                .now()->format('Ymd_His')
+                .'_'
+                .$filename;
 
-            \Illuminate\Support\Facades\Storage::disk('local')->put(
+            Storage::disk('local')->put(
                 $storagePath,
                 $singlePdfContent
             );
@@ -736,7 +589,7 @@ class MembershipFeePrescriptionController extends Controller
             /*
              * Historieneintrag für Postversand.
              */
-            \App\Models\MembershipFeePrescription::create([
+            MembershipFeePrescription::create([
                 'entryID' => $entry->entryID,
                 'memberID' => $member->memberID,
                 'yearID' => $year->yearID,
@@ -754,23 +607,20 @@ class MembershipFeePrescriptionController extends Controller
             ]);
         }
 
-        @unlink($tempFinalPdf);
-
         return response(
             $finalPdf,
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' =>
-                    'attachment; filename="Mitgliedsbeitrag_Erinnerungen.pdf"',
+                'Content-Disposition' => 'attachment; filename="Mitgliedsbeitrag_Erinnerungen.pdf"',
             ]
         );
     }
 
     public function downloadOpenOverview(
-        \App\Models\MembershipFeeYear $year
+        MembershipFeeYear $year
     ) {
-        $entries = \App\Models\MembershipFeeEntry::query()
+        $entries = MembershipFeeEntry::query()
             ->with([
                 'member.city',
                 'member.emails',
@@ -779,14 +629,12 @@ class MembershipFeePrescriptionController extends Controller
             ])
             ->where('yearID', $year->yearID)
             ->where('status', 'open')
-            ->whereHas('member', fn ($query) =>
-            $query->where('active', 1)
+            ->whereHas('member', fn ($query) => $query->where('active', 1)
             )
             ->get()
-            ->sortBy(fn ($entry) =>
-                ($entry->member?->surname ?? '')
-                . ' '
-                . ($entry->member?->name ?? '')
+            ->sortBy(fn ($entry) => ($entry->member?->surname ?? '')
+                .' '
+                .($entry->member?->name ?? '')
             )
             ->values();
 
@@ -794,7 +642,7 @@ class MembershipFeePrescriptionController extends Controller
             fn ($entry) => (float) ($entry->amount ?? 0)
         );
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        $pdf = Pdf::loadView(
             'pdf.membership-fees-open-overview',
             [
                 'year' => $year,
@@ -804,9 +652,7 @@ class MembershipFeePrescriptionController extends Controller
         )->setPaper('a4', 'portrait');
 
         return $pdf->download(
-            'Offene_Mitgliedsbeiträge_' . $year->year . '.pdf'
+            'Offene_Mitgliedsbeiträge_'.$year->year.'.pdf'
         );
     }
-
-
 }

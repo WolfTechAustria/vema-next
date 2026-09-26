@@ -1,35 +1,24 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-public function up(): void
-{
-DB::statement('
-ALTER TABLE tb_dutyplan_events
-DROP INDEX uq_dutyplan_date_type
-');
+    public function up(): void
+    {
+        Schema::table('tb_dutyplan_events', function (Blueprint $table) {
+            $table->dropUnique('uq_dutyplan_date_type');
+            $table->unique(['planID', 'duty_date', 'duty_type'], 'uq_dutyplan_plan_date_type');
+        });
+    }
 
-DB::statement('
-ALTER TABLE tb_dutyplan_events
-ADD UNIQUE KEY uq_dutyplan_plan_date_type
-(planID, duty_date, duty_type)
-');
-}
-
-public function down(): void
-{
-DB::statement('
-ALTER TABLE tb_dutyplan_events
-DROP INDEX uq_dutyplan_plan_date_type
-');
-
-DB::statement('
-ALTER TABLE tb_dutyplan_events
-ADD UNIQUE KEY uq_dutyplan_date_type
-(duty_date, duty_type)
-');
-}
+    public function down(): void
+    {
+        Schema::table('tb_dutyplan_events', function (Blueprint $table) {
+            $table->dropUnique('uq_dutyplan_plan_date_type');
+            $table->unique(['duty_date', 'duty_type'], 'uq_dutyplan_date_type');
+        });
+    }
 };

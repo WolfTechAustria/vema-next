@@ -55,9 +55,8 @@ function something()
 }
 
 /**
- * Baut nur das für das Kassabuch nötige Schema auf. Die vollständige
- * Migrationskette setzt die Legacy-Tabellen (tb_user, tb_members, ...) voraus,
- * die von keiner Migration angelegt werden — RefreshDatabase scheitert daher.
+ * Baut nur das für das Kassabuch nötige Schema auf (schneller als die
+ * vollständige Migrationskette, die Feature-Tests per RefreshDatabase nutzen).
  */
 function setUpCashBookSchema(): void
 {
@@ -84,6 +83,7 @@ function setUpCashBookSchema(): void
             'database/migrations/2026_09_25_031632_create_cash_book_entries_table.php',
             'database/migrations/2026_09_25_031634_create_cash_book_attachments_table.php',
             'database/migrations/2026_09_25_184245_add_demo_mode_to_settings_table.php',
+            'database/migrations/2026_09_26_191133_add_branding_and_mail_to_settings_table.php',
         ],
     ])->assertSuccessful();
 }

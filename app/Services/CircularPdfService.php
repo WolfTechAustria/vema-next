@@ -34,26 +34,9 @@ class CircularPdfService
             ]
         )->setPaper('a4');
 
-        $contentPath = tempnam(
-            sys_get_temp_dir(),
-            'circular_'
-        ).'.pdf';
-
-        file_put_contents(
-            $contentPath,
+        return $this->letterheadService->applyClubLetterhead(
             $pdf->output()
         );
-
-        try {
-            return $this->letterheadService->apply(
-                $contentPath,
-                storage_path('app/templates/briefpapier.pdf')
-            );
-        } finally {
-            if (is_file($contentPath)) {
-                unlink($contentPath);
-            }
-        }
     }
 
     public function fileNameFor(Circular $circular, Member $member): string

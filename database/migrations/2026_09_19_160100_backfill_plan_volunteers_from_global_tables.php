@@ -18,7 +18,11 @@ return new class extends Migration
 
         $memberRows = [];
 
-        foreach (DB::table('tb_dutyplan_volunteers')->get() as $volunteer) {
+        $legacyVolunteers = Schema::hasTable('tb_dutyplan_volunteers')
+            ? DB::table('tb_dutyplan_volunteers')->get()
+            : collect();
+
+        foreach ($legacyVolunteers as $volunteer) {
             foreach ($planIDs as $planID) {
                 $memberRows[] = [
                     'planID' => $planID,

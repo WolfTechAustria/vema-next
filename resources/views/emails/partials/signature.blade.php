@@ -1,5 +1,6 @@
 @php
     $clubSettings = \App\Models\Setting::current();
+    $clubLogoUrl = app(\App\Services\ClubBranding::class)->logoUrl();
 @endphp
 
 <table
@@ -15,29 +16,31 @@
     "
 >
     <tr>
-        <td
-            style="
-                width: 140px;
-                padding-right: 24px;
-                vertical-align: middle;
-            "
-        >
-            <img
-                src="https://vema.sg-angerberg.at/images/logo.png"
-                alt="{{ $clubSettings->name }}"
-                width="120"
+        @if($clubLogoUrl)
+            <td
                 style="
-                    display: block;
-                    max-width: 120px;
-                    height: auto;
+                    width: 140px;
+                    padding-right: 24px;
+                    vertical-align: middle;
                 "
             >
-        </td>
+                <img
+                    src="{{ $clubLogoUrl }}"
+                    alt="{{ $clubSettings->name }}"
+                    width="120"
+                    style="
+                        display: block;
+                        max-width: 120px;
+                        height: auto;
+                    "
+                >
+            </td>
+        @endif
 
         <td
             style="
-                padding-left: 24px;
-                border-left: 1px solid #e5e7eb;
+                padding-left: {{ $clubLogoUrl ? '24px' : '0' }};
+                border-left: {{ $clubLogoUrl ? '1px solid #e5e7eb' : 'none' }};
                 vertical-align: middle;
                 font-size: 13px;
                 line-height: 1.6;

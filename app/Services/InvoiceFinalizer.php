@@ -18,8 +18,7 @@ class InvoiceFinalizer
 {
     public function __construct(
         private readonly InvoiceNumberGenerator $numberGenerator
-    ) {
-    }
+    ) {}
 
     public function finalize(Invoice $invoice): Invoice
     {
@@ -54,24 +53,11 @@ class InvoiceFinalizer
             'settings' => Setting::current(),
         ])->setPaper('a4', 'portrait');
 
-        $tempDirectory = storage_path('app/temp');
+        $finalPdf = app(PdfLetterheadService::class)
+            ->applyClubLetterhead($pdf->output());
 
-        if (!is_dir($tempDirectory)) {
-            mkdir($tempDirectory, 0775, true);
-        }
-
-        $tempPdf = $tempDirectory . '/invoice_' . $invoice->invoiceID . '.pdf';
-
-        file_put_contents($tempPdf, $pdf->output());
-
-        $letterheadPdf = storage_path('app/templates/briefpapier.pdf');
-
-        $finalPdf = app(PdfLetterheadService::class)->apply($tempPdf, $letterheadPdf);
-
-        @unlink($tempPdf);
-
-        $filename = 'Rechnung_' . $invoice->invoice_number . '.pdf';
-        $storagePath = 'invoices/' . $invoice->invoice_date->format('Y') . '/' . $filename;
+        $filename = 'Rechnung_'.$invoice->invoice_number.'.pdf';
+        $storagePath = 'invoices/'.$invoice->invoice_date->format('Y').'/'.$filename;
 
         Storage::disk('local')->put($storagePath, $finalPdf);
 

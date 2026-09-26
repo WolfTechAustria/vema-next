@@ -59,13 +59,21 @@ return new class extends Migration
                 ->cascadeOnDelete();
         });
 
+        /*
+         * Übernahme aus dem Alt-VEMA — nur auf der bestehenden Installation.
+         * Eine neue, leere Datenbank startet ohne Beitragsjahre.
+         */
+        if (! Schema::hasTable('tb_membershipfee')) {
+            return;
+        }
+
         $years = range(2013, 2026);
 
         foreach ($years as $year) {
             $yearId = DB::table('tb_membership_fee_years')
                 ->insertGetId([
                     'year' => $year,
-                    'name' => 'Mitgliedsbeitrag ' . $year,
+                    'name' => 'Mitgliedsbeitrag '.$year,
                     'default_amount' => null,
                     'due_date' => null,
                     'active' => $year === 2026,
@@ -73,7 +81,7 @@ return new class extends Migration
                     'updated_at' => now(),
                 ]);
 
-            $column = 'fee' . $year;
+            $column = 'fee'.$year;
 
             $legacyRows = DB::table('tb_membershipfee')
                 ->select(

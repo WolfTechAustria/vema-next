@@ -38,6 +38,17 @@ return [
             'report' => false,
         ],
 
+        /*
+         * Logo, Briefpapier und Unterschriften des Vereins. Eigene Disk, damit
+         * der Testmodus (biegt nur "local" um) dieselben Dateien verwendet.
+         */
+        'branding' => [
+            'driver' => 'local',
+            'root' => storage_path('app/branding'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

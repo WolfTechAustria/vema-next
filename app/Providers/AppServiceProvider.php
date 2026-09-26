@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Setting;
 use App\Services\DemoMode;
 use Carbon\CarbonImmutable;
 use Illuminate\Mail\Events\MessageSending;
@@ -28,6 +29,27 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureDemoMode();
+        $this->configureClubMailSender();
+    }
+
+    /**
+     * Absender aus den Vereinseinstellungen statt aus .env, sofern hinterlegt.
+     * Wird erst gesetzt, wenn der MailManager tatsächlich gebraucht wird —
+     * so kostet nicht jeder Request eine Abfrage, und die Mailer übernehmen
+     * die Adresse beim Erzeugen (auch für die IMAP-Kopie).
+     */
+    protected function configureClubMailSender(): void
+    {
+        $this->app->afterResolving('mail.manager', function (): void {
+            $setting = Setting::current();
+
+            if (filled($setting->mail_from_address)) {
+                config([
+                    'mail.from.address' => $setting->mail_from_address,
+                    'mail.from.name' => $setting->mail_from_name ?: $setting->name,
+                ]);
+            }
+        });
     }
 
     /**

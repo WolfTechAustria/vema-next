@@ -25,11 +25,21 @@
 
         <div class="border-b border-slate-200 px-8 py-8 text-center">
 
-            <img
-                src="{{ asset('images/logo.jpg') }}"
-                alt="VEMA"
-                class="mx-auto mb-5 max-h-50 w-auto"
-            >
+            @php
+                $clubLogoUrl = app(\App\Services\ClubBranding::class)->logoUrl();
+            @endphp
+
+            @if($clubLogoUrl)
+                <img
+                    src="{{ $clubLogoUrl }}"
+                    alt="VEMA"
+                    class="mx-auto mb-5 max-h-50 w-auto"
+                >
+            @else
+                <p class="mb-5 text-2xl font-bold tracking-tight text-slate-900">
+                    {{ \App\Models\Setting::current()->name }}
+                </p>
+            @endif
 
             <h1 class="text-lg font-semibold text-slate-900">
                 Passwort vergessen

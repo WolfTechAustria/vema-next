@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Member;
 use App\Models\RecipientGroup;
+use App\Models\Setting;
 use Illuminate\Support\Collection;
 
 class BirthdayRecipientService
@@ -14,10 +15,10 @@ class BirthdayRecipientService
     public function resolveEmails(): Collection
     {
         $group = RecipientGroup::query()
-            ->where('name', config('birthday.recipient_group'))
+            ->where('name', Setting::current()->birthdayRecipientGroupName())
             ->first();
 
-        if (!$group) {
+        if (! $group) {
             return collect();
         }
 

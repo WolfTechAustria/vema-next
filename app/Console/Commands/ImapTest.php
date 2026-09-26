@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Services\ImapSentMailService;
 use Illuminate\Console\Command;
-use Webklex\PHPIMAP\ClientManager;
 
 class ImapTest extends Command
 {
@@ -11,22 +11,9 @@ class ImapTest extends Command
 
     protected $description = 'Testet die IMAP-Verbindung und listet alle Ordner auf';
 
-    public function handle(): int
+    public function handle(ImapSentMailService $imapSentMailService): int
     {
-        $cm = new ClientManager();
-
-        $client = $cm->make([
-            'host' => env('IMAP_HOST'),
-            'port' => (int) env('IMAP_PORT', 993),
-            'encryption' => env('IMAP_ENCRYPTION', 'ssl'),
-            'validate_cert' => filter_var(
-                env('IMAP_VALIDATE_CERT', true),
-                FILTER_VALIDATE_BOOLEAN
-            ),
-            'username' => env('IMAP_USERNAME'),
-            'password' => env('IMAP_PASSWORD'),
-            'protocol' => 'imap',
-        ]);
+        $client = $imapSentMailService->makeClient();
 
         try {
             $client->connect();
@@ -40,9 +27,9 @@ class ImapTest extends Command
 
             foreach ($folders as $folder) {
                 $this->line(
-                    '- Name: ' . $folder->name
-                    . ' | Pfad: ' . $folder->path
-                    . ' | Full: ' . $folder->full_name
+                    '- Name: '.$folder->name
+                    .' | Pfad: '.$folder->path
+                    .' | Full: '.$folder->full_name
                 );
             }
 
@@ -53,7 +40,7 @@ class ImapTest extends Command
         } catch (\Throwable $e) {
 
             $this->error(
-                'IMAP-Fehler: ' . $e->getMessage()
+                'IMAP-Fehler: '.$e->getMessage()
             );
 
             return self::FAILURE;
