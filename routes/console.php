@@ -31,3 +31,10 @@ Schedule::command('tenants:run', ['duty:send-reminders'])
 Schedule::command('tenants:run', ['demo:reset --if-nightly'])
     ->dailyAt(config('demo.reset_time'))
     ->withoutOverlapping();
+
+// Plattform: abgelaufene, nie bestätigte Registrierungen entfernen
+if (config('tenancy.mode') === 'multi') {
+    Schedule::command('tenants:prune-unverified')
+        ->dailyAt('04:00')
+        ->withoutOverlapping();
+}

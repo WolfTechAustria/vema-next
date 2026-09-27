@@ -27,7 +27,7 @@
 
     <p class="mt-4 text-sm text-slate-600">
         @if($tenant->status === \App\Enums\TenantStatus::Pending)
-            Dieser Verein ist registriert, der Zugang wird aber erst nach der Freischaltung aktiviert.
+            Dieser Verein ist registriert, wird aber erst eingerichtet, sobald die E-Mail-Adresse bestätigt ist.
         @elseif($tenant->status === \App\Enums\TenantStatus::Suspended)
             Der Zugang dieses Vereins ist derzeit gesperrt.
         @else

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Plan;
 use App\Enums\TenantStatus;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,6 +22,10 @@ class Tenant extends Model
 
     protected $guarded = [];
 
+    protected $hidden = [
+        'verification_token',
+    ];
+
     /**
      * @return array<string, string>
      */
@@ -29,7 +34,20 @@ class Tenant extends Model
         return [
             'status' => TenantStatus::class,
             'license_valid_until' => 'date',
+            'plan' => Plan::class,
+            'requested_plan' => Plan::class,
+            'trial_ends_at' => 'datetime',
+            'email_verified_at' => 'datetime',
+            'provisioned_at' => 'datetime',
         ];
+    }
+
+    /**
+     * In der Testphase (alle Funktionen) — danach gilt das gebuchte Paket.
+     */
+    public function isOnTrial(): bool
+    {
+        return $this->trial_ends_at !== null && $this->trial_ends_at->isFuture();
     }
 
     /**
@@ -58,12 +76,14 @@ class Tenant extends Model
      */
     public function host(): string
     {
-        return $this->slug.'.'.config('tenancy.central_domain');
+        return $this->slug.'.'.config('tenancy.tenant_domain');
     }
 
     public function url(): string
     {
-        return config('tenancy.scheme').'://'.$this->host();
+        $port = config('tenancy.url_port');
+
+        return config('tenancy.scheme').'://'.$this->host().($port ? ':'.$port : '');
     }
 
     /**

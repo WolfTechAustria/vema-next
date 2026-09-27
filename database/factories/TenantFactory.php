@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\Plan;
 use App\Enums\TenantStatus;
 use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -27,7 +28,15 @@ class TenantFactory extends Factory
             'license_valid_until' => now()->addYear(),
             'contact_name' => fake()->name(),
             'contact_email' => fake()->safeEmail(),
+            'plan' => Plan::Starter,
+            'email_verified_at' => now(),
+            'provisioned_at' => now(),
         ];
+    }
+
+    public function onTrial(): static
+    {
+        return $this->state(fn (array $attributes) => ['trial_ends_at' => now()->addDays(30)]);
     }
 
     public function pending(): static

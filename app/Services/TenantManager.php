@@ -8,9 +8,11 @@ use Closure;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Mandantenfähigkeit (TENANCY_MODE=multi): schaltet Datenbank, Dateien,
@@ -74,7 +76,7 @@ class TenantManager
     public function findByHost(string $host): ?Tenant
     {
         $host = Str::lower($host);
-        $suffix = '.'.Str::lower(config('tenancy.central_domain'));
+        $suffix = '.'.Str::lower(config('tenancy.tenant_domain'));
 
         if (Str::endsWith($host, $suffix)) {
             $slug = Str::beforeLast($host, $suffix);
@@ -91,7 +93,7 @@ class TenantManager
 
     public function isCentralHost(string $host): bool
     {
-        return Str::lower($host) === Str::lower(config('tenancy.central_domain'));
+        return Str::lower($host) === Str::lower(config('tenancy.platform_host'));
     }
 
     public function apply(Tenant $tenant): void
@@ -207,9 +209,18 @@ class TenantManager
      */
     private function refreshServices(): void
     {
+        // Der Password-Broker hält die DB-Verbindung ab dem ersten Zugriff fest.
+        app()->forgetInstance('auth.password');
+        Password::clearResolvedInstance('auth.password');
+
         Storage::forgetDisk(['local', 'branding']);
         DB::purge('demo');
         Cache::forgetDriver(config('cache.default'));
+
+        // Rollen/Rechte: Cache-Store mit neuem Präfix, geladene Rollen verwerfen.
+        if (app()->resolved(PermissionRegistrar::class)) {
+            app(PermissionRegistrar::class)->initializeCache();
+        }
 
         if (app()->resolved('mail.manager')) {
             app(ClubMailSender::class)->apply();

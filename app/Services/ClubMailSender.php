@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Setting;
+use Illuminate\Database\QueryException;
 
 /**
  * Setzt den Absender aus den Vereinseinstellungen (sonst .env). Merkt sich
@@ -29,7 +30,14 @@ class ClubMailSender
             return;
         }
 
-        $setting = Setting::current();
+        try {
+            $setting = Setting::current();
+        } catch (QueryException) {
+            // Vereinsdatenbank wird gerade erst eingerichtet (noch ohne Tabellen).
+            $this->reset();
+
+            return;
+        }
 
         config(['mail.from' => filled($setting->mail_from_address)
             ? [

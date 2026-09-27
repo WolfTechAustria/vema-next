@@ -3,8 +3,6 @@
 use App\Enums\TenantStatus;
 use App\Http\Middleware\IdentifyTenant;
 use App\Models\Setting;
-use App\Models\Tenant;
-use App\Models\User;
 use App\Services\ClubBranding;
 use App\Services\DemoMode;
 use App\Services\TenantManager;
@@ -16,7 +14,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -24,87 +21,6 @@ use Tests\TestCase;
  * arbeiten mit eigenen SQLite-Dateien (zentral + je Verein).
  */
 uses(TestCase::class);
-
-const TENANCY_TEST_ENV = [
-    'TENANCY_MODE',
-    'TENANCY_CENTRAL_DOMAIN',
-    'TENANCY_SCHEME',
-    'DB_LANDLORD_DRIVER',
-    'DB_LANDLORD_DATABASE',
-    'DB_TENANT_DRIVER',
-];
-
-function setTenancyTestEnv(string $name, ?string $value): void
-{
-    if ($value === null) {
-        putenv($name);
-        unset($_ENV[$name], $_SERVER[$name]);
-
-        return;
-    }
-
-    putenv("{$name}={$value}");
-    $_ENV[$name] = $_SERVER[$name] = $value;
-}
-
-/**
- * Vollständig migrierte Vereinsdatenbank als Vorlage — einmal pro Testlauf,
- * danach wird sie für jeden Verein nur kopiert.
- */
-function tenantTemplateDatabase(): string
-{
-    static $templatePath = null;
-
-    if ($templatePath !== null && is_file($templatePath)) {
-        return $templatePath;
-    }
-
-    $templatePath = sys_get_temp_dir().DIRECTORY_SEPARATOR.'vema-tenant-template-'.getmypid().'.sqlite';
-    File::put($templatePath, '');
-
-    config(['database.connections.tenant_template' => [
-        'driver' => 'sqlite',
-        'database' => $templatePath,
-        'prefix' => '',
-        'foreign_key_constraints' => true,
-    ]]);
-
-    $previousDefault = DB::getDefaultConnection();
-    DB::setDefaultConnection('tenant_template');
-
-    try {
-        Artisan::call('migrate', ['--database' => 'tenant_template', '--force' => true]);
-    } finally {
-        DB::setDefaultConnection($previousDefault);
-        DB::purge('tenant_template');
-    }
-
-    return $templatePath;
-}
-
-/**
- * Legt einen Verein samt eigener (SQLite-)Datenbank an.
- *
- * @param  array<string, mixed>  $attributes
- */
-function createTenantWithDatabase(string $slug, string $clubName, array $attributes = []): Tenant
-{
-    $databasePath = test()->tenancyDirectory.DIRECTORY_SEPARATOR.$slug.'.sqlite';
-    File::copy(tenantTemplateDatabase(), $databasePath);
-
-    $tenant = Tenant::factory()->create(array_merge([
-        'slug' => $slug,
-        'name' => $clubName,
-        'database' => $databasePath,
-    ], $attributes));
-
-    app(TenantManager::class)->runFor($tenant, function () use ($clubName) {
-        Setting::current()->update(['name' => $clubName]);
-        User::factory()->create(['username' => 'vorstand']);
-    });
-
-    return $tenant;
-}
 
 describe('single mode', function () {
     it('registers no platform routes and does not switch databases', function () {
@@ -122,45 +38,14 @@ describe('single mode', function () {
 
 describe('multi mode', function () {
     beforeEach(function () {
-        $this->tenancyDirectory = storage_path('framework/testing/tenancy-'.Str::random(8));
-        File::ensureDirectoryExists($this->tenancyDirectory);
-        File::put($this->tenancyDirectory.'/landlord.sqlite', '');
-
-        foreach ([
-            'TENANCY_MODE' => 'multi',
-            'TENANCY_CENTRAL_DOMAIN' => 'vemat.test',
-            'TENANCY_SCHEME' => 'http',
-            'DB_LANDLORD_DRIVER' => 'sqlite',
-            'DB_LANDLORD_DATABASE' => $this->tenancyDirectory.'/landlord.sqlite',
-            'DB_TENANT_DRIVER' => 'sqlite',
-        ] as $name => $value) {
-            setTenancyTestEnv($name, $value);
-        }
-
-        // Modus und Routen werden beim Booten festgelegt.
-        $this->refreshApplication();
-
-        config(['tenancy.storage_root' => $this->tenancyDirectory.'/files']);
-
-        $this->artisan('migrate', [
-            '--database' => 'landlord',
-            '--path' => 'database/migrations/landlord',
-            '--force' => true,
-        ])->assertSuccessful();
+        bootMultiTenancyForTests();
 
         $this->clubA = createTenantWithDatabase('verein-a', 'Schützenverein A');
         $this->clubB = createTenantWithDatabase('verein-b', 'Musikverein B');
     });
 
     afterEach(function () {
-        DB::purge('landlord');
-        DB::purge('tenant');
-
-        foreach (TENANCY_TEST_ENV as $name) {
-            setTenancyTestEnv($name, null);
-        }
-
-        File::deleteDirectory($this->tenancyDirectory);
+        shutdownMultiTenancyForTests();
     });
 
     it('works against the central database until a club is identified', function () {
@@ -168,11 +53,18 @@ describe('multi mode', function () {
             ->and(config('session.connection'))->toBe('landlord');
     });
 
-    it('serves the platform page only on the central domain', function () {
-        $this->get('http://vemat.test/')->assertOk()->assertSee('VEMA');
+    it('serves only platform pages on the platform host', function () {
+        $this->get('http://app.vemat.test/')->assertRedirect('/login');
+        $this->get('http://app.vemat.test/login')->assertOk()->assertSee('Zu deinem Verein');
+        $this->get('http://app.vemat.test/registrieren')->assertOk()->assertSee('Verein registrieren');
 
-        $this->get('http://vemat.test/login')->assertNotFound();
-        $this->get('http://verein-a.vemat.test/')->assertRedirect();
+        // Vereins-Routen gibt es auf dem Plattform-Host nicht …
+        $this->get('http://app.vemat.test/dashboard')->assertNotFound();
+        $this->get('http://app.vemat.test/member/login')->assertNotFound();
+
+        // … und Plattform-Routen nicht bei den Vereinen.
+        $this->get('http://verein-a.vemat.test/registrieren')->assertNotFound();
+        $this->get('http://verein-a.vemat.test/login')->assertOk()->assertDontSee('Zu deinem Verein');
     });
 
     it('returns 404 for unknown hosts', function () {
@@ -205,7 +97,7 @@ describe('multi mode', function () {
             ->assertForbidden()
             ->assertSee($message);
     })->with([
-        'pending' => [['status' => TenantStatus::Pending], 'erst nach der Freischaltung'],
+        'pending' => [['status' => TenantStatus::Pending], 'sobald die E-Mail-Adresse bestätigt ist'],
         'suspended' => [['status' => TenantStatus::Suspended], 'gesperrt'],
         'license expired' => [['license_valid_until' => now()->subDay()], 'Lizenz dieses Vereins ist abgelaufen'],
     ]);
