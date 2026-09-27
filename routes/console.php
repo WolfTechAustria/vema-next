@@ -8,21 +8,26 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+/*
+ * Vereinsbezogene Jobs laufen über "tenants:run": im Modus "single" genau
+ * einmal wie bisher, im Modus "multi" für jeden freigeschalteten Verein.
+ */
+
 // täglich morgens: rund/halbrund-Reminder
-Schedule::command('birthdays:send-reminders')
+Schedule::command('tenants:run', ['birthdays:send-reminders'])
     ->dailyAt('07:00')
     ->withoutOverlapping();
 
 // am 1. jedes Monats: PDF-Geburtstagsliste an den Vorstand
-Schedule::command('birthdays:send-monthly-list')
+Schedule::command('tenants:run', ['birthdays:send-monthly-list'])
     ->monthlyOn(1, '06:30')
     ->withoutOverlapping();
 
-Schedule::command('duty:send-reminders')
+Schedule::command('tenants:run', ['duty:send-reminders'])
     ->dailyAt('07:00')
     ->withoutOverlapping();
 
 // Testmodus: Test-DB nachts auf Live-Stand (nur wenn in den Einstellungen gewählt)
-Schedule::command('demo:reset --if-nightly')
+Schedule::command('tenants:run', ['demo:reset --if-nightly'])
     ->dailyAt(config('demo.reset_time'))
     ->withoutOverlapping();

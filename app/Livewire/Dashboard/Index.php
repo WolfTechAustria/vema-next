@@ -71,7 +71,8 @@ class Index extends Component
                 'exempt' => 0,
                 'reminder_due' => 0,
                 'reminded' => 0,
-
+                'open_amount' => 0.0,
+                'paid_amount' => 0.0,
             ];
         }
 

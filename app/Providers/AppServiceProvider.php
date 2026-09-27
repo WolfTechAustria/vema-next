@@ -2,8 +2,9 @@
 
 namespace App\Providers;
 
-use App\Models\Setting;
+use App\Services\ClubMailSender;
 use App\Services\DemoMode;
+use App\Services\TenantManager;
 use Carbon\CarbonImmutable;
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Support\Facades\Date;
@@ -20,6 +21,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(DemoMode::class);
+        $this->app->scoped(TenantManager::class);
+        $this->app->scoped(ClubMailSender::class);
     }
 
     /**
@@ -28,8 +31,22 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureTenancy();
         $this->configureDemoMode();
         $this->configureClubMailSender();
+    }
+
+    /**
+     * Plattform-Betrieb (TENANCY_MODE=multi): bis ein Verein erkannt ist,
+     * arbeitet alles gegen die zentrale Datenbank (siehe IdentifyTenant).
+     */
+    protected function configureTenancy(): void
+    {
+        $tenantManager = app(TenantManager::class);
+
+        if ($tenantManager->isMultiTenant()) {
+            $tenantManager->bootLandlord();
+        }
     }
 
     /**
@@ -41,14 +58,7 @@ class AppServiceProvider extends ServiceProvider
     protected function configureClubMailSender(): void
     {
         $this->app->afterResolving('mail.manager', function (): void {
-            $setting = Setting::current();
-
-            if (filled($setting->mail_from_address)) {
-                config([
-                    'mail.from.address' => $setting->mail_from_address,
-                    'mail.from.name' => $setting->mail_from_name ?: $setting->name,
-                ]);
-            }
+            app(ClubMailSender::class)->apply();
         });
     }
 

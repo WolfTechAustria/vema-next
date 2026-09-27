@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureStaffAccountIsActive;
 use App\Http\Middleware\EnsureUserCanManageInvoices;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\UseDemoDatabase;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -12,7 +13,12 @@ use Illuminate\Session\Middleware\StartSession;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
+        // Plattform-Routen zuerst, damit sie auf der Plattform-Domain Vorrang
+        // haben (im Modus "single" registriert central.php nichts).
+        web: [
+            __DIR__.'/../routes/central.php',
+            __DIR__.'/../routes/web.php',
+        ],
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -23,10 +29,18 @@ return Application::configure(basePath: dirname(__DIR__))
             'invoices' => EnsureUserCanManageInvoices::class,
         ]);
 
-        // Testmodus: direkt nach StartSession, also vor Auth und Route-Model-Binding.
-        $middleware->appendToGroup('web', UseDemoDatabase::class);
+        // Verein erkennen, dann Testmodus: direkt nach StartSession, also vor
+        // Auth und Route-Model-Binding — in genau dieser Reihenfolge.
+        $middleware->appendToGroup('web', [
+            IdentifyTenant::class,
+            UseDemoDatabase::class,
+        ]);
         $middleware->appendToPriorityList(
             StartSession::class,
+            IdentifyTenant::class,
+        );
+        $middleware->appendToPriorityList(
+            IdentifyTenant::class,
             UseDemoDatabase::class,
         );
     })
