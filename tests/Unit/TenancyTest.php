@@ -62,6 +62,16 @@ describe('multi mode', function () {
         $this->get('http://app.vemat.test/dashboard')->assertNotFound();
         $this->get('http://app.vemat.test/member/login')->assertNotFound();
 
+        // Livewire-Requests (Eingaben im Formular) müssen durchgehen.
+        $livewireUpdateUrl = str_replace(url('/'), 'http://app.vemat.test', route('default-livewire.update'));
+        // Ohne X-Livewire-Header oder mit leerer Payload antwortet Livewire selbst
+        // mit 404 — daher ein formal vollständiger (ungültiger) Request, der erst
+        // in Livewire scheitert.
+        $livewireResponse = $this->withHeader('X-Livewire', 'true')->postJson($livewireUpdateUrl, [
+            'components' => [['snapshot' => '{}', 'updates' => [], 'calls' => []]],
+        ]);
+        expect($livewireResponse->getStatusCode())->not->toBe(404);
+
         // … und Plattform-Routen nicht bei den Vereinen.
         $this->get('http://verein-a.vemat.test/registrieren')->assertNotFound();
         $this->get('http://verein-a.vemat.test/login')->assertOk()->assertDontSee('Zu deinem Verein');

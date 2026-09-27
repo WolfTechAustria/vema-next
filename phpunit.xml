@@ -32,5 +32,12 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Unabhängig von der lokalen .env: Tests starten im Modus "single". -->
+        <env name="TENANCY_MODE" value="single"/>
+        <env name="TENANCY_PLATFORM_HOST" value="app.vemat.test"/>
+        <env name="TENANCY_TENANT_DOMAIN" value="vemat.test"/>
+        <env name="TENANCY_SCHEME" value="http"/>
+        <env name="TENANCY_URL_PORT" value=""/>
+        <env name="TENANCY_PLATFORM_ADMIN_EMAIL" value=""/>
     </php>
 </phpunit>

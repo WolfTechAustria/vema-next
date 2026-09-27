@@ -25,7 +25,7 @@ class IdentifyTenant
      *
      * @var array<int, string>
      */
-    private const CENTRAL_ROUTE_PATTERNS = ['central.*', 'livewire.*'];
+    private const CENTRAL_ROUTE_PATTERNS = ['central.*', 'livewire.*', 'default-livewire.*'];
 
     public function __construct(private TenantManager $tenantManager) {}
 

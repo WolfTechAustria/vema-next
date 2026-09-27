@@ -159,6 +159,16 @@ function bootMultiTenancyForTests(): void
 
     test()->tenancyDirectory = $directory;
 
+    // Vorherige Werte (phpunit.xml) merken, damit spätere Tests unberührt bleiben.
+    $originalEnv = [];
+
+    foreach (TENANCY_TEST_ENV as $name) {
+        $original = getenv($name);
+        $originalEnv[$name] = $original === false ? null : $original;
+    }
+
+    test()->tenancyOriginalEnv = $originalEnv;
+
     foreach ([
         'TENANCY_MODE' => 'multi',
         'TENANCY_PLATFORM_HOST' => 'app.vemat.test',
@@ -190,8 +200,8 @@ function shutdownMultiTenancyForTests(): void
     DB::purge('landlord');
     DB::purge('tenant');
 
-    foreach (TENANCY_TEST_ENV as $name) {
-        setTenancyTestEnv($name, null);
+    foreach (test()->tenancyOriginalEnv as $name => $value) {
+        setTenancyTestEnv($name, $value);
     }
 
     File::deleteDirectory(test()->tenancyDirectory);
