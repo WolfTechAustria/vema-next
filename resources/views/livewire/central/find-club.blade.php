@@ -4,7 +4,7 @@
 
         <div class="border-b border-slate-200 px-6 py-7 text-center sm:px-8">
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">
-                Zu deinem Verein
+                {{ $ziel === 'mitglieder' ? 'Mitglieder-Login' : 'Zu deinem Verein' }}
             </h1>
 
             <p class="mt-2 text-sm text-slate-500">

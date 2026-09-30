@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureStaffAccountIsActive;
 use App\Http\Middleware\EnsureUserCanManageInvoices;
 use App\Http\Middleware\EnsureUserIsAdmin;
@@ -27,7 +28,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureUserIsAdmin::class,
             'active.staff' => EnsureStaffAccountIsActive::class,
             'invoices' => EnsureUserCanManageInvoices::class,
+            'feature' => EnsureFeatureEnabled::class,
         ]);
+
+        // Plattform-Admin hat eigene Login-/Startseite, sonst wie bisher.
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->routeIs('central.admin.*')
+            ? route('central.admin.login')
+            : route('login'));
+        $middleware->redirectUsersTo(fn (Request $request) => $request->routeIs('central.admin.*')
+            ? route('central.admin.tenants')
+            : route('dashboard'));
 
         // Verein erkennen, dann Testmodus: direkt nach StartSession, also vor
         // Auth und Route-Model-Binding — in genau dieser Reihenfolge.

@@ -60,9 +60,11 @@ Route::middleware('guest')->group(function () {
         ->name('password.update');
 
     Route::livewire('/member/login', Login::class)
+        ->middleware('feature:member_portal')
         ->name('member.login');
 
     Route::get('/member/login/{token}', [MemberAuthController::class, 'magicLogin'])
+        ->middleware('feature:member_portal')
         ->name('member.magic-login');
 });
 
@@ -71,6 +73,7 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::get('/', fn () => redirect()->route('dashboard'));
 
     Route::post('/demo/enter', [DemoModeController::class, 'enter'])
+        ->middleware('feature:test_mode')
         ->name('demo.enter');
 
     Route::post('/demo/leave', [DemoModeController::class, 'leave'])
@@ -98,24 +101,29 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
         ->name('members.edit');
 
     Route::livewire('/duty-plan', DutyPlanIndex::class)
+        ->middleware('feature:duty_plan')
         ->name('duty-plan.index');
 
     Route::livewire('/duty-plan/volunteers', DutyPlanVolunteers::class)
+        ->middleware('feature:duty_plan')
         ->name('duty-plan.volunteers');
 
     Route::livewire('/duty-plan/absences', DutyPlanAbsences::class)
+        ->middleware('feature:duty_plan')
         ->name('duty-plan.absences');
 
     Route::livewire('/membership-fees', MembershipFeesIndex::class)
         ->name('membership-fees.index');
 
     Route::livewire('/templates', TemplatesIndex::class)
+        ->middleware('feature:templates')
         ->name('templates.index');
 
     Route::get('/membership-fees/{entry}/prescription', [MembershipFeePrescriptionController::class, 'download'])
         ->name('membership-fees.prescription');
 
     Route::get('/templates/{template}/preview', [MembershipFeePrescriptionController::class, 'preview'])
+        ->middleware('feature:templates')
         ->name('templates.preview');
 
     Route::get('/membership-fees/{year}/prescriptions', [MembershipFeePrescriptionController::class, 'downloadAll'])
@@ -137,6 +145,7 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
         ->name('members.pdf.overview');
 
     Route::livewire('/external-contacts', Index::class)
+        ->middleware('feature:recipient_groups')
         ->name('external-contacts.index');
 
     Route::livewire('/circulars', App\Livewire\Circulars\Index::class)
@@ -164,9 +173,11 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
         ->name('circular-attachments.show');
 
     Route::livewire('/recipient-groups', App\Livewire\RecipientGroups\Index::class)
+        ->middleware('feature:recipient_groups')
         ->name('recipient-groups.index');
 
     Route::livewire('/skills', App\Livewire\Skills\Index::class)
+        ->middleware('feature:duty_plan')
         ->name('skills.index');
 
     Route::livewire('/users', App\Livewire\Admin\Users\Index::class)
@@ -179,10 +190,12 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
 
     Route::livewire('/settings/documents', Documents::class)
         ->middleware('admin')
+        ->middleware('feature:templates')
         ->name('admin.settings.documents');
 
     Route::livewire('/activity-log', App\Livewire\Admin\ActivityLog\Index::class)
         ->middleware('admin')
+        ->middleware('feature:activity_log')
         ->name('admin.activity-log.index');
 
     Route::livewire('/cash-book', CashBookIndex::class)
@@ -203,37 +216,44 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
 
     Route::livewire('/invoices', InvoicesIndex::class)
         ->middleware('invoices')
+        ->middleware('feature:invoices')
         ->name('invoices.index');
 
     Route::livewire('/invoices/create', InvoicesCreate::class)
         ->middleware('invoices')
+        ->middleware('feature:invoices')
         ->name('invoices.create');
 
     Route::livewire('/invoices/{invoice}/edit', InvoicesCreate::class)
         ->middleware('invoices')
+        ->middleware('feature:invoices')
         ->name('invoices.edit');
 
     Route::livewire('/invoices/{invoice}', InvoicesShow::class)
         ->middleware('invoices')
+        ->middleware('feature:invoices')
         ->name('invoices.show');
 
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])
         ->middleware('invoices')
+        ->middleware('feature:invoices')
         ->name('invoices.pdf');
 
     Route::livewire('/invoice-recipients', InvoiceRecipientsIndex::class)
         ->middleware('invoices')
+        ->middleware('feature:invoices')
         ->name('invoice-recipients.index');
 
     Route::livewire('/invoice-articles', InvoiceArticlesIndex::class)
         ->middleware('invoices')
+        ->middleware('feature:invoices')
         ->name('invoice-articles.index');
 
     Route::post('/logout', [LoginController::class, 'destroy'])
         ->name('logout');
 });
 
-Route::middleware('auth:member')->group(function () {
+Route::middleware(['auth:member', 'feature:member_portal'])->group(function () {
     Route::livewire('/member/profile', Profile::class)
         ->name('member.profile');
 
@@ -263,6 +283,7 @@ Route::middleware('auth:member')->group(function () {
 });
 
 Route::get('/calendar/duty/{token}.ics', [DutyPlanIcalController::class, 'show'])
+    ->middleware('feature:duty_plan')
     ->name('duty-plan.ical');
 
 Route::get('/branding/logo', [BrandingController::class, 'logo'])

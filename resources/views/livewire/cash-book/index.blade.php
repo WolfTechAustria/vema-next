@@ -515,19 +515,26 @@
                         @endif
 
                         @unless($readOnly)
-                            <label class="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100">
-                                <span wire:loading.remove wire:target="newFiles">📷 Foto aufnehmen / Datei wählen</span>
-                                <span wire:loading wire:target="newFiles">Wird hochgeladen …</span>
-                                <input
-                                    type="file"
-                                    wire:model="newFiles"
-                                    accept="image/*,application/pdf"
-                                    multiple
-                                    class="sr-only"
-                                >
-                            </label>
+                            @feature('cash_book_receipts')
+                                <label class="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100">
+                                    <span wire:loading.remove wire:target="newFiles">📷 Foto aufnehmen / Datei wählen</span>
+                                    <span wire:loading wire:target="newFiles">Wird hochgeladen …</span>
+                                    <input
+                                        type="file"
+                                        wire:model="newFiles"
+                                        accept="image/*,application/pdf"
+                                        multiple
+                                        class="sr-only"
+                                    >
+                                </label>
+                            @else
+                                <p class="rounded-lg bg-slate-50 px-3 py-3 text-xs text-slate-500">
+                                    {{ app(\App\Services\PlanEntitlements::class)->featureMessage(\App\Enums\Feature::CashBookReceipts) }}
+                                </p>
+                            @endfeature
                         @endunless
 
+                        @error('newFiles') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         @error('newFiles.*') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         @error('files.*') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>

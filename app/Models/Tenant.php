@@ -51,6 +51,33 @@ class Tenant extends Model
     }
 
     /**
+     * Paket, dessen Funktionen und Limits gerade gelten: in der Testphase
+     * mindestens Verein Plus („alle Funktionen“), sonst das gebuchte Paket.
+     */
+    public function effectivePlan(): Plan
+    {
+        $plan = $this->plan ?? Plan::Starter;
+
+        if ($this->isOnTrial() && $plan->rank() < Plan::VereinPlus->rank()) {
+            return Plan::VereinPlus;
+        }
+
+        return $plan;
+    }
+
+    /**
+     * Ganze Tage bis zum Ende der Testphase (0 am letzten Tag), sonst null.
+     */
+    public function trialDaysLeft(): ?int
+    {
+        if (! $this->isOnTrial()) {
+            return null;
+        }
+
+        return (int) now()->startOfDay()->diffInDays($this->trial_ends_at->copy()->startOfDay());
+    }
+
+    /**
      * @return HasMany<TenantDomain, $this>
      */
     public function domains(): HasMany
@@ -69,6 +96,18 @@ class Tenant extends Model
 
         return $this->license_valid_until === null
             || $this->license_valid_until->endOfDay()->isFuture();
+    }
+
+    /**
+     * Status für Übersichten — „Aktiv“ mit abgelaufener Lizenz ist keiner.
+     */
+    public function accessLabel(): string
+    {
+        if ($this->status === TenantStatus::Active && ! $this->isAccessible()) {
+            return TenantStatus::Expired->label();
+        }
+
+        return $this->status->label();
     }
 
     /**

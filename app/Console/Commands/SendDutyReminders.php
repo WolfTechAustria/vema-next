@@ -2,10 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\Feature;
 use App\Mail\DutyReminderMail;
 use App\Models\DutyPlanAssignment;
 use App\Models\DutyReminderSent;
 use App\Services\ImapSentMailService;
+use App\Services\PlanEntitlements;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 
@@ -15,8 +17,15 @@ class SendDutyReminders extends Command
 
     protected $description = 'Verschickt 2 Tage vor dem Dienst eine Erinnerungs-Mail an eingeteilte Mitglieder (sofern aktiviert)';
 
-    public function handle(): int
+    public function handle(PlanEntitlements $entitlements): int
     {
+        // Dienstplan ist nicht in jedem Paket enthalten (Plattform-Betrieb).
+        if (! $entitlements->allows(Feature::DutyPlan)) {
+            $this->info('Dienstplan ist im Paket dieses Vereins nicht enthalten.');
+
+            return self::SUCCESS;
+        }
+
         $targetDate = now()->addDays(2)->toDateString();
 
         $assignments = DutyPlanAssignment::query()

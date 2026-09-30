@@ -60,7 +60,7 @@ describe('multi mode', function () {
 
         // Vereins-Routen gibt es auf dem Plattform-Host nicht …
         $this->get('http://app.vemat.test/dashboard')->assertNotFound();
-        $this->get('http://app.vemat.test/member/login')->assertNotFound();
+        $this->get('http://app.vemat.test/member/login')->assertRedirect('/login?ziel=mitglieder');
 
         // Livewire-Requests (Eingaben im Formular) müssen durchgehen.
         $livewireUpdateUrl = str_replace(url('/'), 'http://app.vemat.test', route('default-livewire.update'));

@@ -178,29 +178,30 @@
 
 
         {{-- Mitgliederzugang --}}
-        <div class="border-t border-slate-200 bg-slate-50 px-8 py-6">
+        @feature('member_portal')
+            <div class="border-t border-slate-200 bg-slate-50 px-8 py-6">
 
-            <div class="text-center">
+                <div class="text-center">
 
-                <div class="text-sm font-medium text-slate-700">
-                    Mitglied von {{ \App\Models\Setting::current()->name }}?
+                    <div class="text-sm font-medium text-slate-700">
+                        Mitglied von {{ \App\Models\Setting::current()->name }}?
+                    </div>
+
+                    <p class="mt-1 text-xs text-slate-500">
+                        Melde dich einfach mit deiner hinterlegten E-Mail-Adresse an.
+                    </p>
+
+                    <a
+                        href="{{ route('member.login') }}"
+                        class="mt-4 inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                    >
+                        Zum Mitglieder-Login
+                    </a>
+
                 </div>
 
-                <p class="mt-1 text-xs text-slate-500">
-                    Melde dich einfach mit deiner hinterlegten E-Mail-Adresse an.
-                </p>
-
-
-                <a
-                    href="{{ route('member.login') }}"
-                    class="mt-4 inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                    Zum Mitglieder-Login
-                </a>
-
             </div>
-
-        </div>
+        @endfeature
 
     </div>
 

@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\MemberAccount;
+use App\Models\PlatformAdmin;
 use App\Models\User;
 
 return [
@@ -46,9 +48,13 @@ return [
             'driver' => 'session',
             'provider' => 'member_accounts',
         ],
+
+        // Plattform-Betreiber (nur TENANCY_MODE=multi, Plattform-Host).
+        'platform' => [
+            'driver' => 'session',
+            'provider' => 'platform_admins',
+        ],
     ],
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -70,12 +76,17 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model' => User::class,
         ],
 
         'member_accounts' => [
             'driver' => 'eloquent',
-            'model' => App\Models\MemberAccount::class,
+            'model' => MemberAccount::class,
+        ],
+
+        'platform_admins' => [
+            'driver' => 'eloquent',
+            'model' => PlatformAdmin::class,
         ],
 
         // 'users' => [

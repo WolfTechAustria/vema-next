@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\Feature;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -47,9 +48,13 @@ class DemoMode
         ]);
     }
 
+    /**
+     * In den Einstellungen aktiviert und im Paket enthalten (Plattform).
+     */
     public function isAvailable(): bool
     {
-        return (bool) $this->settings()->demo_enabled;
+        return (bool) $this->settings()->demo_enabled
+            && app(PlanEntitlements::class)->allows(Feature::TestMode);
     }
 
     /**

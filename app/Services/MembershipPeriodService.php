@@ -28,7 +28,7 @@ class MembershipPeriodService
     {
         $openPeriod = $member->currentMembershipPeriod;
 
-        abort_if(!$openPeriod, 422, 'Dieses Mitglied ist bereits ausgetreten.');
+        abort_if(! $openPeriod, 422, 'Dieses Mitglied ist bereits ausgetreten.');
 
         abort_if(
             $openPeriod->date_from && $dateTo < $openPeriod->date_from->format('Y-m-d'),
@@ -51,6 +51,10 @@ class MembershipPeriodService
     public function reenter(Member $member, string $dateFrom, ?string $note = null): MemberMembershipPeriod
     {
         abort_if($member->currentMembershipPeriod, 422, 'Dieses Mitglied ist bereits aktiv.');
+
+        $entitlements = app(PlanEntitlements::class);
+
+        abort_unless($entitlements->canAddActiveMember(), 422, $entitlements->memberLimitMessage());
 
         $lastClosedPeriod = $member->membershipPeriods()
             ->closed()

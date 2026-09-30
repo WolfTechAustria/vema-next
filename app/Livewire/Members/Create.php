@@ -9,26 +9,38 @@ use App\Models\Skill;
 use App\Services\ActivityLogger;
 use App\Services\MembershipFeeEntryService;
 use App\Services\MembershipPeriodService;
+use App\Services\PlanEntitlements;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class Create extends Component
 {
     public string $name = '';
+
     public string $surname = '';
+
     public string $gender = '';
+
     public ?string $dateOfBirth = null;
+
     public ?string $dateOfJoin = null;
+
     public string $street = '';
+
     public string $zip = '';
+
     public bool $competitionMember = false;
+
     public bool $supportingMember = false;
 
     public array $emails = [];
+
     public array $phones = [];
+
     public array $selectedSkills = [];
 
     public $possibleDuplicates = [];
+
     public bool $duplicateWarningDismissed = false;
 
     protected function rules(): array
@@ -113,9 +125,16 @@ class Create extends Component
         $this->phones = array_values($this->phones);
     }
 
-    public function save()
+    public function save(PlanEntitlements $entitlements)
     {
         $validated = $this->validate();
+
+        // Neue Mitglieder sind aktiv — Paketlimit (nur Plattform-Betrieb).
+        if (! $entitlements->canAddActiveMember()) {
+            $this->addError('memberLimit', $entitlements->memberLimitMessage());
+
+            return null;
+        }
 
         $member = DB::transaction(function () use ($validated) {
             $member = Member::create([
@@ -161,7 +180,7 @@ class Create extends Component
 
         ActivityLogger::log(
             'member.created',
-            'Mitglied "' . $member->full_name . '" (#' . $member->memberID . ') wurde angelegt.',
+            'Mitglied "'.$member->full_name.'" (#'.$member->memberID.') wurde angelegt.',
             'Member',
             $member->memberID
         );

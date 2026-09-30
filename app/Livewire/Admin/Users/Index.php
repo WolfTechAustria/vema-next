@@ -7,6 +7,7 @@ use App\Models\Member;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\ImapSentMailService;
+use App\Services\PlanEntitlements;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
@@ -56,9 +57,16 @@ class Index extends Component
         $this->resetValidation();
     }
 
-    public function createUser(): void
+    public function createUser(PlanEntitlements $entitlements): void
     {
         $validated = $this->validate();
+
+        // Paketlimit für Vorstandszugänge (nur Plattform-Betrieb).
+        if (! $entitlements->canAddActiveStaff()) {
+            session()->flash('error', $entitlements->staffLimitMessage());
+
+            return;
+        }
 
         $user = User::create([
             'username' => $validated['newUsername'],
@@ -124,12 +132,18 @@ class Index extends Component
         );
     }
 
-    public function toggleEnabled(int $userId): void
+    public function toggleEnabled(int $userId, PlanEntitlements $entitlements): void
     {
         $user = User::findOrFail($userId);
 
         if ($user->id === auth()->id() && $user->enabled) {
             session()->flash('error', 'Du kannst dich nicht selbst sperren.');
+
+            return;
+        }
+
+        if (! $user->enabled && ! $entitlements->canAddActiveStaff()) {
+            session()->flash('error', $entitlements->staffLimitMessage());
 
             return;
         }

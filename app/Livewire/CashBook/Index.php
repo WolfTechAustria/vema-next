@@ -3,10 +3,12 @@
 namespace App\Livewire\CashBook;
 
 use App\Enums\CashBookEntryType;
+use App\Enums\Feature;
 use App\Models\CashBookAttachment;
 use App\Models\CashBookEntry;
 use App\Models\CashBookYear;
 use App\Services\ActivityLogger;
+use App\Services\PlanEntitlements;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -69,8 +71,16 @@ class Index extends Component
         }
     }
 
-    public function updatedNewFiles(): void
+    public function updatedNewFiles(PlanEntitlements $entitlements): void
     {
+        // Belegablage gehört nicht zu jedem Paket (Plattform-Betrieb).
+        if (! $entitlements->allows(Feature::CashBookReceipts)) {
+            $this->newFiles = [];
+            $this->addError('newFiles', $entitlements->featureMessage(Feature::CashBookReceipts));
+
+            return;
+        }
+
         $this->validate([
             'newFiles.*' => $this->fileRules(),
         ]);
@@ -323,6 +333,12 @@ class Index extends Component
 
     private function storeFiles(CashBookEntry $entry): void
     {
+        if (! app(PlanEntitlements::class)->allows(Feature::CashBookReceipts)) {
+            $this->files = [];
+
+            return;
+        }
+
         foreach ($this->files as $file) {
             $path = $file->store(
                 'cash-book/'.$entry->cashBookYearID.'/'.$entry->cashBookEntryID,

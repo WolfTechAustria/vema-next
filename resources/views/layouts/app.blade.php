@@ -161,17 +161,19 @@
                 </a>
 
 
-                <a
-                    href="{{ route('duty-plan.index') }}"
-                    wire:navigate
-                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                    {{ request()->routeIs('duty-plan.*')
-                        ? 'bg-slate-900 text-white'
-                        : 'text-slate-700 hover:bg-slate-100' }}"
-                >
-                    <span>▤</span>
-                    Dienstplan
-                </a>
+                @feature('duty_plan')
+                    <a
+                        href="{{ route('duty-plan.index') }}"
+                        wire:navigate
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                        {{ request()->routeIs('duty-plan.*')
+                            ? 'bg-slate-900 text-white'
+                            : 'text-slate-700 hover:bg-slate-100' }}"
+                    >
+                        <span>▤</span>
+                        Dienstplan
+                    </a>
+                @endfeature
 
 
 
@@ -204,7 +206,7 @@
                 @endif
 
 
-                @if($webUser?->hasAnyRole(['admin', 'kassier']))
+                @if($webUser?->hasAnyRole(['admin', 'kassier']) && app(\App\Services\PlanEntitlements::class)->allows(\App\Enums\Feature::Invoices))
                     <a
                         href="{{ route('invoices.index') }}"
                         wire:navigate
@@ -276,53 +278,61 @@
                         </a>
 
 
-                        <a
-                            href="{{ route('recipient-groups.index') }}"
-                            wire:navigate
-                            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
-                            {{ request()->routeIs('recipient-groups.*')
-                            ? 'bg-slate-100 text-slate-900'
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
-                        >
-                            <span>♙</span>
-                            Empfängergruppen
-                        </a>
-
-                        <a
-                            href="{{ route('skills.index') }}"
-                            wire:navigate
-                            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
-                            {{ request()->routeIs('skills.*')
-                            ? 'bg-slate-100 text-slate-900'
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
-                        >
-                            <span>★</span>
-                            Fähigkeiten
-                        </a>
-
-                        <a
-                            href="{{ route('external-contacts.index') }}"
-                            wire:navigate
-                            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
-                            {{ request()->routeIs('external-contacts.*')
+                        @feature('recipient_groups')
+                            <a
+                                href="{{ route('recipient-groups.index') }}"
+                                wire:navigate
+                                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+                                {{ request()->routeIs('recipient-groups.*')
                                 ? 'bg-slate-100 text-slate-900'
                                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
-                        >
-                            <span>♙</span>
-                            Externe Kontakte
-                        </a>
+                            >
+                                <span>♙</span>
+                                Empfängergruppen
+                            </a>
+                        @endfeature
 
-                        <a
-                            href="{{ route('templates.index') }}"
-                            wire:navigate
-                            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                            {{ request()->routeIs('templates.*')
-                            ? 'bg-slate-100 text-slate-900'
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'  }}"
-                        >
-                            <span>▤</span>
-                            Templates
-                        </a>
+                        @feature('duty_plan')
+                            <a
+                                href="{{ route('skills.index') }}"
+                                wire:navigate
+                                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+                                {{ request()->routeIs('skills.*')
+                                ? 'bg-slate-100 text-slate-900'
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                            >
+                                <span>★</span>
+                                Fähigkeiten
+                            </a>
+                        @endfeature
+
+                        @feature('recipient_groups')
+                            <a
+                                href="{{ route('external-contacts.index') }}"
+                                wire:navigate
+                                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+                                {{ request()->routeIs('external-contacts.*')
+                                    ? 'bg-slate-100 text-slate-900'
+                                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                            >
+                                <span>♙</span>
+                                Externe Kontakte
+                            </a>
+                        @endfeature
+
+                        @feature('templates')
+                            <a
+                                href="{{ route('templates.index') }}"
+                                wire:navigate
+                                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                                {{ request()->routeIs('templates.*')
+                                ? 'bg-slate-100 text-slate-900'
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'  }}"
+                            >
+                                <span>▤</span>
+                                Templates
+                            </a>
+                        @endfeature
 
                     </div>
 
@@ -614,6 +624,23 @@
 
         </header>
 
+
+        @php
+            $platformTenant = app(\App\Services\TenantManager::class)->current();
+        @endphp
+
+        @if($platformTenant?->isOnTrial() && $webUser?->hasRole('admin'))
+            @php
+                $trialDaysLeft = $platformTenant->trialDaysLeft();
+            @endphp
+
+            <div class="border-b border-sky-200 bg-sky-50 px-4 py-2 text-sm text-sky-900 sm:px-6 lg:px-8">
+                Testphase mit allen Funktionen:
+                <strong>{{ $trialDaysLeft === 0 ? 'endet heute' : 'noch '.$trialDaysLeft.' '.($trialDaysLeft === 1 ? 'Tag' : 'Tage') }}</strong>
+                (bis {{ $platformTenant->trial_ends_at->format('d.m.Y') }}), danach Paket {{ $platformTenant->plan->label() }}.
+                <a href="{{ route('admin.settings.index') }}" wire:navigate class="font-medium underline">Details</a>
+            </div>
+        @endif
 
         @if($isDemoActive)
 

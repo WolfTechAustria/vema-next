@@ -11,16 +11,18 @@
         Vereinseinstellungen
     </a>
 
-    <a
-        href="{{ route('admin.settings.documents') }}"
-        wire:navigate
-        class="whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition
-        {{ request()->routeIs('admin.settings.documents')
-            ? 'border-slate-900 text-slate-900'
-            : 'border-transparent text-slate-500 hover:text-slate-800' }}"
-    >
-        Briefpapier & E-Mail
-    </a>
+    @feature('templates')
+        <a
+            href="{{ route('admin.settings.documents') }}"
+            wire:navigate
+            class="whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition
+            {{ request()->routeIs('admin.settings.documents')
+                ? 'border-slate-900 text-slate-900'
+                : 'border-transparent text-slate-500 hover:text-slate-800' }}"
+        >
+            Briefpapier & E-Mail
+        </a>
+    @endfeature
 
     <a
         href="{{ route('admin.users.index') }}"
@@ -33,15 +35,17 @@
         Benutzerverwaltung
     </a>
 
-    <a
-        href="{{ route('admin.activity-log.index') }}"
-        wire:navigate
-        class="whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition
-        {{ request()->routeIs('admin.activity-log.*')
-            ? 'border-slate-900 text-slate-900'
-            : 'border-transparent text-slate-500 hover:text-slate-800' }}"
-    >
-        Aktivitätsprotokoll
-    </a>
+    @feature('activity_log')
+        <a
+            href="{{ route('admin.activity-log.index') }}"
+            wire:navigate
+            class="whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition
+            {{ request()->routeIs('admin.activity-log.*')
+                ? 'border-slate-900 text-slate-900'
+                : 'border-transparent text-slate-500 hover:text-slate-800' }}"
+        >
+            Aktivitätsprotokoll
+        </a>
+    @endfeature
 
 </div>

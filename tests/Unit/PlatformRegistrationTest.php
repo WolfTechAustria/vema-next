@@ -37,7 +37,7 @@ afterEach(function () {
  */
 function registerClubViaForm(string $slug = 'musikverein-musterdorf', string $plan = 'verein-plus'): string
 {
-    Livewire::withQueryParams(['plan' => $plan])
+    Livewire::withQueryParams(['paket' => $plan])
         ->test(Register::class)
         ->set('club_name', 'Musikverein Musterdorf')
         ->set('slug', $slug)
@@ -78,6 +78,12 @@ describe('registration', function () {
 
         $this->get('http://musikverein-musterdorf.vemat.test/login')->assertForbidden();
     });
+
+    it('shows the package chosen on the website', function (string $parameter) {
+        $this->get('http://app.vemat.test/registrieren?'.$parameter.'=verein-plus')
+            ->assertOk()
+            ->assertSee('Gewähltes Paket: Verein Plus');
+    })->with(['paket', 'plan']);
 
     it('suggests the address from the club name until it is edited', function () {
         Livewire::test(Register::class)
@@ -245,6 +251,17 @@ describe('find club', function () {
             ->call('openClub')
             ->assertRedirect('http://trachtenverein.vemat.test/login');
     })->with(['trachtenverein', ' Trachtenverein.vemat.test ', 'https://trachtenverein.vemat.test/login']);
+
+    it('forwards members to the member login of their club', function () {
+        $this->get('http://app.vemat.test/member/login')->assertRedirect('/login?ziel=mitglieder');
+
+        Livewire::withQueryParams(['ziel' => 'mitglieder'])
+            ->test(FindClub::class)
+            ->assertSee('Mitglieder-Login')
+            ->set('address', 'trachtenverein')
+            ->call('openClub')
+            ->assertRedirect('http://trachtenverein.vemat.test/member/login');
+    });
 
     it('reports unknown and unconfirmed addresses', function () {
         app(TenantRegistration::class)->register([

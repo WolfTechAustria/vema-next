@@ -176,45 +176,48 @@
 
         </section>
 
-        <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+        {{-- Fähigkeiten gehören zum Dienstplan --}}
+        @feature('duty_plan')
+            <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
-            <div class="border-b border-slate-200 px-6 py-4">
-                <h3 class="font-semibold text-slate-900">
-                    Fähigkeiten
-                </h3>
-            </div>
+                <div class="border-b border-slate-200 px-6 py-4">
+                    <h3 class="font-semibold text-slate-900">
+                        Fähigkeiten
+                    </h3>
+                </div>
 
-            <div class="p-6">
+                <div class="p-6">
 
-                @if($skills->isEmpty())
-                    <p class="text-sm text-slate-500">
-                        Noch keine Fähigkeiten angelegt.
-                        <a href="{{ route('skills.index') }}" wire:navigate class="font-medium text-slate-700 underline">
-                            Jetzt anlegen
-                        </a>
-                    </p>
-                @else
-                    <div class="grid gap-3 md:grid-cols-2">
-                        @foreach($skills as $skill)
-                            <label class="flex items-center gap-3">
-                                <input
-                                    type="checkbox"
-                                    wire:model="selectedSkills"
-                                    value="{{ $skill->skillID }}"
-                                    class="rounded border-slate-300"
-                                >
+                    @if($skills->isEmpty())
+                        <p class="text-sm text-slate-500">
+                            Noch keine Fähigkeiten angelegt.
+                            <a href="{{ route('skills.index') }}" wire:navigate class="font-medium text-slate-700 underline">
+                                Jetzt anlegen
+                            </a>
+                        </p>
+                    @else
+                        <div class="grid gap-3 md:grid-cols-2">
+                            @foreach($skills as $skill)
+                                <label class="flex items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        wire:model="selectedSkills"
+                                        value="{{ $skill->skillID }}"
+                                        class="rounded border-slate-300"
+                                    >
 
-                                <span class="text-sm font-medium text-slate-700">
-                                    {{ $skill->name }}
-                                </span>
-                            </label>
-                        @endforeach
-                    </div>
-                @endif
+                                    <span class="text-sm font-medium text-slate-700">
+                                        {{ $skill->name }}
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                    @endif
 
-            </div>
+                </div>
 
-        </section>
+            </section>
+        @endfeature
 
         <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 

@@ -2,16 +2,21 @@
 
 namespace App\Providers;
 
+use App\Enums\Feature;
+use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Services\ClubMailSender;
 use App\Services\DemoMode;
+use App\Services\PlanEntitlements;
 use App\Services\TenantManager;
 use Carbon\CarbonImmutable;
 use Illuminate\Mail\Events\MessageSending;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(DemoMode::class);
         $this->app->scoped(TenantManager::class);
         $this->app->scoped(ClubMailSender::class);
+        $this->app->scoped(PlanEntitlements::class);
     }
 
     /**
@@ -34,6 +40,19 @@ class AppServiceProvider extends ServiceProvider
         $this->configureTenancy();
         $this->configureDemoMode();
         $this->configureClubMailSender();
+        $this->configurePlanFeatures();
+    }
+
+    /**
+     * @feature('duty_plan') … @endfeature — blendet Inhalte aus, deren Funktion
+     * im Paket des Vereins fehlt (im Modus "single" immer sichtbar).
+     */
+    protected function configurePlanFeatures(): void
+    {
+        Blade::if('feature', fn (string $feature): bool => app(PlanEntitlements::class)->allows(Feature::from($feature)));
+
+        // Auch Livewire-Aktionen auf einer bereits geöffneten Seite prüfen.
+        Livewire::addPersistentMiddleware([EnsureFeatureEnabled::class]);
     }
 
     /**

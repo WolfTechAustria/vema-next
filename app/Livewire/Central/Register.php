@@ -20,10 +20,18 @@ class Register extends Component
     private const MAX_REGISTRATIONS_PER_HOUR = 5;
 
     /**
-     * Paket aus dem Link der Website, z. B. ?plan=verein_plus.
+     * Paket aus dem Link der Website, z. B. ?paket=verein-plus.
      */
-    #[Url(as: 'plan')]
+    #[Url(as: 'paket')]
     public string $requestedPlan = '';
+
+    public function mount(): void
+    {
+        // Ältere Links mit ?plan=… weiterhin annehmen.
+        if ($this->requestedPlan === '' && is_string(request()->query('plan'))) {
+            $this->requestedPlan = request()->query('plan');
+        }
+    }
 
     public string $club_name = '';
 

@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
@@ -19,6 +20,12 @@ class FindClub extends Component
     private const MAX_LINK_REQUESTS = 3;
 
     public string $address = '';
+
+    /**
+     * ?ziel=mitglieder: weiter zum Mitglieder-Login statt zum Vorstand-Login.
+     */
+    #[Url]
+    public string $ziel = '';
 
     public string $email = '';
 
@@ -41,7 +48,7 @@ class FindClub extends Component
             return;
         }
 
-        $this->redirect($tenant->url().'/login');
+        $this->redirect($tenant->url().($this->ziel === 'mitglieder' ? '/member/login' : '/login'));
     }
 
     public function sendLinks(): void
