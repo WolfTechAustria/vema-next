@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\MembershipFeeEntry;
-use App\Models\Template;
 use App\Models\ExternalContact;
 use App\Models\Member;
+use App\Models\MembershipFeeEntry;
+use App\Models\Template;
 
 class TemplateRendererService
 {
@@ -42,8 +42,8 @@ class TemplateRendererService
 
             '{{full_name}}' => trim(
                 ($member->name ?? '')
-                . ' '
-                . ($member->surname ?? '')
+                .' '
+                .($member->surname ?? '')
             ),
 
             '{{street}}' => $member->street ?? '',
@@ -76,8 +76,8 @@ class TemplateRendererService
     }
 
     public function membershipFeeReminder(
-        \App\Models\Template $template,
-        \App\Models\MembershipFeeEntry $entry,
+        Template $template,
+        MembershipFeeEntry $entry,
         int $reminderLevel
     ): string {
         $member = $entry->member;
@@ -102,11 +102,11 @@ class TemplateRendererService
             '{{first_name}}' => $member->name,
             '{{last_name}}' => $member->surname,
             '{{full_name}}' => trim(
-                $member->name . ' ' . $member->surname
+                $member->name.' '.$member->surname
             ),
 
-            '{{street}}' => $member->street,
-            '{{zip}}' => $member->zip,
+            '{{street}}' => $member->street ?? '',
+            '{{zip}}' => $member->zip ?? '',
             '{{city}}' => $member->city?->city ?? '',
 
             '{{year}}' => (string) $year->year,
@@ -137,8 +137,7 @@ class TemplateRendererService
     public function circular(
         string $bodyHtml,
         Member|ExternalContact $recipient
-    ): string
-    {
+    ): string {
         if ($recipient instanceof Member) {
 
             $recipient->loadMissing('city');

@@ -143,8 +143,8 @@ class Create extends Component
                 'surname' => $validated['surname'],
                 'dateOfBirth' => $validated['dateOfBirth'] ?: null,
                 'dateOfJoin' => $validated['dateOfJoin'] ?: null,
-                'street' => $validated['street'],
-                'zip' => $validated['zip'],
+                'street' => $validated['street'] ?: null,
+                'zip' => $validated['zip'] ?: null,
                 'competitionMember' => $validated['competitionMember'],
                 'supportingMember' => $validated['supportingMember'],
             ]);

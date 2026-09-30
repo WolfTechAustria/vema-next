@@ -12,52 +12,59 @@
         </p>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2">
-        @if($selectedYear->active)
-            <span class="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
-                Offen
-            </span>
-            @else
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                    Abgeschlossen
+    @if($selectedYear)
+        <div class="flex flex-wrap items-center gap-2">
+            @if($selectedYear->active)
+                <span class="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+                    Offen
                 </span>
-        @endif
-            <button
-                type="button"
-                wire:click="toggleYearActive"
-                wire:confirm="{{ $selectedYear->active
-        ? 'Dieses Beitragsjahr wirklich abschließen? Danach sind keine Änderungen mehr möglich.'
-        : 'Dieses Beitragsjahr wieder zur Bearbeitung öffnen?' }}"
-                class="
-        rounded-lg px-4 py-2 text-sm font-medium
-        {{ $selectedYear->active
-            ? 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-            : 'bg-slate-900 text-white hover:bg-slate-800'
-        }}
-    "
-            >
-                {{ $selectedYear->active
-                    ? 'Beitragsjahr abschließen'
-                    : 'Beitragsjahr wieder öffnen'
-                }}
-            </button>
-
-
-            @if($selectedYear)
-
-                <a
-                    href="{{ route(
-            'membership-fees.open-overview',
-            $selectedYear->yearID
-        ) }}"
-                    class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                    PDF offene Beiträge
-                </a>
-
+                @else
+                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                        Abgeschlossen
+                    </span>
             @endif
+                <button
+                    type="button"
+                    wire:click="toggleYearActive"
+                    wire:confirm="{{ $selectedYear->active
+            ? 'Dieses Beitragsjahr wirklich abschließen? Danach sind keine Änderungen mehr möglich.'
+            : 'Dieses Beitragsjahr wieder zur Bearbeitung öffnen?' }}"
+                    class="
+            rounded-lg px-4 py-2 text-sm font-medium
+            {{ $selectedYear->active
+                ? 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                : 'bg-slate-900 text-white hover:bg-slate-800'
+            }}
+        "
+                >
+                    {{ $selectedYear->active
+                        ? 'Beitragsjahr abschließen'
+                        : 'Beitragsjahr wieder öffnen'
+                    }}
+                </button>
 
-    </div>
+
+                @if($selectedYear)
+
+                    <a
+                        href="{{ route(
+                'membership-fees.open-overview',
+                $selectedYear->yearID
+            ) }}"
+                        class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                        PDF offene Beiträge
+                    </a>
+
+                @endif
+
+        </div>
+    @else
+        <div class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-8 text-center text-sm text-slate-600">
+            Noch kein Beitragsjahr angelegt. Lege über <strong>„Neues Beitragsjahr“</strong> das erste an —
+            danach können Beiträge erfasst und Vorschreibungen erstellt werden.
+        </div>
+    @endif
 
 
 
@@ -313,94 +320,96 @@
 
     @endif
 
-    <section
-        x-data="{ open: window.matchMedia('(min-width: 768px)').matches }"
-        class="rounded-xl border border-slate-200 bg-white shadow-sm"
-    >
-
-        <button
-            type="button"
-            @click="open = !open"
-            class="flex w-full items-center justify-between border-b border-slate-200 px-4 py-4 text-left sm:px-6"
+    @if($selectedYear)
+        <section
+            x-data="{ open: window.matchMedia('(min-width: 768px)').matches }"
+            class="rounded-xl border border-slate-200 bg-white shadow-sm"
         >
-            <span>
-                <span class="block font-semibold text-slate-900">
-                    Standardbeitrag
+
+            <button
+                type="button"
+                @click="open = !open"
+                class="flex w-full items-center justify-between border-b border-slate-200 px-4 py-4 text-left sm:px-6"
+            >
+                <span>
+                    <span class="block font-semibold text-slate-900">
+                        Standardbeitrag
+                    </span>
+
+                    <span class="mt-1 block text-sm text-slate-500">
+                        Standardbetrag für das ausgewählte Beitragsjahr.
+                    </span>
                 </span>
 
-                <span class="mt-1 block text-sm text-slate-500">
-                    Standardbetrag für das ausgewählte Beitragsjahr.
-                </span>
-            </span>
+                <span x-text="open ? '▴' : '▾'" class="text-slate-500"></span>
+            </button>
 
-            <span x-text="open ? '▴' : '▾'" class="text-slate-500"></span>
-        </button>
+            <div x-show="open" x-collapse class="flex flex-col gap-4 p-4 sm:flex-row sm:flex-wrap sm:items-end sm:p-6">
 
-        <div x-show="open" x-collapse class="flex flex-col gap-4 p-4 sm:flex-row sm:flex-wrap sm:items-end sm:p-6">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">
+                        Betrag
+                    </label>
 
-            <div>
-                <label class="mb-1 block text-sm font-medium text-slate-700">
-                    Betrag
-                </label>
+                    <div class="flex items-center gap-2">
+                        <input
+                            type="text"
+                            wire:model="defaultAmount"
+                            class="w-32 rounded-lg border border-slate-300 px-3 py-2 text-right"
+                            placeholder="0,00"
+                            @disabled(!$selectedYear->active)
+                        >
 
-                <div class="flex items-center gap-2">
-                    <input
-                        type="text"
-                        wire:model="defaultAmount"
-                        class="w-32 rounded-lg border border-slate-300 px-3 py-2 text-right"
-                        placeholder="0,00"
-                        @disabled(!$selectedYear->active)
+                        <span class="text-sm text-slate-500">
+                        €
+                    </span>
+                    </div>
+
+                    @error('defaultAmount')
+                    <div class="mt-1 text-sm text-red-600">
+                        {{ $message }}
+                    </div>
+                    @enderror
+                </div>
+
+                <button
+                    type="button"
+                    wire:click="saveDefaultAmount"
+                    class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    @disabled(!$selectedYear->active)
+                >
+                    Standardbetrag speichern
+                </button>
+
+                <button
+                    type="button"
+                    wire:click="applyDefaultAmount"
+                    wire:confirm="Standardbetrag wirklich auf alle offenen Beiträge dieses Jahres anwenden?"
+                    class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                    @disabled(!$selectedYear->active)
+                >
+                    Auf offene Beiträge anwenden
+                </button>
+
+                @if($selectedYear)
+
+                    <a
+                        href="{{ route(
+                            'membership-fees.prescriptions.all',
+                            $selectedYear->yearID
+                        ) }}"
+                        target="_blank"
+                        class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
+                        Alle offenen Vorschreibungen
+                    </a>
 
-                    <span class="text-sm text-slate-500">
-                    €
-                </span>
-                </div>
+                @endif
 
-                @error('defaultAmount')
-                <div class="mt-1 text-sm text-red-600">
-                    {{ $message }}
-                </div>
-                @enderror
             </div>
 
-            <button
-                type="button"
-                wire:click="saveDefaultAmount"
-                class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                @disabled(!$selectedYear->active)
-            >
-                Standardbetrag speichern
-            </button>
-
-            <button
-                type="button"
-                wire:click="applyDefaultAmount"
-                wire:confirm="Standardbetrag wirklich auf alle offenen Beiträge dieses Jahres anwenden?"
-                class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-                @disabled(!$selectedYear->active)
-            >
-                Auf offene Beiträge anwenden
-            </button>
-
-            @if($selectedYear)
-
-                <a
-                    href="{{ route(
-                        'membership-fees.prescriptions.all',
-                        $selectedYear->yearID
-                    ) }}"
-                    target="_blank"
-                    class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                    Alle offenen Vorschreibungen
-                </a>
-
-            @endif
-
-        </div>
-
-    </section>
+        </section>
+    @endif
 
     @if($selectedYear)
 
