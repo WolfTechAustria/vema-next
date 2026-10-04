@@ -3,18 +3,42 @@
 namespace App\Livewire\ExternalContacts;
 
 use App\Models\ExternalContact;
+use App\Services\ExternalContactImporter;
+use InvalidArgumentException;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 class Index extends Component
 {
+    use WithFileUploads;
+
     public ?int $editingContactID = null;
 
+    public bool $showImport = false;
+
+    public ?TemporaryUploadedFile $importFile = null;
+
+    /**
+     * Vorschau aus ExternalContactImporter::analyze(). Nur zur Anzeige —
+     * beim Import wird die Datei erneut ausgewertet.
+     *
+     * @var list<array<string, mixed>>
+     */
+    public array $importPreview = [];
+
     public string $name = '';
+
     public string $surname = '';
+
     public string $organization = '';
+
     public string $email = '';
+
     public string $phone = '';
+
     public string $note = '';
+
     public bool $active = true;
 
     public string $search = '';
@@ -127,7 +151,7 @@ class Index extends Component
         );
 
         $contact->update([
-            'active' => !$contact->active,
+            'active' => ! $contact->active,
         ]);
     }
 
@@ -147,6 +171,60 @@ class Index extends Component
             'success',
             'Externer Kontakt wurde gelöscht.'
         );
+    }
+
+    public function updatedImportFile(): void
+    {
+        $this->importPreview = [];
+
+        $this->validateImportFile();
+
+        try {
+            $this->importPreview = app(ExternalContactImporter::class)
+                ->analyze($this->importFile->getRealPath());
+        } catch (InvalidArgumentException $exception) {
+            $this->addError('importFile', $exception->getMessage());
+        }
+    }
+
+    public function runImport(ExternalContactImporter $importer): void
+    {
+        $this->validateImportFile();
+
+        try {
+            $summary = $importer->import(
+                $importer->analyze($this->importFile->getRealPath())
+            );
+        } catch (InvalidArgumentException $exception) {
+            $this->addError('importFile', $exception->getMessage());
+
+            return;
+        }
+
+        $this->cancelImport();
+
+        session()->flash(
+            'success',
+            "Import abgeschlossen: {$summary['created']} angelegt, {$summary['updated']} aktualisiert, {$summary['skipped']} übersprungen."
+        );
+    }
+
+    public function cancelImport(): void
+    {
+        $this->reset(['showImport', 'importFile', 'importPreview']);
+        $this->resetValidation('importFile');
+    }
+
+    private function validateImportFile(): void
+    {
+        $this->validate([
+            'importFile' => [
+                'required',
+                'file',
+                'mimes:xlsx,xls,csv,txt',
+                'max:5120',
+            ],
+        ]);
     }
 
     private function resetForm(): void
@@ -170,7 +248,7 @@ class Index extends Component
             ->when(
                 trim($this->search) !== '',
                 function ($query) {
-                    $search = '%' . trim($this->search) . '%';
+                    $search = '%'.trim($this->search).'%';
 
                     $query->where(function ($query) use ($search) {
                         $query
