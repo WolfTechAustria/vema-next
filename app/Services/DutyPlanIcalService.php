@@ -9,7 +9,10 @@ use Spatie\IcalendarGenerator\Components\Event;
 
 class DutyPlanIcalService
 {
-    public function buildForMember(Member $member): Calendar
+    /**
+     * Trägt die Dienste des Mitglieds in den (gemeinsamen) Kalender ein.
+     */
+    public function addToCalendar(Calendar $calendar, Member $member): void
     {
         $assignments = $member->dutyAssignments()
             ->with('event')
@@ -21,27 +24,23 @@ class DutyPlanIcalService
             ->get()
             ->filter(fn ($assignment) => $assignment->event !== null);
 
-        $calendar = Calendar::create('Dienste ' . $member->full_name)
-            ->refreshInterval(60)
-            ->withoutTimezone();
-
         foreach ($assignments as $assignment) {
             $event = $assignment->event;
 
             $icalEvent = Event::create($event->duty_name ?? 'Dienst')
-                ->uniqueIdentifier('duty-assignment-' . $assignment->assignmentID)
+                ->uniqueIdentifier('duty-assignment-'.$assignment->assignmentID)
                 ->description(
-                    'Dienst "' . ($event->duty_name ?? 'Dienst')
-                    . '" für ' . $member->full_name
+                    'Dienst "'.($event->duty_name ?? 'Dienst')
+                    .'" für '.$member->full_name
                 );
 
             if ($event->start_time) {
                 $start = Carbon::parse(
-                    $event->duty_date->toDateString() . ' ' . $event->start_time
+                    $event->duty_date->toDateString().' '.$event->start_time
                 );
 
                 $end = $event->end_time
-                    ? Carbon::parse($event->duty_date->toDateString() . ' ' . $event->end_time)
+                    ? Carbon::parse($event->duty_date->toDateString().' '.$event->end_time)
                     : $start->copy()->addHour();
 
                 $icalEvent->startsAt($start)->endsAt($end);
@@ -53,7 +52,5 @@ class DutyPlanIcalService
 
             $calendar->event($icalEvent);
         }
-
-        return $calendar;
     }
 }

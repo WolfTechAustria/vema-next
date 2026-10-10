@@ -7,7 +7,7 @@ use App\Models\ClubEvent;
 use App\Models\ClubEventResponse;
 use App\Models\ClubEventSource;
 use App\Models\Member;
-use App\Models\MemberEventSettings;
+use App\Models\MemberDutySettings;
 use App\Models\User;
 use App\Services\ExternalCalendarException;
 use App\Services\ExternalCalendarSyncService;
@@ -350,9 +350,9 @@ describe('member portal and calendar feed', function () {
         $source = ClubEventSource::factory()->create(['name' => 'Landesverband']);
         ClubEvent::factory()->create(['title' => 'Landestreffen', 'sourceID' => $source->sourceID, 'external_uid' => 'a']);
         ClubEvent::factory()->create(['title' => 'Vereinsfest']);
-        $token = MemberEventSettings::forMember($member)->getOrCreateIcalToken();
+        $token = MemberDutySettings::forMember($member)->getOrCreateIcalToken();
 
-        $this->get(route('events.ical', $token))
+        $this->get(route('member-calendar.ical', $token))
             ->assertSee('Vereinsfest')
             ->assertDontSee('Landestreffen');
 
@@ -360,14 +360,14 @@ describe('member portal and calendar feed', function () {
             ->assertSee('Landesverband')
             ->call('toggleSourceSubscription', $source->sourceID);
 
-        $this->get(route('events.ical', $token))
+        $this->get(route('member-calendar.ical', $token))
             ->assertSee('Vereinsfest')
             ->assertSee('Landestreffen');
 
         Livewire::test(MyEvents::class)
             ->call('toggleSourceSubscription', $source->sourceID);
 
-        $this->get(route('events.ical', $token))
+        $this->get(route('member-calendar.ical', $token))
             ->assertDontSee('Landestreffen');
     });
 });

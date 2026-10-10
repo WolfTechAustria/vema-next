@@ -6,7 +6,7 @@ use App\Enums\EventResponseStatus;
 use App\Models\ClubEvent;
 use App\Models\ClubEventResponse;
 use App\Models\ClubEventSource;
-use App\Models\MemberEventSettings;
+use App\Models\MemberDutySettings;
 use App\Services\ActiveMemberResolver;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -24,9 +24,9 @@ class MyEvents extends Component
 
     public function mount(ActiveMemberResolver $resolver): void
     {
-        $settings = MemberEventSettings::forMember($resolver->resolve());
+        $settings = MemberDutySettings::forMember($resolver->resolve());
 
-        $this->icalUrl = route('events.ical', $settings->getOrCreateIcalToken());
+        $this->icalUrl = route('member-calendar.ical', $settings->getOrCreateIcalToken());
     }
 
     public function showMoreEvents(): void
@@ -82,9 +82,9 @@ class MyEvents extends Component
 
     public function regenerateIcalLink(): void
     {
-        $settings = MemberEventSettings::forMember(app(ActiveMemberResolver::class)->resolve());
+        $settings = MemberDutySettings::forMember(app(ActiveMemberResolver::class)->resolve());
 
-        $this->icalUrl = route('events.ical', $settings->regenerateIcalToken());
+        $this->icalUrl = route('member-calendar.ical', $settings->regenerateIcalToken());
 
         session()->flash(
             'success',

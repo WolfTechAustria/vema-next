@@ -24,9 +24,6 @@ class EnsureFeatureEnabled
             return $next($request);
         }
 
-        // Kalender-Abo: kein Browser, der eine Weiterleitung anzeigen könnte.
-        abort_if($request->routeIs('duty-plan.ical'), 404);
-
         $message = $this->entitlements->featureMessage($feature);
 
         if ($request->expectsJson() || ! $request->isMethod('GET')) {

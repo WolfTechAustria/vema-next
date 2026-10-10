@@ -11,7 +11,8 @@
         <p class="mt-1 text-sm text-slate-500">
             Dieser Link kann in Google Kalender, Apple Kalender oder Outlook
             als Kalender-Abo hinzugefügt werden. Er enthält alle Vereinstermine,
-            für die du nicht abgesagt hast.
+            für die du nicht abgesagt hast, und deine Dienste – es ist derselbe
+            Link wie unter „Mein Dienstplan“.
         </p>
 
         <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">

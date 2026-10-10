@@ -11,10 +11,11 @@ use Spatie\IcalendarGenerator\Components\Event;
 class ClubEventIcalService
 {
     /**
-     * Vereinskalender für ein Mitglied — abgesagte Termine werden ausgeblendet,
-     * externe Kalender nur nach Opt-in des Mitglieds übernommen.
+     * Trägt die Vereinstermine in den (gemeinsamen) Kalender des Mitglieds
+     * ein — abgesagte Termine werden ausgeblendet, externe Kalender nur nach
+     * Opt-in des Mitglieds übernommen.
      */
-    public function buildForMember(Member $member): Calendar
+    public function addToCalendar(Calendar $calendar, Member $member): void
     {
         $events = ClubEvent::query()
             ->inCalendarOf($member)
@@ -23,10 +24,6 @@ class ClubEventIcalService
             ->orderBy('starts_at')
             ->get()
             ->reject(fn (ClubEvent $event) => $event->responseFor($member)?->status === EventResponseStatus::Declined);
-
-        $calendar = Calendar::create('Vereinstermine')
-            ->refreshInterval(60)
-            ->withoutTimezone();
 
         foreach ($events as $event) {
             $icalEvent = Event::create($event->title)
@@ -50,7 +47,5 @@ class ClubEventIcalService
 
             $calendar->event($icalEvent);
         }
-
-        return $calendar;
     }
 }

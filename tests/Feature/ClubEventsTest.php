@@ -2,11 +2,16 @@
 
 use App\Enums\EventResponseStatus;
 use App\Livewire\Events\Index as EventsIndex;
+use App\Livewire\MemberPortal\MyDuties as MemberPortalMyDuties;
 use App\Livewire\MemberPortal\MyEvents;
 use App\Models\ClubEvent;
 use App\Models\ClubEventResponse;
+use App\Models\DutyPlan;
+use App\Models\DutyPlanAssignment;
+use App\Models\DutyPlanEvent;
+use App\Models\DutyPlanRole;
 use App\Models\Member;
-use App\Models\MemberEventSettings;
+use App\Models\MemberDutySettings;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Livewire\Livewire;
@@ -221,20 +226,20 @@ describe('member portal', function () {
         $component->call('regenerateIcalLink');
 
         expect($component->get('icalUrl'))->not->toBe($oldUrl)
-            ->and($component->get('icalUrl'))->toContain(MemberEventSettings::find($member->memberID)->ical_token);
+            ->and($component->get('icalUrl'))->toContain(MemberDutySettings::find($member->memberID)->ical_token);
     });
 });
 
 describe('calendar feed', function () {
     it('serves upcoming events but hides declined ones', function () {
         $member = Member::create(['gender' => 'm', 'name' => 'Max', 'surname' => 'Muster', 'active' => 1]);
-        $token = MemberEventSettings::forMember($member)->getOrCreateIcalToken();
+        $token = MemberDutySettings::forMember($member)->getOrCreateIcalToken();
 
         ClubEvent::factory()->create(['title' => 'Sommerfest', 'location' => 'Festplatz']);
         $declined = ClubEvent::factory()->create(['title' => 'Vorstandssitzung']);
         ClubEventResponse::create(['eventID' => $declined->eventID, 'memberID' => $member->memberID, 'status' => EventResponseStatus::Declined]);
 
-        $this->get(route('events.ical', $token))
+        $this->get(route('member-calendar.ical', $token))
             ->assertOk()
             ->assertHeader('Content-Type', 'text/calendar; charset=utf-8')
             ->assertSee('SUMMARY:Sommerfest', false)
@@ -242,12 +247,41 @@ describe('calendar feed', function () {
             ->assertDontSee('Vorstandssitzung', false);
     });
 
+    it('serves duties and club events through the same link', function () {
+        $member = loginPortalMember();
+
+        $plan = DutyPlan::create(['name' => 'Saison', 'date_from' => now()->startOfYear(), 'date_to' => now()->endOfYear()]);
+        $role = DutyPlanRole::create(['planID' => $plan->planID, 'name' => 'Schießstandaufsicht']);
+        $dutyEvent = DutyPlanEvent::create([
+            'planID' => $plan->planID,
+            'roleID' => $role->roleID,
+            'duty_date' => now()->addDays(3)->toDateString(),
+            'duty_name' => 'Schießstandaufsicht',
+            'required_helpers' => 1,
+            'start_time' => '18:00',
+            'end_time' => '21:00',
+        ]);
+        DutyPlanAssignment::create(['eventID' => $dutyEvent->eventID, 'slot_no' => 1, 'memberID' => $member->memberID]);
+
+        ClubEvent::factory()->create(['title' => 'Sommerfest']);
+
+        $dutiesLink = Livewire::test(MemberPortalMyDuties::class)->get('icalUrl');
+        $eventsLink = Livewire::test(MyEvents::class)->get('icalUrl');
+
+        expect($eventsLink)->toBe($dutiesLink);
+
+        $this->get($eventsLink)
+            ->assertOk()
+            ->assertSee('SUMMARY:Schießstandaufsicht', false)
+            ->assertSee('SUMMARY:Sommerfest', false);
+    });
+
     it('rejects unknown tokens and inactive members', function () {
-        $this->get(route('events.ical', 'unbekannt'))->assertNotFound();
+        $this->get(route('member-calendar.ical', 'unbekannt'))->assertNotFound();
 
         $member = Member::create(['gender' => 'm', 'name' => 'Max', 'surname' => 'Inaktiv', 'active' => 0]);
-        $token = MemberEventSettings::forMember($member)->getOrCreateIcalToken();
+        $token = MemberDutySettings::forMember($member)->getOrCreateIcalToken();
 
-        $this->get(route('events.ical', $token))->assertNotFound();
+        $this->get(route('member-calendar.ical', $token))->assertNotFound();
     });
 });

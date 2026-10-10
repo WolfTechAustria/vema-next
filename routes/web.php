@@ -6,11 +6,10 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\CashBookController;
 use App\Http\Controllers\CircularController;
-use App\Http\Controllers\ClubEventIcalController;
 use App\Http\Controllers\DemoModeController;
-use App\Http\Controllers\DutyPlanIcalController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MemberAuthController;
+use App\Http\Controllers\MemberCalendarController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberPortalDocumentController;
 use App\Http\Controllers\MembershipFeePrescriptionController;
@@ -293,13 +292,9 @@ Route::middleware(['auth:member', 'feature:member_portal'])->group(function () {
         ->name('member.circulars.attachment');
 });
 
-Route::get('/calendar/duty/{token}.ics', [DutyPlanIcalController::class, 'show'])
-    ->middleware('feature:duty_plan')
-    ->name('duty-plan.ical');
-
-Route::get('/calendar/events/{token}.ics', [ClubEventIcalController::class, 'show'])
-    ->middleware('feature:events')
-    ->name('events.ical');
+// Pfad bleibt aus Kompatibilität ".../duty/...", damit bestehende Abos weiterlaufen.
+Route::get('/calendar/duty/{token}.ics', [MemberCalendarController::class, 'show'])
+    ->name('member-calendar.ical');
 
 Route::get('/branding/logo', [BrandingController::class, 'logo'])
     ->name('branding.logo');

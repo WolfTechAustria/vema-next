@@ -22,7 +22,7 @@ class MyDuties extends Component
         $this->reminderEnabled = $settings->duty_reminder_enabled;
 
         $this->icalUrl = route(
-            'duty-plan.ical',
+            'member-calendar.ical',
             $settings->getOrCreateIcalToken()
         );
     }
@@ -33,7 +33,7 @@ class MyDuties extends Component
 
         $settings = MemberDutySettings::forMember($member);
 
-        $settings->duty_reminder_enabled = !$settings->duty_reminder_enabled;
+        $settings->duty_reminder_enabled = ! $settings->duty_reminder_enabled;
         $settings->save();
 
         $this->reminderEnabled = $settings->duty_reminder_enabled;
@@ -54,7 +54,7 @@ class MyDuties extends Component
 
         $token = $settings->regenerateIcalToken();
 
-        $this->icalUrl = route('duty-plan.ical', $token);
+        $this->icalUrl = route('member-calendar.ical', $token);
 
         session()->flash(
             'success',
@@ -98,7 +98,7 @@ class MyDuties extends Component
 
         $past = $assignments->filter(
             fn ($assignment) => $assignment->event->duty_date->isPast()
-                && !$assignment->event->duty_date->isToday()
+                && ! $assignment->event->duty_date->isToday()
         )->reverse()->values();
 
         return view('livewire.member-portal.my-duties', [

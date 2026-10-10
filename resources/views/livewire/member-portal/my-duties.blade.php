@@ -12,6 +12,9 @@
             Dieser Link kann in Google Kalender, Apple Kalender oder Outlook
             als Kalender-Abo hinzugefügt werden. Er aktualisiert sich
             automatisch, sobald sich deine Dienste ändern.
+            @feature('events')
+                Er enthält auch die Vereinstermine – es ist derselbe Link wie unter „Termine“.
+            @endfeature
         </p>
 
         <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
