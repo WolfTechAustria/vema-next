@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -14,8 +15,11 @@ class BirthdayListMail extends Mailable
     use Queueable, SerializesModels;
 
     public string $monthName;
+
     public int $memberCount;
+
     public string $pdfContent;
+
     public string $pdfFileName;
 
     public function __construct(
@@ -32,8 +36,12 @@ class BirthdayListMail extends Mailable
 
     public function envelope(): Envelope
     {
+        /*
+         * Die Empfänger stehen in BCC, sichtbar ist nur die Vereinsadresse.
+         */
         return new Envelope(
-            subject: 'Geburtstagsliste ' . $this->monthName
+            to: [new Address(config('mail.from.address'), config('mail.from.name'))],
+            subject: 'Geburtstagsliste '.$this->monthName
         );
     }
 

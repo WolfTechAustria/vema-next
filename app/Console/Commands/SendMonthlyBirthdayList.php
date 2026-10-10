@@ -87,7 +87,7 @@ class SendMonthlyBirthdayList extends Command
             }
         );
 
-        Mail::to($recipients->all())->send($mail);
+        Mail::bcc($recipients->all())->send($mail);
 
         if ($rawMessage) {
             try {
