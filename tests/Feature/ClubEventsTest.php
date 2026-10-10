@@ -95,6 +95,46 @@ describe('staff', function () {
         expect(ClubEvent::query()->count())->toBe(0);
     });
 
+    it('restricts an event to selected members and lifts the restriction again', function () {
+        $anna = Member::create(['gender' => 'w', 'name' => 'Anna', 'surname' => 'Ausgewählt', 'active' => 1]);
+        $bernd = Member::create(['gender' => 'm', 'name' => 'Bernd', 'surname' => 'Auch', 'active' => 1]);
+
+        $component = Livewire::test(EventsIndex::class)
+            ->set('title', 'Vorstandssitzung')
+            ->set('startDate', '2026-11-14')
+            ->set('startTime', '19:30')
+            ->set('selectedMembers', [(string) $anna->memberID, (string) $bernd->memberID])
+            ->call('saveEvent')
+            ->assertHasNoErrors()
+            ->assertSet('selectedMembers', [])
+            ->assertSee('Nur sichtbar für 2 Mitglieder');
+
+        $event = ClubEvent::query()->sole();
+
+        expect($event->members()->pluck('tb_members.memberID')->sort()->values()->all())
+            ->toBe([$anna->memberID, $bernd->memberID]);
+
+        $component->call('editEvent', $event->eventID)
+            ->assertSet('selectedMembers', [(string) $anna->memberID, (string) $bernd->memberID])
+            ->set('selectedMembers', [])
+            ->call('saveEvent')
+            ->assertHasNoErrors();
+
+        expect($event->members()->count())->toBe(0);
+    });
+
+    it('rejects unknown members in the visibility selection', function () {
+        Livewire::test(EventsIndex::class)
+            ->set('title', 'Sitzung')
+            ->set('startDate', '2026-11-14')
+            ->set('startTime', '19:30')
+            ->set('selectedMembers', ['999999'])
+            ->call('saveEvent')
+            ->assertHasErrors('selectedMembers.0');
+
+        expect(ClubEvent::query()->count())->toBe(0);
+    });
+
     it('updates an existing event', function () {
         $event = ClubEvent::factory()->create(['title' => 'Alt']);
 
@@ -126,7 +166,6 @@ describe('staff', function () {
         $event = ClubEvent::factory()->create();
         $attending = Member::create(['gender' => 'w', 'name' => 'Anna', 'surname' => 'Zusager', 'active' => 1]);
         $declining = Member::create(['gender' => 'm', 'name' => 'Bernd', 'surname' => 'Absager', 'active' => 1]);
-        Member::create(['gender' => 'm', 'name' => 'Carl', 'surname' => 'Schweiger', 'active' => 1]);
 
         ClubEventResponse::create(['eventID' => $event->eventID, 'memberID' => $attending->memberID, 'status' => EventResponseStatus::Attending]);
         ClubEventResponse::create(['eventID' => $event->eventID, 'memberID' => $declining->memberID, 'status' => EventResponseStatus::Declined]);
@@ -135,10 +174,9 @@ describe('staff', function () {
             ->call('toggleResponses', $event->eventID)
             ->assertSee('Zugesagt (1)')
             ->assertSee('Abgesagt (1)')
-            ->assertSee('Zusager')
-            ->assertSee('Absager')
-            ->assertDontSee('Keine Rückmeldung')
-            ->assertDontSee('Schweiger');
+            ->assertSee('Anna Zusager')
+            ->assertSee('Bernd Absager')
+            ->assertDontSee('Keine Rückmeldung');
     });
 
     it('shows the next five upcoming events and more on demand', function () {
@@ -167,6 +205,31 @@ describe('staff', function () {
 });
 
 describe('member portal', function () {
+    it('shows restricted events only to the selected members', function () {
+        $member = loginPortalMember();
+        $other = Member::create(['gender' => 'w', 'name' => 'Anna', 'surname' => 'Andere', 'active' => 1]);
+
+        ClubEvent::factory()->create(['title' => 'Für alle']);
+        ClubEvent::factory()->create(['title' => 'Nur für mich'])->members()->attach($member->memberID);
+        $hidden = ClubEvent::factory()->create(['title' => 'Nur für Anna']);
+        $hidden->members()->attach($other->memberID);
+
+        $component = Livewire::test(MyEvents::class)
+            ->assertSee('Für alle')
+            ->assertSee('Nur für mich')
+            ->assertDontSee('Nur für Anna');
+
+        expect(fn () => $component->call('respond', $hidden->eventID, 'attending'))
+            ->toThrow(ModelNotFoundException::class);
+
+        $token = MemberDutySettings::forMember($member)->getOrCreateIcalToken();
+
+        $this->get(route('member-calendar.ical', $token))
+            ->assertSee('Für alle')
+            ->assertSee('Nur für mich')
+            ->assertDontSee('Nur für Anna');
+    });
+
     it('shows the next five upcoming events and more on demand', function () {
         loginPortalMember();
         createNumberedUpcomingEvents(7);

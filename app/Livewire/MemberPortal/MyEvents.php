@@ -41,7 +41,7 @@ class MyEvents extends Component
 
         $event = ClubEvent::query()
             ->upcoming()
-            ->visibleToMembers()
+            ->visibleTo($member)
             ->where('rsvp_enabled', true)
             ->findOrFail($eventID);
 
@@ -98,7 +98,7 @@ class MyEvents extends Component
 
         $eventsQuery = ClubEvent::query()
             ->upcoming()
-            ->visibleToMembers();
+            ->visibleTo($member);
 
         $totalEvents = $eventsQuery->count();
 

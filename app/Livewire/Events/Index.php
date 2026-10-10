@@ -5,10 +5,12 @@ namespace App\Livewire\Events;
 use App\Enums\EventResponseStatus;
 use App\Models\ClubEvent;
 use App\Models\ClubEventSource;
+use App\Models\Member;
 use App\Services\ExternalCalendarException;
 use App\Services\ExternalCalendarSyncService;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class Index extends Component
@@ -30,6 +32,13 @@ class Index extends Component
     public bool $allDay = false;
 
     public bool $rsvpEnabled = true;
+
+    /**
+     * Mitglieder, die den Termin sehen; leer = alle.
+     *
+     * @var array<int, string>
+     */
+    public array $selectedMembers = [];
 
     public ?int $editingEventID = null;
 
@@ -66,6 +75,8 @@ class Index extends Component
             'endTime' => ['nullable', 'date_format:H:i'],
             'allDay' => ['boolean'],
             'rsvpEnabled' => ['boolean'],
+            'selectedMembers' => ['array'],
+            'selectedMembers.*' => ['integer', Rule::exists('tb_members', 'memberID')],
         ], [], [
             'title' => 'Titel',
             'startDate' => 'Datum',
@@ -97,14 +108,18 @@ class Index extends Component
         ];
 
         if ($this->editingEventID) {
-            ClubEvent::query()->whereNull('sourceID')->findOrFail($this->editingEventID)->update($attributes);
+            $event = ClubEvent::query()->whereNull('sourceID')->findOrFail($this->editingEventID);
+            $event->update($attributes);
 
             session()->flash('success', 'Termin wurde aktualisiert.');
         } else {
-            ClubEvent::create($attributes);
+            $event = ClubEvent::create($attributes);
 
             session()->flash('success', 'Termin wurde angelegt.');
         }
+
+        // Keine Auswahl = für alle Mitglieder sichtbar.
+        $event->members()->sync(array_map('intval', $this->selectedMembers));
 
         $this->resetForm();
     }
@@ -119,6 +134,10 @@ class Index extends Component
         $this->location = $event->location ?? '';
         $this->allDay = $event->all_day;
         $this->rsvpEnabled = $event->rsvp_enabled;
+        $this->selectedMembers = $event->members()
+            ->pluck('tb_members.memberID')
+            ->map(fn ($memberID) => (string) $memberID)
+            ->all();
         $this->startDate = $event->starts_at->format('Y-m-d');
         $this->startTime = $event->all_day ? '' : $event->starts_at->format('H:i');
         $this->endDate = $event->ends_at && ! $event->ends_at->isSameDay($event->starts_at)
@@ -289,6 +308,7 @@ class Index extends Component
             'endTime',
             'allDay',
             'rsvpEnabled',
+            'selectedMembers',
             'editingEventID',
         ]);
     }
@@ -317,7 +337,7 @@ class Index extends Component
 
         $events = $eventsQuery
             ->when(! $this->showPast, fn ($query) => $query->limit($this->visibleUpcomingCount))
-            ->with(['source', 'responses.member'])
+            ->with(['source', 'responses.member', 'members'])
             ->get();
 
         $responseOverview = null;
@@ -340,6 +360,11 @@ class Index extends Component
 
         return view('livewire.events.index', [
             'events' => $events,
+            'members' => Member::query()
+                ->where('active', true)
+                ->orderBy('surname')
+                ->orderBy('name')
+                ->get(['memberID', 'name', 'surname']),
             'hiddenEventsCount' => $totalEvents - $events->count(),
             'responseOverview' => $responseOverview,
             'sources' => ClubEventSource::query()->withCount('events')->orderBy('name')->get(),

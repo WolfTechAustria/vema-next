@@ -174,6 +174,59 @@
                     Mitglieder können im Mitgliederportal zu- oder absagen
                 </label>
 
+                <div x-data="{ search: '' }">
+                    <div class="mb-1 flex items-center justify-between gap-2">
+                        <label class="block text-sm font-medium">
+                            Sichtbar für
+                        </label>
+
+                        <span class="text-xs text-slate-500">
+                            {{ count($selectedMembers) === 0 ? 'alle Mitglieder' : count($selectedMembers).' ausgewählt' }}
+                        </span>
+                    </div>
+
+                    <p class="mb-2 text-xs text-slate-500">
+                        Keine Auswahl: Alle Mitglieder sehen den Termin. Sonst nur die ausgewählten.
+                    </p>
+
+                    <input
+                        type="search"
+                        x-model="search"
+                        placeholder="Mitglied suchen …"
+                        class="mb-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    >
+
+                    <div class="max-h-60 overflow-y-auto rounded-lg border border-slate-200">
+                        @forelse($members as $member)
+                            <label
+                                wire:key="event-member-{{ $member->memberID }}"
+                                data-name="{{ mb_strtolower($member->surname.' '.$member->name) }}"
+                                x-show="$el.dataset.name.includes(search.toLowerCase())"
+                                class="flex items-center gap-3 border-b border-slate-100 px-4 py-2 last:border-b-0"
+                            >
+                                <input
+                                    type="checkbox"
+                                    wire:model.live="selectedMembers"
+                                    value="{{ $member->memberID }}"
+                                    class="h-4 w-4 rounded border-slate-300"
+                                >
+
+                                <span class="text-sm text-slate-700">
+                                    {{ $member->surname }} {{ $member->name }}
+                                </span>
+                            </label>
+                        @empty
+                            <div class="px-4 py-5 text-center text-sm text-slate-500">
+                                Keine aktiven Mitglieder vorhanden.
+                            </div>
+                        @endforelse
+                    </div>
+
+                    @error('selectedMembers.*')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <button
                     type="submit"
                     wire:loading.attr="disabled"
@@ -251,6 +304,15 @@
                                 @else
                                     <div class="mt-2 text-xs text-slate-400">
                                         Ohne Zu-/Absage
+                                    </div>
+                                @endif
+
+                                @if($event->members->isNotEmpty())
+                                    <div
+                                        class="mt-1 text-xs text-amber-700"
+                                        title="{{ $event->members->sortBy('surname')->map(fn ($member) => $member->full_name)->join(', ') }}"
+                                    >
+                                        Nur sichtbar für {{ $event->members->count() }} {{ $event->members->count() === 1 ? 'Mitglied' : 'Mitglieder' }}
                                     </div>
                                 @endif
                             </div>

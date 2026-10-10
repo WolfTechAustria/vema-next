@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -52,13 +53,34 @@ class ClubEvent extends Model
     }
 
     /**
-     * Für Mitglieder sichtbar: eigene Termine und Termine aktiver Quellen.
+     * Mitglieder, die diesen Termin sehen — leer bedeutet: alle.
      */
-    public function scopeVisibleToMembers(Builder $query): Builder
+    public function members(): BelongsToMany
     {
-        return $query->where(function (Builder $query) {
-            $query->whereNull('sourceID')
-                ->orWhereHas('source', fn (Builder $query) => $query->where('active', true));
+        return $this->belongsToMany(
+            Member::class,
+            'tb_event_members',
+            'eventID',
+            'memberID',
+            'eventID',
+            'memberID'
+        )->withTimestamps();
+    }
+
+    /**
+     * Für das Mitglied sichtbar: eigene Termine ohne Einschränkung oder mit
+     * diesem Mitglied, dazu Termine aktiver externer Kalender.
+     */
+    public function scopeVisibleTo(Builder $query, Member $member): Builder
+    {
+        return $query->where(function (Builder $query) use ($member) {
+            $query->where(function (Builder $query) use ($member) {
+                $query->whereNull('sourceID')
+                    ->where(function (Builder $query) use ($member) {
+                        $query->whereDoesntHave('members')
+                            ->orWhereHas('members', fn (Builder $query) => $query->where('tb_members.memberID', $member->memberID));
+                    });
+            })->orWhereHas('source', fn (Builder $query) => $query->where('active', true));
         });
     }
 
@@ -68,7 +90,7 @@ class ClubEvent extends Model
      */
     public function scopeInCalendarOf(Builder $query, Member $member): Builder
     {
-        return $query->visibleToMembers()
+        return $query->visibleTo($member)
             ->where(function (Builder $query) use ($member) {
                 $query->whereNull('sourceID')
                     ->orWhereIn('sourceID', $member->subscribedEventSources()->select('tb_event_sources.sourceID'));
