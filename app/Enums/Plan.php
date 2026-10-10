@@ -54,7 +54,7 @@ enum Plan: string
         }
 
         if ($this->rank() >= self::Verein->rank()) {
-            array_push($features, Feature::DutyPlan, Feature::Invoices, Feature::RecipientGroups);
+            array_push($features, Feature::DutyPlan, Feature::Invoices, Feature::RecipientGroups, Feature::Events);
         }
 
         if ($this->rank() >= self::VereinPlus->rank()) {

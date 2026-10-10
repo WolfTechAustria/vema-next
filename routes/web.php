@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\CashBookController;
 use App\Http\Controllers\CircularController;
+use App\Http\Controllers\ClubEventIcalController;
 use App\Http\Controllers\DemoModeController;
 use App\Http\Controllers\DutyPlanIcalController;
 use App\Http\Controllers\InvoiceController;
@@ -20,6 +21,7 @@ use App\Livewire\Dashboard\Index as DashboardIndex;
 use App\Livewire\DutyPlan\Absences as DutyPlanAbsences;
 use App\Livewire\DutyPlan\Index as DutyPlanIndex;
 use App\Livewire\DutyPlan\Volunteers as DutyPlanVolunteers;
+use App\Livewire\Events\Index as EventsIndex;
 use App\Livewire\ExternalContacts\Index;
 use App\Livewire\Invoices\Articles\Index as InvoiceArticlesIndex;
 use App\Livewire\Invoices\Create as InvoicesCreate;
@@ -29,6 +31,7 @@ use App\Livewire\Invoices\Show as InvoicesShow;
 use App\Livewire\MemberAuth\Login;
 use App\Livewire\MemberPortal\MyCirculars;
 use App\Livewire\MemberPortal\MyDuties as MemberPortalMyDuties;
+use App\Livewire\MemberPortal\MyEvents;
 use App\Livewire\MemberPortal\MyFees;
 use App\Livewire\MemberPortal\Profile;
 use App\Livewire\MemberPortal\SelectProfile;
@@ -111,6 +114,10 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/duty-plan/absences', DutyPlanAbsences::class)
         ->middleware('feature:duty_plan')
         ->name('duty-plan.absences');
+
+    Route::livewire('/events', EventsIndex::class)
+        ->middleware('feature:events')
+        ->name('events.index');
 
     Route::livewire('/membership-fees', MembershipFeesIndex::class)
         ->name('membership-fees.index');
@@ -266,6 +273,10 @@ Route::middleware(['auth:member', 'feature:member_portal'])->group(function () {
     Route::livewire('/member/duties', MemberPortalMyDuties::class)
         ->name('member.duties');
 
+    Route::livewire('/member/events', MyEvents::class)
+        ->middleware('feature:events')
+        ->name('member.events');
+
     Route::livewire('/member/fees', MyFees::class)
         ->name('member.fees');
 
@@ -285,6 +296,10 @@ Route::middleware(['auth:member', 'feature:member_portal'])->group(function () {
 Route::get('/calendar/duty/{token}.ics', [DutyPlanIcalController::class, 'show'])
     ->middleware('feature:duty_plan')
     ->name('duty-plan.ical');
+
+Route::get('/calendar/events/{token}.ics', [ClubEventIcalController::class, 'show'])
+    ->middleware('feature:events')
+    ->name('events.ical');
 
 Route::get('/branding/logo', [BrandingController::class, 'logo'])
     ->name('branding.logo');

@@ -13,6 +13,7 @@ enum Feature: string
     case DutyPlan = 'duty_plan';
     case Invoices = 'invoices';
     case RecipientGroups = 'recipient_groups';
+    case Events = 'events';
     case MemberPortal = 'member_portal';
     case ActivityLog = 'activity_log';
     case TestMode = 'test_mode';
@@ -25,6 +26,7 @@ enum Feature: string
             self::DutyPlan => 'Dienstplan',
             self::Invoices => 'Rechnungen',
             self::RecipientGroups => 'Empfängergruppen & externe Kontakte',
+            self::Events => 'Vereinstermine',
             self::MemberPortal => 'Mitgliederportal',
             self::ActivityLog => 'Aktivitätsprotokoll',
             self::TestMode => 'Testmodus',
