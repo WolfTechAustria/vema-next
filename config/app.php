@@ -68,6 +68,13 @@ return [
     'timezone' => 'UTC',
 
     /*
+     * Zeitzone des Vereins: Termine aus externen iCal-Kalendern werden in
+     * diese Zeitzone umgerechnet und – wie eigene Termine – als Wanduhrzeit
+     * gespeichert.
+     */
+    'club_timezone' => env('CLUB_TIMEZONE', 'Europe/Vienna'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------

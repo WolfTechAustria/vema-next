@@ -27,6 +27,11 @@ Schedule::command('tenants:run', ['duty:send-reminders'])
     ->dailyAt('07:00')
     ->withoutOverlapping();
 
+// stündlich: Termine aus externen iCal-Kalendern übernehmen
+Schedule::command('tenants:run', ['events:sync-external'])
+    ->hourly()
+    ->withoutOverlapping();
+
 // Testmodus: Test-DB nachts auf Live-Stand (nur wenn in den Einstellungen gewählt)
 Schedule::command('tenants:run', ['demo:reset --if-nightly'])
     ->dailyAt(config('demo.reset_time'))

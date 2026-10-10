@@ -39,6 +39,41 @@
                 Link erneuern
             </button>
         </div>
+
+        @if($sources->isNotEmpty())
+            <div class="mt-6 border-t border-slate-100 pt-4">
+                <h4 class="text-sm font-semibold text-slate-900">
+                    Weitere Kalender ins Abo übernehmen
+                </h4>
+
+                <p class="mt-1 text-sm text-slate-500">
+                    Termine aus diesen Kalendern siehst du immer hier im Portal.
+                    In dein Kalender-Abo kommen sie nur, wenn du sie einschaltest.
+                </p>
+
+                <div class="mt-3 divide-y divide-slate-100">
+                    @foreach($sources as $source)
+                        @php($isSubscribed = in_array($source->sourceID, $subscribedSourceIDs, true))
+
+                        <div wire:key="event-source-{{ $source->sourceID }}" class="flex items-center justify-between gap-4 py-3">
+                            <span class="text-sm text-slate-700">
+                                {{ $source->name }}
+                            </span>
+
+                            <button
+                                type="button"
+                                wire:click="toggleSourceSubscription({{ $source->sourceID }})"
+                                aria-label="{{ $source->name }} ins Kalender-Abo übernehmen"
+                                aria-pressed="{{ $isSubscribed ? 'true' : 'false' }}"
+                                class="{{ $isSubscribed ? 'bg-emerald-600' : 'bg-slate-300' }} relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition"
+                            >
+                                <span class="{{ $isSubscribed ? 'translate-x-6' : 'translate-x-1' }} inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
+                            </button>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </section>
 
     <!-- Anstehende Termine -->
@@ -57,8 +92,14 @@
                 class="flex flex-col gap-3 border-b border-slate-100 px-6 py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between"
             >
                 <div class="min-w-0">
-                    <div class="font-medium text-slate-900">
+                    <div class="flex flex-wrap items-center gap-2 font-medium text-slate-900">
                         {{ $event->title }}
+
+                        @if($event->source)
+                            <span class="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
+                                {{ $event->source->name }}
+                            </span>
+                        @endif
                     </div>
 
                     <div class="text-sm text-slate-500">
@@ -106,6 +147,18 @@
                 Aktuell keine anstehenden Termine.
             </p>
         @endforelse
+
+        @if($hiddenEventsCount > 0)
+            <div class="border-t border-slate-200 px-6 py-3 text-center">
+                <button
+                    type="button"
+                    wire:click="showMoreEvents"
+                    class="text-sm font-medium text-slate-600 hover:text-slate-900"
+                >
+                    Mehr anzeigen ({{ $hiddenEventsCount }} weitere)
+                </button>
+            </div>
+        @endif
     </section>
 
 </div>

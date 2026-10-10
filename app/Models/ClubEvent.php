@@ -7,6 +7,7 @@ use Database\Factories\ClubEventFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -34,6 +35,44 @@ class ClubEvent extends Model
     public function responses(): HasMany
     {
         return $this->hasMany(ClubEventResponse::class, 'eventID', 'eventID');
+    }
+
+    public function source(): BelongsTo
+    {
+        return $this->belongsTo(ClubEventSource::class, 'sourceID', 'sourceID');
+    }
+
+    /**
+     * Aus einem externen Kalender übernommen – wird beim Sync überschrieben
+     * und ist daher nicht bearbeitbar.
+     */
+    public function isExternal(): bool
+    {
+        return $this->sourceID !== null;
+    }
+
+    /**
+     * Für Mitglieder sichtbar: eigene Termine und Termine aktiver Quellen.
+     */
+    public function scopeVisibleToMembers(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query) {
+            $query->whereNull('sourceID')
+                ->orWhereHas('source', fn (Builder $query) => $query->where('active', true));
+        });
+    }
+
+    /**
+     * Inhalt des persönlichen iCal-Abos: eigene Termine plus Termine der
+     * Quellen, die das Mitglied ausdrücklich übernommen hat.
+     */
+    public function scopeInCalendarOf(Builder $query, Member $member): Builder
+    {
+        return $query->visibleToMembers()
+            ->where(function (Builder $query) use ($member) {
+                $query->whereNull('sourceID')
+                    ->orWhereIn('sourceID', $member->subscribedEventSources()->select('tb_event_sources.sourceID'));
+            });
     }
 
     /**

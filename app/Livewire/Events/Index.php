@@ -4,7 +4,9 @@ namespace App\Livewire\Events;
 
 use App\Enums\EventResponseStatus;
 use App\Models\ClubEvent;
-use App\Models\Member;
+use App\Models\ClubEventSource;
+use App\Services\ExternalCalendarException;
+use App\Services\ExternalCalendarSyncService;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -34,6 +36,23 @@ class Index extends Component
     public ?int $viewingResponsesEventID = null;
 
     public bool $showPast = false;
+
+    /**
+     * Anzahl der angezeigten anstehenden Termine („Mehr anzeigen“ erhöht sie).
+     */
+    public int $visibleUpcomingCount = self::UPCOMING_PAGE_SIZE;
+
+    private const UPCOMING_PAGE_SIZE = 5;
+
+    public string $sourceName = '';
+
+    public string $sourceUrl = '';
+
+    public bool $sourceRsvpEnabled = false;
+
+    public bool $sourceActive = true;
+
+    public ?int $editingSourceID = null;
 
     public function saveEvent(): void
     {
@@ -78,7 +97,7 @@ class Index extends Component
         ];
 
         if ($this->editingEventID) {
-            ClubEvent::findOrFail($this->editingEventID)->update($attributes);
+            ClubEvent::query()->whereNull('sourceID')->findOrFail($this->editingEventID)->update($attributes);
 
             session()->flash('success', 'Termin wurde aktualisiert.');
         } else {
@@ -92,7 +111,7 @@ class Index extends Component
 
     public function editEvent(int $eventID): void
     {
-        $event = ClubEvent::findOrFail($eventID);
+        $event = ClubEvent::query()->whereNull('sourceID')->findOrFail($eventID);
 
         $this->editingEventID = $event->eventID;
         $this->title = $event->title;
@@ -118,7 +137,7 @@ class Index extends Component
 
     public function deleteEvent(int $eventID): void
     {
-        ClubEvent::findOrFail($eventID)->delete();
+        ClubEvent::query()->whereNull('sourceID')->findOrFail($eventID)->delete();
 
         if ($this->editingEventID === $eventID) {
             $this->resetForm();
@@ -129,6 +148,109 @@ class Index extends Component
         }
 
         session()->flash('success', 'Termin wurde gelöscht.');
+    }
+
+    public function saveSource(ExternalCalendarSyncService $syncService): void
+    {
+        $validated = $this->validate([
+            'sourceName' => ['required', 'string', 'max:150'],
+            'sourceUrl' => ['required', 'string', 'max:2000'],
+            'sourceRsvpEnabled' => ['boolean'],
+            'sourceActive' => ['boolean'],
+        ], [], [
+            'sourceName' => 'Beschriftung',
+            'sourceUrl' => 'iCal-Link',
+        ]);
+
+        try {
+            $syncService->assertFetchableUrl($validated['sourceUrl']);
+        } catch (ExternalCalendarException $exception) {
+            $this->addError('sourceUrl', $exception->getMessage());
+
+            return;
+        }
+
+        $attributes = [
+            'name' => $validated['sourceName'],
+            'url' => trim($validated['sourceUrl']),
+            'rsvp_enabled' => $this->sourceRsvpEnabled,
+            'active' => $this->sourceActive,
+        ];
+
+        if ($this->editingSourceID) {
+            $source = ClubEventSource::findOrFail($this->editingSourceID);
+            $source->update($attributes);
+
+            // Zu-/Absage gilt sofort auch für bereits übernommene Termine.
+            $source->events()->update(['rsvp_enabled' => $source->rsvp_enabled]);
+        } else {
+            $source = ClubEventSource::create($attributes);
+        }
+
+        if ($source->active) {
+            $syncService->sync($source);
+        }
+
+        $this->resetSourceForm();
+
+        if ($source->last_sync_error) {
+            session()->flash('warning', 'Kalender gespeichert, aber nicht synchronisiert: '.$source->last_sync_error);
+        } else {
+            session()->flash('success', 'Kalender „'.$source->name.'“ wurde gespeichert.');
+        }
+    }
+
+    public function editSource(int $sourceID): void
+    {
+        $source = ClubEventSource::findOrFail($sourceID);
+
+        $this->editingSourceID = $source->sourceID;
+        $this->sourceName = $source->name;
+        $this->sourceUrl = $source->url;
+        $this->sourceRsvpEnabled = $source->rsvp_enabled;
+        $this->sourceActive = $source->active;
+
+        $this->resetValidation();
+    }
+
+    public function cancelSourceEdit(): void
+    {
+        $this->resetSourceForm();
+        $this->resetValidation();
+    }
+
+    public function syncSource(int $sourceID, ExternalCalendarSyncService $syncService): void
+    {
+        $source = ClubEventSource::findOrFail($sourceID);
+
+        $count = $syncService->sync($source);
+
+        if ($source->last_sync_error) {
+            session()->flash('error', $source->name.': '.$source->last_sync_error);
+        } else {
+            session()->flash('success', $source->name.': '.$count.' Termine synchronisiert.');
+        }
+    }
+
+    public function deleteSource(int $sourceID): void
+    {
+        ClubEventSource::findOrFail($sourceID)->delete();
+
+        if ($this->editingSourceID === $sourceID) {
+            $this->resetSourceForm();
+        }
+
+        session()->flash('success', 'Kalender und seine Termine wurden entfernt.');
+    }
+
+    public function showMoreEvents(): void
+    {
+        $this->visibleUpcomingCount += self::UPCOMING_PAGE_SIZE;
+    }
+
+    public function updatedShowPast(): void
+    {
+        $this->visibleUpcomingCount = self::UPCOMING_PAGE_SIZE;
     }
 
     public function toggleResponses(int $eventID): void
@@ -171,15 +293,31 @@ class Index extends Component
         ]);
     }
 
+    private function resetSourceForm(): void
+    {
+        $this->reset([
+            'sourceName',
+            'sourceUrl',
+            'sourceRsvpEnabled',
+            'sourceActive',
+            'editingSourceID',
+        ]);
+    }
+
     public function render(): View
     {
-        $events = ClubEvent::query()
+        $eventsQuery = ClubEvent::query()
             ->when(
                 $this->showPast,
                 fn ($query) => $query->past()->orderByDesc('starts_at'),
                 fn ($query) => $query->upcoming()->orderBy('starts_at'),
-            )
-            ->with('responses.member')
+            );
+
+        $totalEvents = $eventsQuery->count();
+
+        $events = $eventsQuery
+            ->when(! $this->showPast, fn ($query) => $query->limit($this->visibleUpcomingCount))
+            ->with(['source', 'responses.member'])
             ->get();
 
         $responseOverview = null;
@@ -188,8 +326,6 @@ class Index extends Component
             $event = $events->firstWhere('eventID', $this->viewingResponsesEventID);
 
             if ($event) {
-                $respondedMemberIDs = $event->responses->pluck('memberID')->all();
-
                 $responseOverview = [
                     'event' => $event,
                     'attending' => $event->responses
@@ -198,19 +334,15 @@ class Index extends Component
                     'declined' => $event->responses
                         ->where('status', EventResponseStatus::Declined)
                         ->sortBy(fn ($response) => $response->member?->surname),
-                    'pending' => Member::query()
-                        ->where('active', true)
-                        ->whereNotIn('memberID', $respondedMemberIDs)
-                        ->orderBy('surname')
-                        ->orderBy('name')
-                        ->get(),
                 ];
             }
         }
 
         return view('livewire.events.index', [
             'events' => $events,
+            'hiddenEventsCount' => $totalEvents - $events->count(),
             'responseOverview' => $responseOverview,
+            'sources' => ClubEventSource::query()->withCount('events')->orderBy('name')->get(),
         ])->layout('layouts.app', [
             'title' => 'Termine | VEMA',
             'heading' => 'Termine',

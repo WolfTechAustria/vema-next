@@ -11,11 +11,13 @@ use Spatie\IcalendarGenerator\Components\Event;
 class ClubEventIcalService
 {
     /**
-     * Vereinskalender für ein Mitglied — abgesagte Termine werden ausgeblendet.
+     * Vereinskalender für ein Mitglied — abgesagte Termine werden ausgeblendet,
+     * externe Kalender nur nach Opt-in des Mitglieds übernommen.
      */
     public function buildForMember(Member $member): Calendar
     {
         $events = ClubEvent::query()
+            ->inCalendarOf($member)
             ->where('starts_at', '>=', now()->subMonths(1)->startOfDay())
             ->with(['responses' => fn ($query) => $query->where('memberID', $member->memberID)])
             ->orderBy('starts_at')

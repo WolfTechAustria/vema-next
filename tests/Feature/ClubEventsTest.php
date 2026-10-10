@@ -6,35 +6,27 @@ use App\Livewire\MemberPortal\MyEvents;
 use App\Models\ClubEvent;
 use App\Models\ClubEventResponse;
 use App\Models\Member;
-use App\Models\MemberAccount;
-use App\Models\MemberEmail;
 use App\Models\MemberEventSettings;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Livewire\Livewire;
 
 /**
- * Aktives Mitglied mit Portal-Zugang; die Session zeigt auf dieses Profil.
+ * „Termin 01“ morgen, „Termin 02“ übermorgen, …
  */
-function loginPortalMember(string $surname = 'Muster'): Member
+function createNumberedUpcomingEvents(int $count): void
 {
-    $email = strtolower($surname).'@example.test';
+    foreach (range(1, $count) as $number) {
+        $start = now()->addDays($number)->setTime(19, 0);
 
-    $member = Member::create([
-        'gender' => 'm',
-        'name' => 'Max',
-        'surname' => $surname,
-        'active' => 1,
-    ]);
-
-    MemberEmail::create(['memberID' => $member->memberID, 'email' => $email]);
-
-    $account = MemberAccount::create(['memberID' => $member->memberID, 'email' => $email]);
-
-    test()->actingAs($account, 'member');
-    session(['active_member_id' => $member->memberID]);
-
-    return $member;
+        ClubEvent::factory()->create([
+            'title' => sprintf('Termin %02d', $number),
+            'description' => null,
+            'location' => null,
+            'starts_at' => $start,
+            'ends_at' => $start->copy()->addHours(2),
+        ]);
+    }
 }
 
 describe('staff', function () {
@@ -125,12 +117,11 @@ describe('staff', function () {
             ->and(ClubEventResponse::query()->count())->toBe(0);
     });
 
-    it('lists who attends, declined and has not answered yet', function () {
+    it('lists who attends and who declined', function () {
         $event = ClubEvent::factory()->create();
         $attending = Member::create(['gender' => 'w', 'name' => 'Anna', 'surname' => 'Zusager', 'active' => 1]);
         $declining = Member::create(['gender' => 'm', 'name' => 'Bernd', 'surname' => 'Absager', 'active' => 1]);
         Member::create(['gender' => 'm', 'name' => 'Carl', 'surname' => 'Schweiger', 'active' => 1]);
-        Member::create(['gender' => 'm', 'name' => 'Dora', 'surname' => 'Ausgetreten', 'active' => 0]);
 
         ClubEventResponse::create(['eventID' => $event->eventID, 'memberID' => $attending->memberID, 'status' => EventResponseStatus::Attending]);
         ClubEventResponse::create(['eventID' => $event->eventID, 'memberID' => $declining->memberID, 'status' => EventResponseStatus::Declined]);
@@ -139,9 +130,22 @@ describe('staff', function () {
             ->call('toggleResponses', $event->eventID)
             ->assertSee('Zugesagt (1)')
             ->assertSee('Abgesagt (1)')
-            ->assertSee('Keine Rückmeldung (1)')
-            ->assertSee('Schweiger')
-            ->assertDontSee('Ausgetreten');
+            ->assertSee('Zusager')
+            ->assertSee('Absager')
+            ->assertDontSee('Keine Rückmeldung')
+            ->assertDontSee('Schweiger');
+    });
+
+    it('shows the next five upcoming events and more on demand', function () {
+        createNumberedUpcomingEvents(7);
+
+        Livewire::test(EventsIndex::class)
+            ->assertSee('Termin 05')
+            ->assertDontSee('Termin 06')
+            ->assertSee('Mehr anzeigen (2 weitere)')
+            ->call('showMoreEvents')
+            ->assertSee('Termin 07')
+            ->assertDontSee('Mehr anzeigen');
     });
 
     it('separates upcoming from past events', function () {
@@ -158,6 +162,19 @@ describe('staff', function () {
 });
 
 describe('member portal', function () {
+    it('shows the next five upcoming events and more on demand', function () {
+        loginPortalMember();
+        createNumberedUpcomingEvents(7);
+
+        Livewire::test(MyEvents::class)
+            ->assertSee('Termin 05')
+            ->assertDontSee('Termin 06')
+            ->assertSee('Mehr anzeigen (2 weitere)')
+            ->call('showMoreEvents')
+            ->assertSee('Termin 07')
+            ->assertDontSee('Mehr anzeigen');
+    });
+
     it('shows upcoming events only', function () {
         loginPortalMember();
         ClubEvent::factory()->create(['title' => 'Kommt noch']);

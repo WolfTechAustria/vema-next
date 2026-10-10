@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\MembershipFeePrescription;
-use App\Models\CircularRecipient;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
-use App\Models\BirthdayReminderSent;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Member extends Model
 {
@@ -37,7 +36,7 @@ class Member extends Model
 
     public function getFullNameAttribute(): string
     {
-        return trim($this->name . ' ' . $this->surname);
+        return trim($this->name.' '.$this->surname);
     }
 
     public function emails()
@@ -151,7 +150,7 @@ class Member extends Model
      * Mitglieder, die an einem bestimmten Tag im Jahr (Monat/Tag) Geburtstag haben,
      * unabhängig vom Geburtsjahr.
      */
-    public function scopeBirthdayOn(Builder $query, \Carbon\CarbonInterface $date): Builder
+    public function scopeBirthdayOn(Builder $query, CarbonInterface $date): Builder
     {
         return $query
             ->whereNotNull('dateOfBirth')
@@ -159,7 +158,7 @@ class Member extends Model
             ->whereDay('dateOfBirth', $date->day);
     }
 
-    public function reminderLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function reminderLogs(): HasMany
     {
         return $this->hasMany(
             BirthdayReminderSent::class,
@@ -173,7 +172,7 @@ class Member extends Model
      */
     public function getAgeAttribute(): ?int
     {
-        if (!$this->dateOfBirth) {
+        if (! $this->dateOfBirth) {
             return null;
         }
 
@@ -184,9 +183,9 @@ class Member extends Model
      * Alter, das das Mitglied an seinem naechsten/aktuellen Geburtstag im
      * uebergebenen Referenzjahr erreicht (bzw. erreicht hat).
      */
-    public function ageOn(\Carbon\CarbonInterface $date): ?int
+    public function ageOn(CarbonInterface $date): ?int
     {
-        if (!$this->dateOfBirth) {
+        if (! $this->dateOfBirth) {
             return null;
         }
 
@@ -214,9 +213,6 @@ class Member extends Model
         return $this->isRoundBirthday($age) || $this->isHalfRoundBirthday($age);
     }
 
-
-
-
     public function skills(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -241,7 +237,22 @@ class Member extends Model
         )->withTimestamps();
     }
 
-    public function dutySettings(): \Illuminate\Database\Eloquent\Relations\HasOne
+    /**
+     * Externe Kalender, deren Termine das Mitglied in sein iCal-Abo übernimmt.
+     */
+    public function subscribedEventSources(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            ClubEventSource::class,
+            'tb_member_event_source_subscriptions',
+            'memberID',
+            'sourceID',
+            'memberID',
+            'sourceID'
+        )->withTimestamps();
+    }
+
+    public function dutySettings(): HasOne
     {
         return $this->hasOne(
             MemberDutySettings::class,
@@ -265,7 +276,7 @@ class Member extends Model
         );
     }
 
-    public function currentMembershipPeriod(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function currentMembershipPeriod(): HasOne
     {
         return $this->hasOne(
             MemberMembershipPeriod::class,

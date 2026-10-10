@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Member;
+use App\Models\MemberAccount;
+use App\Models\MemberEmail;
 use App\Models\Setting;
 use App\Models\Tenant;
 use App\Models\User;
@@ -112,6 +115,30 @@ function createStaffUser(array $roles = ['kassier']): User
     }
 
     return $user;
+}
+
+/**
+ * Aktives Mitglied mit Portal-Zugang; die Session zeigt auf dieses Profil.
+ */
+function loginPortalMember(string $surname = 'Muster'): Member
+{
+    $email = strtolower($surname).'@example.test';
+
+    $member = Member::create([
+        'gender' => 'm',
+        'name' => 'Max',
+        'surname' => $surname,
+        'active' => 1,
+    ]);
+
+    MemberEmail::create(['memberID' => $member->memberID, 'email' => $email]);
+
+    $account = MemberAccount::create(['memberID' => $member->memberID, 'email' => $email]);
+
+    test()->actingAs($account, 'member');
+    session(['active_member_id' => $member->memberID]);
+
+    return $member;
 }
 
 /*
