@@ -13,6 +13,7 @@ use App\Http\Controllers\MemberCalendarController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberPortalDocumentController;
 use App\Http\Controllers\MembershipFeePrescriptionController;
+use App\Http\Controllers\UserManualController;
 use App\Livewire\Admin\Settings\Documents;
 use App\Livewire\CashBook\Index as CashBookIndex;
 use App\Livewire\CashBook\Years as CashBookYears;
@@ -41,6 +42,7 @@ use App\Livewire\Members\Index as MembersIndex;
 use App\Livewire\Members\Show as MembersShow;
 use App\Livewire\MembershipFees\Index as MembershipFeesIndex;
 use App\Livewire\Templates\Index as TemplatesIndex;
+use App\Livewire\UserManual\Index as UserManualIndex;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -73,6 +75,13 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'active.staff'])->group(function () {
 
     Route::get('/', fn () => redirect()->route('dashboard'));
+
+    Route::livewire('/anleitung', UserManualIndex::class)
+        ->name('user-manual');
+
+    Route::get('/anleitung/bilder/{image}', [UserManualController::class, 'image'])
+        ->where('image', '[A-Za-z0-9_-]+\.png')
+        ->name('user-manual.image');
 
     Route::post('/demo/enter', [DemoModeController::class, 'enter'])
         ->middleware('feature:test_mode')

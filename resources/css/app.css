@@ -6,3 +6,34 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* Benutzerhandbuch (/anleitung), aus resources/docs/anleitung/anleitung.md gerendert */
+@layer components {
+    .manual-content { @apply text-[15px] leading-relaxed text-slate-700; }
+    .manual-content h2 { @apply mb-4 border-b border-slate-200 pb-3 text-xl font-bold tracking-tight text-slate-900; }
+    .manual-content h3 { @apply mt-8 mb-3 text-lg font-semibold text-slate-900; }
+    .manual-content h4 { @apply mt-6 mb-2 font-semibold text-slate-900; }
+    .manual-content p { @apply mb-3; }
+    .manual-content a { @apply text-blue-700 underline-offset-2 hover:underline; }
+    .manual-content strong { @apply font-semibold text-slate-900; }
+    .manual-content ul { @apply mb-4 list-disc space-y-1 pl-6; }
+    .manual-content ol { @apply mb-4 list-decimal space-y-1 pl-6; }
+    .manual-content code { @apply rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[13px] text-slate-800; }
+    .manual-content table { @apply mb-5 block w-full overflow-x-auto text-sm sm:table; border-collapse: collapse; }
+    .manual-content th { @apply bg-slate-900 px-3 py-2 text-left font-semibold text-white; }
+    .manual-content td { @apply border-b border-slate-200 px-3 py-2 align-top; }
+    .manual-content tr:nth-child(even) td { @apply bg-slate-50; }
+    .manual-content .manual-figure { @apply my-5 text-center; }
+    .manual-content .manual-figure img { @apply mx-auto max-h-[70vh] cursor-zoom-in rounded-lg border border-slate-200 shadow-md; }
+    .manual-content .manual-figure-mobile img { @apply max-w-[260px]; }
+    .manual-content .manual-figure-placeholder { @apply my-5 rounded-lg border-2 border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400; }
+    .manual-content figcaption { @apply mt-2 text-xs italic text-slate-500; }
+    .manual-content .manual-note { @apply my-4 rounded-r-lg border-l-4 border-blue-500 bg-blue-50 px-4 py-3 text-sm; }
+    .manual-content .manual-note p:last-child { @apply mb-0; }
+    .manual-content .manual-note-warning { @apply border-amber-500 bg-amber-50; }
+}
+
+::highlight(manual-search) {
+    background-color: #fde68a;
+    color: #0f172a;
+}

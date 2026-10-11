@@ -551,6 +551,16 @@
 
             @elseif($isInternal)
 
+                <a
+                    href="{{ route('user-manual') }}"
+                    target="_blank"
+                    rel="noopener"
+                    class="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                >
+                    <span>📖</span>
+                    Anleitung
+                </a>
+
                 @if($webUser?->hasRole('admin'))
 
                     <a
