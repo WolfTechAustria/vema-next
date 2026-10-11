@@ -25,7 +25,7 @@ Version: Oktober 2026
 15. [VEMA auf vemat.at: Registrierung, Pakete und Testphase](#15-vema-auf-vematat-registrierung-pakete-und-testphase)
 16. [Häufige Fragen und Tipps](#16-häufige-fragen-und-tipps)
 
-> **Hinweis zu den Abbildungen:** Alle Screenshots zeigen den fiktiven Verein „Schützengilde Musterdorf“ mit erfundenen Demodaten. Namen, Adressen und Beträge haben keinen Bezug zu echten Personen. Stellen mit *[Abbildung folgt: …]* bekommen bei der nächsten Überarbeitung einen Screenshot.
+> **Hinweis zu den Abbildungen:** Alle Screenshots zeigen den fiktiven Verein „Schützengilde Musterdorf“ mit erfundenen Demodaten. Namen, Adressen und Beträge haben keinen Bezug zu echten Personen.
 
 ---
 
@@ -323,7 +323,7 @@ Unter **Abwesenheiten** tragen Sie Urlaube oder sonstige Verhinderungen ein: **H
 
 Unter **Termine** planen Sie einzelne Vereinstermine wie Sitzungen, die Jahreshauptversammlung, Feste oder Ausrückungen. Mitglieder sehen die Termine im Mitgliederbereich, können zu- oder absagen und haben sie automatisch in ihrem Kalender-Abo. Zusätzlich lassen sich **externe Kalender** (z. B. vom Verband oder der Gemeinde) einbinden, deren Termine VEMA selbstständig übernimmt.
 
-*[Abbildung folgt: Termine-Übersicht]*
+![Termine mit aufgeklappten Rückmeldungen](bilder/45-termine.png)
 
 ### 7.1 Termin anlegen
 
@@ -344,7 +344,7 @@ Mit **Termin anlegen** speichern.
 
 **Sichtbar für:** Ist **kein Mitglied ausgewählt**, sehen **alle Mitglieder** den Termin. Hakt man Mitglieder an, sehen **nur diese** den Termin im Mitgliederbereich und in ihrem Kalender-Abo – praktisch z. B. für Vorstandssitzungen. Über **Mitglied suchen …** filtern Sie die Liste; rechts oben steht, wie viele ausgewählt sind („alle Mitglieder“ bzw. „3 ausgewählt“).
 
-*[Abbildung folgt: Formular „Neuer Termin“ mit Auswahl „Sichtbar für“]*
+![Termin bearbeiten – nur für ausgewählte Mitglieder sichtbar](bilder/46-termin-bearbeiten.png)
 
 ### 7.2 Terminliste
 
@@ -369,7 +369,7 @@ Ein Klick auf **Rückmeldungen** klappt beim Termin zwei Spalten auf: **Zugesagt
 
 Im Abschnitt **Externe Kalender** unten auf der Seite binden Sie Kalender ein, die als **iCal-Link** veröffentlicht sind – etwa den Terminkalender des Landesverbands, der Gemeinde oder einen Google-Kalender des Vorstands.
 
-*[Abbildung folgt: Abschnitt „Externe Kalender“]*
+![Externe Kalender einbinden](bilder/47-externe-kalender.png)
 
 1. Unter **Kalender hinzufügen** eine **Beschriftung** eingeben, z. B. „Termine Landesverband“. Unter diesem Namen sehen die Mitglieder die Termine – wählen Sie also einen Namen, mit dem sie etwas anfangen können.
 2. Den **iCal-Link** einfügen (beginnt mit `https://` oder `webcal://`).
@@ -533,7 +533,7 @@ Externe Kontakte sind Personen ohne Mitgliedschaft – z. B. Gemeinde, Nachbarve
 
 Viele Kontakte auf einmal – z. B. eine Liste aller Nachbarvereine – übernehmen Sie über **Kontakte importieren** rechts oben.
 
-*[Abbildung folgt: Import-Vorschau]*
+![Vorschau beim Import externer Kontakte](bilder/48-kontakte-import.png)
 
 1. Eine Datei auswählen: **Excel (.xlsx, .xls) oder CSV**, höchstens 5 MB. Gelesen wird das erste Tabellenblatt.
 2. VEMA sucht in den ersten 20 Zeilen die **Kopfzeile** und erkennt die Spalten anhand ihrer Überschrift:
@@ -707,7 +707,7 @@ Entwürfe haben stattdessen die Knöpfe **Bearbeiten** und **Rechnung erstellen*
 
 **Nummernkreis der Rechnungen**
 
-*[Abbildung folgt: Nummernkreis mit Vorschau]*
+![Nummernkreis mit Vorschau der nächsten Rechnungsnummer](bilder/49-nummernkreis.png)
 
 Unter **Rechnungsdaten → Nummernkreis** legen Sie fest, wie Rechnungsnummern aussehen:
 
@@ -732,7 +732,7 @@ Enthält das Format ein Jahr (`{JAHR}` oder `{JJ}`), beginnt die Nummer **jedes 
 
 ### 12.2 Briefpapier & E-Mail
 
-*[Abbildung folgt: Einstellungen „Briefpapier & E-Mail“]*
+![Einstellungen „Briefpapier & E-Mail“](bilder/50-briefpapier-email.png)
 
 Hier legen Sie fest, wie Briefe und E-Mails des Vereins aussehen:
 
@@ -843,7 +843,7 @@ Alle Rundschreiben, die das Mitglied erhalten hat, als PDF – inklusive Anhäng
 
 ### 13.6 Termine
 
-*[Abbildung folgt: Termine im Mitgliederbereich]*
+![Termine im Mitgliederbereich](bilder/51-portal-termine.png)
 
 Unter **Termine** sehen Mitglieder die anstehenden Vereinstermine – zunächst die nächsten fünf, mit **Mehr anzeigen** weitere. Termine aus externen Kalendern tragen ein Etikett mit dem Namen des Kalenders (z. B. „Termine Landesverband“).
 
@@ -890,7 +890,7 @@ Dieses Kapitel betrifft nur Vereine, die VEMA über die Plattform **vemat.at** n
 
 ### 15.1 Verein registrieren
 
-*[Abbildung folgt: Registrierung „Verein registrieren“]*
+![Verein registrieren auf vemat.at](bilder/52-verein-registrieren.png)
 
 1. Auf **app.vemat.at/registrieren** (oder über **Kostenlos registrieren** auf vemat.at) das Formular ausfüllen:
    - **Name des Vereins**
