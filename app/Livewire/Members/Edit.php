@@ -156,6 +156,8 @@ class Edit extends Component
     {
         $validated = $this->validate();
 
+        $before = $this->member->activitySnapshot();
+
         $this->member->update([
             'name' => $validated['name'],
             'surname' => $validated['surname'],
@@ -176,9 +178,10 @@ class Edit extends Component
 
         ActivityLogger::log(
             'member.updated',
-            'Mitglied "' . $this->member->full_name . '" (#' . $this->member->memberID . ') wurde geändert.',
+            'Mitglied "'.$this->member->full_name.'" (#'.$this->member->memberID.') wurde geändert.',
             'Member',
-            $this->member->memberID
+            $this->member->memberID,
+            ActivityLogger::changes($before, $this->member->activitySnapshot(), Member::ACTIVITY_LABELS)
         );
 
         session()->flash('success', 'Mitglied wurde gespeichert.');

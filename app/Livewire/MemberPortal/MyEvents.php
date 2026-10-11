@@ -8,6 +8,7 @@ use App\Models\ClubEventResponse;
 use App\Models\ClubEventSource;
 use App\Models\MemberDutySettings;
 use App\Services\ActiveMemberResolver;
+use App\Services\ActivityLogger;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -45,10 +46,31 @@ class MyEvents extends Component
             ->where('rsvp_enabled', true)
             ->findOrFail($eventID);
 
+        $previousStatus = ClubEventResponse::query()
+            ->where('eventID', $event->eventID)
+            ->where('memberID', $member->memberID)
+            ->first()
+            ?->status;
+
         ClubEventResponse::query()->updateOrCreate(
             ['eventID' => $event->eventID, 'memberID' => $member->memberID],
             ['status' => $responseStatus],
         );
+
+        if ($previousStatus !== $responseStatus) {
+            ActivityLogger::log(
+                'portal.event_responded',
+                'Mitglied "'.$member->full_name.'" (#'.$member->memberID.') hat für Termin '.$event->activityName()
+                    .($responseStatus === EventResponseStatus::Attending ? ' zugesagt.' : ' abgesagt.'),
+                'ClubEvent',
+                $event->eventID,
+                ActivityLogger::changes(
+                    ['status' => $previousStatus],
+                    ['status' => $responseStatus],
+                    ['status' => 'Rückmeldung']
+                )
+            );
+        }
 
         session()->flash(
             'success',
@@ -71,6 +93,20 @@ class MyEvents extends Component
             ->findOrFail($sourceID);
 
         $result = $member->subscribedEventSources()->toggle([$source->sourceID]);
+        $isSubscribed = $result['attached'] !== [];
+
+        ActivityLogger::log(
+            'portal.calendar_source_toggled',
+            'Mitglied "'.$member->full_name.'" (#'.$member->memberID.') hat den Kalender „'.$source->name.'“ '
+                .($isSubscribed ? 'in sein Kalender-Abo übernommen.' : 'aus seinem Kalender-Abo entfernt.'),
+            'ClubEventSource',
+            $source->sourceID,
+            ActivityLogger::changes(
+                ['subscribed' => ! $isSubscribed],
+                ['subscribed' => $isSubscribed],
+                ['subscribed' => 'Im Kalender-Abo']
+            )
+        );
 
         session()->flash(
             'success',
@@ -82,9 +118,24 @@ class MyEvents extends Component
 
     public function regenerateIcalLink(): void
     {
-        $settings = MemberDutySettings::forMember(app(ActiveMemberResolver::class)->resolve());
+        $member = app(ActiveMemberResolver::class)->resolve();
+        $settings = MemberDutySettings::forMember($member);
+        $previousToken = $settings->ical_token;
 
         $this->icalUrl = route('member-calendar.ical', $settings->regenerateIcalToken());
+
+        ActivityLogger::log(
+            'portal.calendar_link_renewed',
+            'Mitglied "'.$member->full_name.'" (#'.$member->memberID.') hat seinen Kalender-Link erneuert.',
+            'Member',
+            $member->memberID,
+            ActivityLogger::changes(
+                ['ical_token' => $previousToken],
+                ['ical_token' => $settings->ical_token],
+                ['ical_token' => 'Kalender-Link'],
+                ['ical_token']
+            )
+        );
 
         session()->flash(
             'success',

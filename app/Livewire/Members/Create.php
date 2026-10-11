@@ -182,7 +182,8 @@ class Create extends Component
             'member.created',
             'Mitglied "'.$member->full_name.'" (#'.$member->memberID.') wurde angelegt.',
             'Member',
-            $member->memberID
+            $member->memberID,
+            ActivityLogger::created($member->activitySnapshot(), Member::ACTIVITY_LABELS)
         );
 
         session()->flash('success', 'Mitglied wurde angelegt.');

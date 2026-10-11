@@ -3,6 +3,7 @@
 namespace App\Livewire\ExternalContacts;
 
 use App\Models\ExternalContact;
+use App\Services\ActivityLogger;
 use App\Services\ExternalContactImporter;
 use InvalidArgumentException;
 use Livewire\Component;
@@ -12,6 +13,19 @@ use Livewire\WithFileUploads;
 class Index extends Component
 {
     use WithFileUploads;
+
+    /**
+     * @var array<string, string>
+     */
+    private const ACTIVITY_LABELS = [
+        'name' => 'Vorname',
+        'surname' => 'Nachname',
+        'organization' => 'Organisation / Firma',
+        'email' => 'E-Mail',
+        'phone' => 'Telefon',
+        'note' => 'Notiz',
+        'active' => 'Kontakt aktiv',
+    ];
 
     public ?int $editingContactID = null;
 
@@ -85,6 +99,8 @@ class Index extends Component
                 $this->editingContactID
             );
 
+            $before = $contact->only(array_keys(self::ACTIVITY_LABELS));
+
             $contact->update([
                 'name' => $validated['name'],
                 'surname' => $validated['surname'],
@@ -95,12 +111,28 @@ class Index extends Component
                 'active' => $validated['active'],
             ]);
 
+            $changes = ActivityLogger::changes(
+                $before,
+                $contact->fresh()->only(array_keys(self::ACTIVITY_LABELS)),
+                self::ACTIVITY_LABELS
+            );
+
+            if ($changes !== []) {
+                ActivityLogger::log(
+                    'contact.updated',
+                    'Externer Kontakt „'.$contact->full_name.'“ wurde geändert.',
+                    'ExternalContact',
+                    $contact->externalContactID,
+                    $changes
+                );
+            }
+
             session()->flash(
                 'success',
                 'Externer Kontakt wurde aktualisiert.'
             );
         } else {
-            ExternalContact::create([
+            $contact = ExternalContact::create([
                 'name' => $validated['name'],
                 'surname' => $validated['surname'],
                 'organization' => $validated['organization'] ?: null,
@@ -109,6 +141,14 @@ class Index extends Component
                 'note' => $validated['note'] ?: null,
                 'active' => $validated['active'],
             ]);
+
+            ActivityLogger::log(
+                'contact.created',
+                'Externer Kontakt „'.$contact->full_name.'“ wurde angelegt.',
+                'ExternalContact',
+                $contact->externalContactID,
+                ActivityLogger::created($contact->fresh()->only(array_keys(self::ACTIVITY_LABELS)), self::ACTIVITY_LABELS)
+            );
 
             session()->flash(
                 'success',
@@ -153,6 +193,13 @@ class Index extends Component
         $contact->update([
             'active' => ! $contact->active,
         ]);
+
+        ActivityLogger::log(
+            $contact->active ? 'contact.activated' : 'contact.deactivated',
+            'Externer Kontakt „'.$contact->full_name.'“ wurde '.($contact->active ? 'aktiviert' : 'deaktiviert').'.',
+            'ExternalContact',
+            $contact->externalContactID
+        );
     }
 
     public function delete(int $externalContactID): void
@@ -162,6 +209,13 @@ class Index extends Component
         );
 
         $contact->delete();
+
+        ActivityLogger::log(
+            'contact.deleted',
+            'Externer Kontakt „'.$contact->full_name.'“ ('.$contact->email.') wurde gelöscht.',
+            'ExternalContact',
+            $externalContactID
+        );
 
         if ($this->editingContactID === $externalContactID) {
             $this->resetForm();
@@ -200,6 +254,11 @@ class Index extends Component
 
             return;
         }
+
+        ActivityLogger::log(
+            'contact.imported',
+            "Externe Kontakte wurden importiert: {$summary['created']} angelegt, {$summary['updated']} aktualisiert, {$summary['skipped']} übersprungen."
+        );
 
         $this->cancelImport();
 

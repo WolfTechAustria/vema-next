@@ -18,24 +18,39 @@ class Create extends Component
     public ?int $invoiceID = null;
 
     public ?int $recipientID = null;
+
     public string $recipientSearch = '';
 
     public bool $showNewRecipientForm = false;
+
     public string $newRecipientCompanyName = '';
+
     public string $newRecipientName = '';
+
     public string $newRecipientSurname = '';
+
     public string $newRecipientStreet = '';
+
     public string $newRecipientZip = '';
+
     public string $newRecipientCity = '';
+
     public string $newRecipientEmail = '';
+
     public string $newRecipientPhone = '';
+
     public string $newRecipientVatId = '';
 
     public string $purpose = '';
+
     public string $invoice_date;
+
     public ?string $due_date = null;
+
     public string $intro_text = '';
+
     public string $footer_text = '';
+
     public bool $small_business_no_vat = false;
 
     public array $items = [];
@@ -109,13 +124,13 @@ class Create extends Component
      */
     public function fillFromArticle(int $index): void
     {
-        if (!isset($this->items[$index])) {
+        if (! isset($this->items[$index])) {
             return;
         }
 
         $article = Article::findByName($this->items[$index]['description'] ?? '');
 
-        if (!$article) {
+        if (! $article) {
             $this->items[$index]['articleID'] = null;
 
             return;
@@ -208,6 +223,14 @@ class Create extends Component
             'active' => true,
         ]);
 
+        ActivityLogger::log(
+            'invoice.recipient_created',
+            'Rechnungsempfänger „'.$recipient->display_name.'“ wurde angelegt.',
+            'InvoiceRecipient',
+            $recipient->recipientID,
+            ActivityLogger::created($recipient->only(array_keys(Recipients\Index::ACTIVITY_LABELS)), Recipients\Index::ACTIVITY_LABELS)
+        );
+
         $this->cancelNewRecipient();
         $this->selectRecipient($recipient->recipientID);
 
@@ -266,17 +289,17 @@ class Create extends Component
             $taxRate = $this->normalizeDecimal($item['tax_rate'] ?? null);
 
             if ($quantity === null) {
-                $this->addError('items.' . $index . '.quantity', 'Bitte eine gültige Menge eingeben.');
+                $this->addError('items.'.$index.'.quantity', 'Bitte eine gültige Menge eingeben.');
                 $valid = false;
             }
 
             if ($priceNet === null) {
-                $this->addError('items.' . $index . '.price_net', 'Bitte einen gültigen Preis eingeben.');
+                $this->addError('items.'.$index.'.price_net', 'Bitte einen gültigen Preis eingeben.');
                 $valid = false;
             }
 
             if ($taxRate === null) {
-                $this->addError('items.' . $index . '.tax_rate', 'Bitte einen gültigen USt.-Satz eingeben.');
+                $this->addError('items.'.$index.'.tax_rate', 'Bitte einen gültigen USt.-Satz eingeben.');
                 $valid = false;
             }
 
@@ -335,7 +358,7 @@ class Create extends Component
             foreach ($lines as $sortOrder => $line) {
                 $article = Article::findByName($line['description']);
 
-                if (!$article) {
+                if (! $article) {
                     $article = Article::create([
                         'name' => $line['description'],
                         'unit' => $line['unit'],
@@ -374,29 +397,87 @@ class Create extends Component
 
     public function saveDraft()
     {
+        $existingInvoice = $this->invoiceID ? Invoice::find($this->invoiceID) : null;
+        $before = $existingInvoice ? $this->invoiceSnapshot($existingInvoice) : [];
+
         $invoice = $this->persist();
 
-        if (!$invoice) {
+        if (! $invoice) {
             return;
         }
 
-        ActivityLogger::log(
-            $this->invoiceID ? 'invoice.draft_updated' : 'invoice.draft_created',
-            'Rechnungsentwurf für "' . $invoice->recipient->display_name . '" wurde gespeichert.',
-            'Invoice',
-            $invoice->invoiceID
-        );
+        $after = $this->invoiceSnapshot($invoice->fresh());
+
+        $changes = $this->invoiceID
+            ? ActivityLogger::changes($before, $after, self::ACTIVITY_LABELS, self::MASKED_FIELDS)
+            : ActivityLogger::created($after, self::ACTIVITY_LABELS, self::MASKED_FIELDS);
+
+        if (! $this->invoiceID || $changes !== []) {
+            ActivityLogger::log(
+                $this->invoiceID ? 'invoice.draft_updated' : 'invoice.draft_created',
+                'Rechnungsentwurf für "'.$invoice->recipient->display_name.'" wurde gespeichert.',
+                'Invoice',
+                $invoice->invoiceID,
+                $changes
+            );
+        }
 
         session()->flash('success', 'Rechnung wurde als Entwurf gespeichert.');
 
         return $this->redirectRoute('invoices.show', ['invoice' => $invoice->invoiceID], navigate: true);
     }
 
+    /**
+     * @var array<string, string>
+     */
+    private const ACTIVITY_LABELS = [
+        'recipient' => 'Empfänger',
+        'invoice_date' => 'Rechnungsdatum',
+        'due_date' => 'Fällig bis',
+        'purpose' => 'Anlass',
+        'intro_text' => 'Einleitungstext',
+        'small_business_no_vat' => 'Kleinunternehmer',
+        'items' => 'Positionen',
+        'total_gross' => 'Gesamtbetrag',
+        'footer_text' => 'Fußtext',
+    ];
+
+    /**
+     * Lange Texte erscheinen im Protokoll nur als „geändert“.
+     *
+     * @var list<string>
+     */
+    private const MASKED_FIELDS = ['intro_text', 'footer_text'];
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function invoiceSnapshot(Invoice $invoice): array
+    {
+        $amount = fn (mixed $value): string => number_format((float) $value, 2, ',', '.');
+
+        return [
+            'recipient' => $invoice->recipient?->display_name,
+            'invoice_date' => $invoice->invoice_date,
+            'due_date' => $invoice->due_date,
+            'purpose' => $invoice->purpose,
+            'intro_text' => $invoice->intro_text,
+            'small_business_no_vat' => (bool) $invoice->small_business_no_vat,
+            'items' => $invoice->items()->orderBy('sort_order')->get()
+                ->map(fn (InvoiceItem $item): string => rtrim(rtrim(number_format((float) $item->quantity, 2, ',', ''), '0'), ',')
+                    .' × '.$item->description.' à '.$amount($item->price_net)
+                    .((float) $item->discount_percent > 0 ? ' (−'.rtrim(rtrim(number_format((float) $item->discount_percent, 2, ',', ''), '0'), ',').' %)' : ''))
+                ->implode('; '),
+            'total_gross' => $amount($invoice->total_gross),
+            'footer_text' => $invoice->footer_text,
+        ];
+    }
+
     public function saveAndFinalize()
     {
         $invoice = $this->persist();
 
-        if (!$invoice) {
+        if (! $invoice) {
             return;
         }
 
@@ -404,12 +485,12 @@ class Create extends Component
 
         ActivityLogger::log(
             'invoice.finalized',
-            'Rechnung ' . $invoice->invoice_number . ' wurde erstellt.',
+            'Rechnung '.$invoice->invoice_number.' wurde erstellt.',
             'Invoice',
             $invoice->invoiceID
         );
 
-        session()->flash('success', 'Rechnung ' . $invoice->invoice_number . ' wurde erstellt.');
+        session()->flash('success', 'Rechnung '.$invoice->invoice_number.' wurde erstellt.');
 
         return $this->redirectRoute('invoices.show', ['invoice' => $invoice->invoiceID], navigate: true);
     }
@@ -422,8 +503,8 @@ class Create extends Component
 
         $availableRecipients = collect();
 
-        if (!$selectedRecipient && trim($this->recipientSearch) !== '') {
-            $search = '%' . trim($this->recipientSearch) . '%';
+        if (! $selectedRecipient && trim($this->recipientSearch) !== '') {
+            $search = '%'.trim($this->recipientSearch).'%';
 
             $availableRecipients = InvoiceRecipient::query()
                 ->where('active', true)
@@ -467,7 +548,7 @@ class Create extends Component
             'itemLineTotals' => $itemLineTotals,
             'articles' => $articles,
         ])->layout('layouts.app', [
-            'title' => ($this->invoiceID ? 'Rechnung bearbeiten' : 'Rechnung erstellen') . ' | VEMA',
+            'title' => ($this->invoiceID ? 'Rechnung bearbeiten' : 'Rechnung erstellen').' | VEMA',
             'heading' => $this->invoiceID ? 'Rechnung bearbeiten' : 'Rechnung erstellen',
         ]);
     }

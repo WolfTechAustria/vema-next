@@ -132,15 +132,27 @@ class Years extends Component
                 ]);
             }
 
+            $before = $this->yearSnapshot($year);
+
             $year->update($attributes);
 
-            ActivityLogger::log('cash-book.year-update', 'Vereinsjahr '.$year->name.' geändert', 'cash_book_year', $year->cashBookYearID);
+            $changes = ActivityLogger::changes($before, $this->yearSnapshot($year->fresh()), self::ACTIVITY_LABELS);
+
+            if ($changes !== []) {
+                ActivityLogger::log('cash-book.year-update', 'Vereinsjahr '.$year->name.' geändert', 'cash_book_year', $year->cashBookYearID, $changes);
+            }
 
             session()->flash('success', 'Vereinsjahr '.$year->name.' gespeichert.');
         } else {
             $year = CashBookYear::create($attributes);
 
-            ActivityLogger::log('cash-book.year-create', 'Vereinsjahr '.$year->name.' angelegt', 'cash_book_year', $year->cashBookYearID);
+            ActivityLogger::log(
+                'cash-book.year-create',
+                'Vereinsjahr '.$year->name.' angelegt',
+                'cash_book_year',
+                $year->cashBookYearID,
+                ActivityLogger::created($this->yearSnapshot($year->fresh()), self::ACTIVITY_LABELS)
+            );
 
             session()->flash('success', 'Vereinsjahr '.$year->name.' angelegt.');
         }
@@ -235,6 +247,29 @@ class Years extends Component
             'title' => 'Vereinsjahre | Kassabuch | VEMA',
             'heading' => 'Kassabuch',
         ]);
+    }
+
+    /**
+     * @var array<string, string>
+     */
+    private const ACTIVITY_LABELS = [
+        'name' => 'Bezeichnung',
+        'start_date' => 'Beginn',
+        'end_date' => 'Ende',
+        'opening_balance' => 'Anfangsbestand',
+    ];
+
+    /**
+     * @return array{name: string, start_date: \Illuminate\Support\Carbon, end_date: \Illuminate\Support\Carbon, opening_balance: string}
+     */
+    private function yearSnapshot(CashBookYear $year): array
+    {
+        return [
+            'name' => $year->name,
+            'start_date' => $year->start_date,
+            'end_date' => $year->end_date,
+            'opening_balance' => number_format((float) $year->opening_balance, 2, ',', '.'),
+        ];
     }
 
     private function findOpenYear(int $yearId): CashBookYear

@@ -2,19 +2,21 @@
 
 namespace App\Livewire\RecipientGroups;
 
+use App\Models\ExternalContact;
 use App\Models\Member;
 use App\Models\RecipientGroup;
+use App\Services\ActivityLogger;
 use Livewire\Component;
-use App\Models\ExternalContact;
 
 class Index extends Component
 {
     public string $name = '';
+
     public string $description = '';
 
     public array $selectedMembers = [];
-    public array $selectedExternalContacts = [];
 
+    public array $selectedExternalContacts = [];
 
     public ?int $editingGroupID = null;
 
@@ -49,6 +51,14 @@ class Index extends Component
 
         $group->externalContacts()->sync(
             array_map('intval', $this->selectedExternalContacts)
+        );
+
+        ActivityLogger::log(
+            'group.created',
+            'Empfängergruppe „'.$group->name.'“ wurde angelegt.',
+            'RecipientGroup',
+            $group->groupID,
+            ActivityLogger::created($this->groupSnapshot($group), self::ACTIVITY_LABELS)
         );
 
         $this->resetForm();
@@ -116,7 +126,7 @@ class Index extends Component
             $this->editingGroupID
         );
 
-
+        $before = $this->groupSnapshot($group);
 
         $group->update([
             'name' => $validated['name'],
@@ -130,6 +140,18 @@ class Index extends Component
         $group->externalContacts()->sync(
             array_map('intval', $this->selectedExternalContacts)
         );
+
+        $changes = ActivityLogger::changes($before, $this->groupSnapshot($group->fresh()), self::ACTIVITY_LABELS);
+
+        if ($changes !== []) {
+            ActivityLogger::log(
+                'group.updated',
+                'Empfängergruppe „'.$group->name.'“ wurde geändert.',
+                'RecipientGroup',
+                $group->groupID,
+                $changes
+            );
+        }
 
         $this->resetForm();
 
@@ -149,8 +171,18 @@ class Index extends Component
     {
         $group = RecipientGroup::findOrFail($groupID);
 
+        $memberCount = $group->members()->count();
+        $contactCount = $group->externalContacts()->count();
+
         $group->members()->detach();
         $group->delete();
+
+        ActivityLogger::log(
+            'group.deleted',
+            'Empfängergruppe „'.$group->name.'“ ('.$memberCount.' Mitglieder, '.$contactCount.' externe Kontakte) wurde gelöscht.',
+            'RecipientGroup',
+            $groupID
+        );
 
         if ($this->editingGroupID === $groupID) {
             $this->resetForm();
@@ -160,6 +192,29 @@ class Index extends Component
             'success',
             'Empfängergruppe wurde gelöscht.'
         );
+    }
+
+    /**
+     * @var array<string, string>
+     */
+    private const ACTIVITY_LABELS = [
+        'name' => 'Name',
+        'description' => 'Beschreibung',
+        'members' => 'Mitglieder',
+        'externalContacts' => 'Externe Kontakte',
+    ];
+
+    /**
+     * @return array{name: string, description: ?string, members: list<string>, externalContacts: list<string>}
+     */
+    private function groupSnapshot(RecipientGroup $group): array
+    {
+        return [
+            'name' => $group->name,
+            'description' => $group->description,
+            'members' => $group->members()->get()->map(fn (Member $member): string => $member->full_name)->all(),
+            'externalContacts' => $group->externalContacts()->get()->map(fn (ExternalContact $contact): string => $contact->full_name)->all(),
+        ];
     }
 
     private function resetForm(): void
@@ -178,7 +233,7 @@ class Index extends Component
         $groups = RecipientGroup::query()
             ->with(
                 'members',
-                'externalContacts',)
+                'externalContacts', )
             ->orderBy('name')
             ->get();
 

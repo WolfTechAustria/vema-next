@@ -3,10 +3,12 @@
 namespace App\Livewire\DutyPlan;
 
 use App\Models\DutyPlan;
+use App\Models\DutyPlanRole;
 use App\Models\DutyPlanVolunteer;
 use App\Models\ExternalContact;
 use App\Models\Member;
 use App\Models\Skill;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 
 class Volunteers extends Component
@@ -33,14 +35,15 @@ class Volunteers extends Component
 
     public function copyVolunteersFromPlan(int $sourcePlanId): void
     {
-        if (!$this->planId || $sourcePlanId === $this->planId) {
+        if (! $this->planId || $sourcePlanId === $this->planId) {
             return;
         }
 
         $sourceRows = DutyPlanVolunteer::where('planID', $sourcePlanId)->get();
+        $addedCount = 0;
 
         foreach ($sourceRows as $row) {
-            DutyPlanVolunteer::firstOrCreate(
+            $copy = DutyPlanVolunteer::firstOrCreate(
                 [
                     'planID' => $this->planId,
                     'memberID' => $row->memberID,
@@ -51,11 +54,24 @@ class Volunteers extends Component
                     'weekday_mask' => $row->weekday_mask,
                 ]
             );
+
+            if ($copy->wasRecentlyCreated) {
+                $addedCount++;
+            }
         }
+
+        ActivityLogger::log(
+            'duty.volunteers_copied',
+            'Helferliste von Dienstplan '.DutyPlan::find($sourcePlanId)?->activityName()
+                .' in Dienstplan '.$this->currentPlan()?->activityName().' übernommen: '
+                .$addedCount.' neu, '.($sourceRows->count() - $addedCount).' bereits vorhanden.',
+            'DutyPlan',
+            $this->planId
+        );
 
         session()->flash(
             'success',
-            'Helferliste wurde übernommen (' . $sourceRows->count() . ' Einträge).'
+            'Helferliste wurde übernommen ('.$sourceRows->count().' Einträge).'
         );
     }
 
@@ -66,20 +82,24 @@ class Volunteers extends Component
             ->where('memberID', $memberId)
             ->first();
 
-        if (!$volunteer) {
-            DutyPlanVolunteer::create([
+        if (! $volunteer) {
+            $volunteer = DutyPlanVolunteer::create([
                 'planID' => $this->planId,
                 'memberID' => $memberId,
                 'active' => true,
                 'weekday_mask' => 127,
             ]);
 
+            $this->logVolunteerToggled($volunteer);
+
             return;
         }
 
         $volunteer->update([
-            'active' => !$volunteer->active,
+            'active' => ! $volunteer->active,
         ]);
+
+        $this->logVolunteerToggled($volunteer);
     }
 
     public function toggleWeekday(
@@ -95,14 +115,11 @@ class Volunteers extends Component
             ->where('memberID', $memberId)
             ->first();
 
-        if (!$volunteer || !$volunteer->active) {
+        if (! $volunteer || ! $volunteer->active) {
             return;
         }
 
-        $volunteer->setWeekdayAvailability(
-            $weekday,
-            !$volunteer->isAvailableOnWeekday($weekday)
-        );
+        $this->toggleVolunteerWeekday($volunteer, $weekday);
     }
 
     public function toggleExternalVolunteer(
@@ -117,20 +134,24 @@ class Volunteers extends Component
             ->where('externalContactID', $contact->externalContactID)
             ->first();
 
-        if (!$volunteer) {
-            DutyPlanVolunteer::create([
+        if (! $volunteer) {
+            $volunteer = DutyPlanVolunteer::create([
                 'planID' => $this->planId,
                 'externalContactID' => $contact->externalContactID,
                 'active' => true,
                 'weekday_mask' => 127,
             ]);
 
+            $this->logVolunteerToggled($volunteer);
+
             return;
         }
 
         $volunteer->update([
-            'active' => !$volunteer->active,
+            'active' => ! $volunteer->active,
         ]);
+
+        $this->logVolunteerToggled($volunteer);
     }
 
     public function toggleExternalWeekday(
@@ -146,14 +167,11 @@ class Volunteers extends Component
             ->where('externalContactID', $externalContactID)
             ->first();
 
-        if (!$volunteer || !$volunteer->active) {
+        if (! $volunteer || ! $volunteer->active) {
             return;
         }
 
-        $volunteer->setWeekdayAvailability(
-            $weekday,
-            !$volunteer->isAvailableOnWeekday($weekday)
-        );
+        $this->toggleVolunteerWeekday($volunteer, $weekday);
     }
 
     public function toggleExternalContactSkill(
@@ -162,7 +180,77 @@ class Volunteers extends Component
     ): void {
         $contact = ExternalContact::findOrFail($externalContactID);
 
+        $skillsBefore = $contact->skills()->pluck('tb_skills.name')->all();
+
         $contact->skills()->toggle($skillID);
+
+        ActivityLogger::log(
+            'duty.volunteer_skills_changed',
+            'Fähigkeiten von externem Helfer "'.$contact->full_name.'" wurden geändert.',
+            'ExternalContact',
+            $contact->externalContactID,
+            ActivityLogger::changes(
+                ['skills' => $skillsBefore],
+                ['skills' => $contact->skills()->pluck('tb_skills.name')->all()],
+                ['skills' => 'Fähigkeiten']
+            )
+        );
+    }
+
+    /**
+     * Schaltet einen Wochentag um und protokolliert die neue Verfügbarkeit.
+     */
+    private function toggleVolunteerWeekday(DutyPlanVolunteer $volunteer, int $weekday): void
+    {
+        $weekdaysBefore = DutyPlanRole::formatWeekdayMask((int) $volunteer->weekday_mask);
+
+        $volunteer->setWeekdayAvailability(
+            $weekday,
+            ! $volunteer->isAvailableOnWeekday($weekday)
+        );
+
+        ActivityLogger::log(
+            'duty.volunteer_weekdays_changed',
+            'Verfügbarkeit von '.$this->volunteerLabel($volunteer).' im Dienstplan '
+                .$this->currentPlan()?->activityName().' wurde geändert.',
+            'DutyPlanVolunteer',
+            $volunteer->planVolunteerID,
+            ActivityLogger::changes(
+                ['weekdays' => $weekdaysBefore],
+                ['weekdays' => DutyPlanRole::formatWeekdayMask((int) $volunteer->weekday_mask)],
+                ['weekdays' => 'Verfügbare Wochentage']
+            )
+        );
+    }
+
+    /**
+     * Aufnahme bzw. Entfernen eines Helfers (Mitglied oder extern).
+     */
+    private function logVolunteerToggled(DutyPlanVolunteer $volunteer): void
+    {
+        ActivityLogger::log(
+            $volunteer->active ? 'duty.volunteer_added' : 'duty.volunteer_removed',
+            ucfirst($this->volunteerLabel($volunteer)).' wurde im Dienstplan '
+                .$this->currentPlan()?->activityName()
+                .($volunteer->active ? ' als Helfer aufgenommen.' : ' als Helfer entfernt.'),
+            'DutyPlanVolunteer',
+            $volunteer->planVolunteerID
+        );
+    }
+
+    /**
+     * Z. B. Mitglied "Max Muster" bzw. externer Helfer "Muster Erika".
+     */
+    private function volunteerLabel(DutyPlanVolunteer $volunteer): string
+    {
+        return $volunteer->is_external
+            ? 'externer Helfer "'.$volunteer->externalContact?->full_name.'"'
+            : 'Mitglied "'.$volunteer->member?->full_name.'"';
+    }
+
+    private function currentPlan(): ?DutyPlan
+    {
+        return $this->planId ? DutyPlan::find($this->planId) : null;
     }
 
     public function weekdayName(int $weekday): string
@@ -203,12 +291,12 @@ class Volunteers extends Component
                             ->where(
                                 'name',
                                 'like',
-                                '%' . $this->search . '%'
+                                '%'.$this->search.'%'
                             )
                             ->orWhere(
                                 'surname',
                                 'like',
-                                '%' . $this->search . '%'
+                                '%'.$this->search.'%'
                             );
                     });
                 }
@@ -228,22 +316,22 @@ class Volunteers extends Component
                             ->where(
                                 'name',
                                 'like',
-                                '%' . $this->search . '%'
+                                '%'.$this->search.'%'
                             )
                             ->orWhere(
                                 'surname',
                                 'like',
-                                '%' . $this->search . '%'
+                                '%'.$this->search.'%'
                             )
                             ->orWhere(
                                 'organization',
                                 'like',
-                                '%' . $this->search . '%'
+                                '%'.$this->search.'%'
                             )
                             ->orWhere(
                                 'email',
                                 'like',
-                                '%' . $this->search . '%'
+                                '%'.$this->search.'%'
                             );
                     });
                 }

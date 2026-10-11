@@ -3,16 +3,19 @@
 namespace App\Livewire\Templates;
 
 use App\Models\Template;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 
 class Index extends Component
 {
-
     public ?int $selectedTemplateID = null;
+
     public $templates;
 
     public string $name = '';
+
     public string $subject = '';
+
     public string $bodyHtml = '';
 
     // In der Livewire-Komponente
@@ -32,7 +35,7 @@ class Index extends Component
 
     public function mount(): void
     {
-        $this->templates = \App\Models\Template::query()
+        $this->templates = Template::query()
             ->where('active', true)
             ->orderBy('name')
             ->get();
@@ -53,11 +56,11 @@ class Index extends Component
 
     protected function loadTemplate(): void
     {
-        if (!$this->selectedTemplateID) {
+        if (! $this->selectedTemplateID) {
             return;
         }
 
-        $template = \App\Models\Template::findOrFail(
+        $template = Template::findOrFail(
             $this->selectedTemplateID
         );
 
@@ -89,12 +92,31 @@ class Index extends Component
             $this->selectedTemplateID
         );
 
+        $before = $template->only(array_keys(self::ACTIVITY_LABELS));
+
         $template->update([
             'name' => $validated['name'],
             'subject' => $validated['subject'],
             'body_html' => $validated['bodyHtml'],
             'active' => true,
         ]);
+
+        $changes = ActivityLogger::changes(
+            $before,
+            $template->fresh()->only(array_keys(self::ACTIVITY_LABELS)),
+            self::ACTIVITY_LABELS,
+            masked: ['body_html']
+        );
+
+        if ($changes !== []) {
+            ActivityLogger::log(
+                'template.updated',
+                'Template „'.$template->name.'“ wurde geändert.',
+                'Template',
+                $template->templateID,
+                $changes
+            );
+        }
 
         $this->selectedTemplateID =
             $template->templateID;
@@ -104,6 +126,15 @@ class Index extends Component
             'Template wurde gespeichert.'
         );
     }
+
+    /**
+     * @var array<string, string>
+     */
+    private const ACTIVITY_LABELS = [
+        'name' => 'Bezeichnung',
+        'subject' => 'Betreff',
+        'body_html' => 'Text',
+    ];
 
     public function render()
     {

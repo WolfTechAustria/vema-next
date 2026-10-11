@@ -13,6 +13,10 @@ class ActivityLog extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'changes' => 'array',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(

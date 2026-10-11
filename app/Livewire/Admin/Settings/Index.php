@@ -156,6 +156,10 @@ class Index extends Component
         }
 
         $previousFormat = $numberGenerator->currentFormat();
+        $before = [
+            ...$this->settingsSnapshot(Setting::current()),
+            'invoice_next_number' => $this->loadedInvoiceNextNumber,
+        ];
 
         Setting::current()->update([
             'name' => $validated['name'],
@@ -189,10 +193,51 @@ class Index extends Component
 
         ActivityLogger::log(
             'settings.updated',
-            'Vereinseinstellungen wurden geändert.'
+            'Vereinseinstellungen wurden geändert.',
+            changes: ActivityLogger::changes(
+                $before,
+                [...$this->settingsSnapshot(Setting::current()->fresh()), 'invoice_next_number' => $nextNumber],
+                self::ACTIVITY_LABELS,
+                masked: ['iban', 'bic'],
+            )
         );
 
         session()->flash('success', 'Einstellungen wurden gespeichert.');
+    }
+
+    /**
+     * @var array<string, string>
+     */
+    private const ACTIVITY_LABELS = [
+        'name' => 'Vereinsname',
+        'street' => 'Straße',
+        'zip' => 'PLZ',
+        'city' => 'Ort',
+        'email' => 'E-Mail',
+        'phone' => 'Telefon',
+        'website' => 'Website',
+        'bank_name' => 'Bank',
+        'iban' => 'IBAN',
+        'bic' => 'BIC',
+        'vat_id' => 'UID-Nummer',
+        'small_business_default' => 'Kleinunternehmer als Standard',
+        'invoice_default_tax_rate' => 'Standard-USt.-Satz (%)',
+        'invoice_footer_text' => 'Standard-Fußtext',
+        'invoice_number_format' => 'Format der Rechnungsnummer',
+        'invoice_next_number' => 'Nächste Rechnungsnummer',
+    ];
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function settingsSnapshot(Setting $setting): array
+    {
+        return [
+            ...$setting->only(array_keys(self::ACTIVITY_LABELS)),
+            'small_business_default' => (bool) $setting->small_business_default,
+            'invoice_default_tax_rate' => number_format((float) $setting->invoice_default_tax_rate, 2, ',', ''),
+            'invoice_number_format' => $setting->invoice_number_format ?: InvoiceNumberGenerator::DEFAULT_FORMAT,
+        ];
     }
 
     /**
@@ -210,11 +255,16 @@ class Index extends Component
             'demo_reset_mode' => ['required', Rule::enum(DemoResetMode::class)],
         ]);
 
-        $demoMode->settings()->update($validated);
+        $demoSettings = $demoMode->settings();
+        $labels = ['demo_enabled' => 'Testmodus verfügbar', 'demo_reset_mode' => 'Zurücksetzen'];
+        $before = $demoSettings->only(array_keys($labels));
+
+        $demoSettings->update($validated);
 
         ActivityLogger::log(
             'settings.demo_updated',
-            'Testmodus-Einstellungen wurden geändert.'
+            'Testmodus-Einstellungen wurden geändert.',
+            changes: ActivityLogger::changes($before, $demoSettings->fresh()->only(array_keys($labels)), $labels)
         );
 
         session()->flash('success', 'Testmodus-Einstellungen wurden gespeichert.');

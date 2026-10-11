@@ -10,6 +10,7 @@ use App\Models\CashBookYear;
 use App\Services\ActivityLogger;
 use App\Services\PlanEntitlements;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -177,6 +178,10 @@ class Index extends Component
             'note' => trim((string) $validated['note']) ?: null,
         ];
 
+        $before = $this->editingEntryId !== null
+            ? $this->entrySnapshot($this->findEntry($this->editingEntryId))
+            : [];
+
         $entry = DB::transaction(function () use ($year, $attributes) {
             if ($this->editingEntryId !== null) {
                 $entry = $this->findEntry($this->editingEntryId);
@@ -196,14 +201,22 @@ class Index extends Component
         $this->storeFiles($entry);
 
         $isNew = $this->editingEntryId === null;
+        $after = $this->entrySnapshot($entry->fresh());
 
-        ActivityLogger::log(
-            $isNew ? 'cash-book.create' : 'cash-book.update',
-            ($isNew ? 'Buchung angelegt: ' : 'Buchung geändert: ')
-                .'#'.$entry->receipt_number.' '.$entry->description,
-            'cash_book_entry',
-            $entry->cashBookEntryID
-        );
+        $changes = $isNew
+            ? ActivityLogger::created($after, self::ACTIVITY_LABELS)
+            : ActivityLogger::changes($before, $after, self::ACTIVITY_LABELS);
+
+        if ($isNew || $changes !== []) {
+            ActivityLogger::log(
+                $isNew ? 'cash-book.create' : 'cash-book.update',
+                ($isNew ? 'Buchung angelegt: ' : 'Buchung geändert: ')
+                    .'#'.$entry->receipt_number.' '.$entry->description,
+                'cash_book_entry',
+                $entry->cashBookEntryID,
+                $changes
+            );
+        }
 
         $this->closeEntryDialog();
 
@@ -249,6 +262,20 @@ class Index extends Component
         Storage::disk('local')->delete($attachment->file_path);
 
         $attachment->delete();
+
+        $entry = $attachment->entry;
+
+        ActivityLogger::log(
+            'cash-book.attachment_removed',
+            'Beleg „'.$attachment->file_name.'“ von Buchung #'.$entry->receipt_number.' „'.$entry->description.'“ wurde entfernt.',
+            'cash_book_entry',
+            $entry->cashBookEntryID,
+            ActivityLogger::changes(
+                ['attachments' => $attachment->file_name],
+                [],
+                ['attachments' => self::ACTIVITY_LABELS['attachments']]
+            )
+        );
     }
 
     public function render(): View
@@ -321,6 +348,35 @@ class Index extends Component
             'title' => 'Kassabuch | VEMA',
             'heading' => 'Kassabuch',
         ]);
+    }
+
+    /**
+     * @var array<string, string>
+     */
+    private const ACTIVITY_LABELS = [
+        'type' => 'Art',
+        'amount' => 'Betrag',
+        'date' => 'Datum',
+        'description' => 'Beschreibung',
+        'category' => 'Kategorie',
+        'note' => 'Notiz',
+        'attachments' => 'Belege',
+    ];
+
+    /**
+     * @return array{type: CashBookEntryType, amount: string, date: Carbon, description: string, category: ?string, note: ?string, attachments: list<string>}
+     */
+    private function entrySnapshot(CashBookEntry $entry): array
+    {
+        return [
+            'type' => $entry->type,
+            'amount' => number_format((float) $entry->amount, 2, ',', '.'),
+            'date' => $entry->date,
+            'description' => $entry->description,
+            'category' => $entry->category,
+            'note' => $entry->note,
+            'attachments' => $entry->attachments()->pluck('file_name')->all(),
+        ];
     }
 
     /**

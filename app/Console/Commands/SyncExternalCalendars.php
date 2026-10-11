@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\Feature;
 use App\Models\ClubEventSource;
+use App\Services\ActivityLogger;
 use App\Services\ExternalCalendarSyncService;
 use App\Services\PlanEntitlements;
 use Illuminate\Console\Command;
@@ -28,10 +29,22 @@ class SyncExternalCalendars extends Command
             ->get();
 
         foreach ($sources as $source) {
+            $previousError = $source->last_sync_error;
+
             $count = $syncService->sync($source);
 
             if ($source->last_sync_error) {
                 $this->warn($source->name.': '.$source->last_sync_error);
+
+                // Nur bei neuem/geändertem Fehler protokollieren, nicht stündlich denselben.
+                if ($source->last_sync_error !== $previousError) {
+                    ActivityLogger::log(
+                        'event.source_sync_failed',
+                        'Automatische Synchronisierung des externen Kalenders „'.$source->name.'“ fehlgeschlagen: '.$source->last_sync_error,
+                        'ClubEventSource',
+                        $source->sourceID
+                    );
+                }
             } else {
                 $this->info($source->name.': '.$count.' Termine synchronisiert.');
             }

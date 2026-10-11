@@ -30,6 +30,33 @@ class Documents extends Component
         'signature2Upload' => 'signature_2',
     ];
 
+    /**
+     * @var array<string, string>
+     */
+    private const LETTER_ACTIVITY_LABELS = [
+        'letter_place' => 'Ort in der Datumszeile',
+        'signatory_1_title' => 'Unterzeichner 1 – Funktion',
+        'signatory_1_name' => 'Unterzeichner 1 – Name',
+        'signatory_2_title' => 'Unterzeichner 2 – Funktion',
+        'signatory_2_name' => 'Unterzeichner 2 – Name',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    private const MAIL_ACTIVITY_LABELS = [
+        'mail_from_address' => 'Absender-Adresse',
+        'mail_from_name' => 'Absender-Name',
+        'birthday_recipient_group' => 'Empfängergruppe für Geburtstags-Benachrichtigungen',
+        'imap_host' => 'IMAP-Server',
+        'imap_port' => 'IMAP-Port',
+        'imap_encryption' => 'IMAP-Verschlüsselung',
+        'imap_username' => 'IMAP-Benutzername',
+        'imap_password' => 'IMAP-Passwort',
+        'imap_sent_folder' => 'Gesendet-Ordner',
+        'imap_validate_cert' => 'Zertifikat prüfen',
+    ];
+
     public string $letter_place = '';
 
     public string $signatory_1_title = '';
@@ -103,15 +130,26 @@ class Documents extends Component
             'signatory_2_name' => ['nullable', 'string', 'max:100'],
         ]);
 
+        $before = Setting::current()->only(array_keys(self::LETTER_ACTIVITY_LABELS));
+
         Setting::current()->update(array_map(
             fn (?string $value): ?string => $value ?: null,
             $validated
         ));
 
-        ActivityLogger::log(
-            'settings.letter_updated',
-            'Briefeinstellungen wurden geändert.'
+        $changes = ActivityLogger::changes(
+            $before,
+            Setting::current()->fresh()->only(array_keys(self::LETTER_ACTIVITY_LABELS)),
+            self::LETTER_ACTIVITY_LABELS
         );
+
+        if ($changes !== []) {
+            ActivityLogger::log(
+                'settings.letter_updated',
+                'Briefeinstellungen wurden geändert.',
+                changes: $changes
+            );
+        }
 
         session()->flash('success', 'Briefeinstellungen wurden gespeichert.');
     }
@@ -202,14 +240,26 @@ class Documents extends Component
             $attributes['imap_password'] = null;
         }
 
+        $before = Setting::current()->only(array_keys(self::MAIL_ACTIVITY_LABELS));
+
         Setting::current()->update($attributes);
 
         $this->imap_password = '';
 
-        ActivityLogger::log(
-            'settings.mail_updated',
-            'E-Mail-Einstellungen wurden geändert.'
+        $changes = ActivityLogger::changes(
+            $before,
+            Setting::current()->fresh()->only(array_keys(self::MAIL_ACTIVITY_LABELS)),
+            self::MAIL_ACTIVITY_LABELS,
+            masked: ['imap_password']
         );
+
+        if ($changes !== []) {
+            ActivityLogger::log(
+                'settings.mail_updated',
+                'E-Mail-Einstellungen wurden geändert.',
+                changes: $changes
+            );
+        }
 
         session()->flash('success', 'E-Mail-Einstellungen wurden gespeichert.');
     }

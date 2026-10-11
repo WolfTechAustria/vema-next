@@ -4,14 +4,18 @@ namespace App\Livewire\MemberPortal;
 
 use App\Models\Member;
 use App\Models\MemberPhone;
+use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class Profile extends Component
 {
     public string $name = '';
+
     public string $surname = '';
+
     public string $street = '';
+
     public string $zip = '';
 
     public array $phones = [];
@@ -48,7 +52,7 @@ class Profile extends Component
 
     public function removePhone(int $index): void
     {
-        if (!isset($this->phones[$index])) {
+        if (! isset($this->phones[$index])) {
             return;
         }
 
@@ -119,6 +123,8 @@ class Profile extends Component
 
         $member = $this->activeMember();
 
+        $before = $member->activitySnapshot();
+
         /*
          * Stammdaten speichern
          */
@@ -173,6 +179,18 @@ class Profile extends Component
              */
             $this->phones[$index]['ID'] = $phone->ID;
             $this->phones[$index]['phoneNumber'] = $phoneNumber;
+        }
+
+        $changes = ActivityLogger::changes($before, $member->fresh()->activitySnapshot(), Member::ACTIVITY_LABELS);
+
+        if ($changes !== []) {
+            ActivityLogger::log(
+                'portal.profile_updated',
+                'Mitglied "'.$member->full_name.'" (#'.$member->memberID.') hat seine Stammdaten im Mitgliederbereich geändert.',
+                'Member',
+                $member->memberID,
+                $changes
+            );
         }
 
         session()->flash(

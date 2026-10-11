@@ -33,6 +33,54 @@ class ClubEvent extends Model
         'rsvp_enabled' => 'boolean',
     ];
 
+    /**
+     * Feldnamen für das Aktivitätsprotokoll (siehe activitySnapshot()).
+     *
+     * @var array<string, string>
+     */
+    public const ACTIVITY_LABELS = [
+        'title' => 'Titel',
+        'starts_at' => 'Beginn',
+        'ends_at' => 'Ende',
+        'all_day' => 'Ganztägig',
+        'location' => 'Ort',
+        'description' => 'Beschreibung',
+        'rsvp_enabled' => 'Zu-/Absage möglich',
+        'members' => 'Sichtbar für',
+    ];
+
+    /**
+     * Momentaufnahme für das Aktivitätsprotokoll (vor und nach einer
+     * Änderung, siehe ActivityLogger::changes()).
+     *
+     * @return array<string, mixed>
+     */
+    public function activitySnapshot(): array
+    {
+        $this->unsetRelation('members');
+
+        return [
+            'title' => $this->title,
+            'starts_at' => $this->starts_at,
+            'ends_at' => $this->ends_at,
+            'all_day' => (bool) $this->all_day,
+            'location' => $this->location,
+            'description' => $this->description,
+            'rsvp_enabled' => (bool) $this->rsvp_enabled,
+            'members' => $this->members->isEmpty()
+                ? 'alle Mitglieder'
+                : $this->members->map(fn (Member $member) => $member->full_name)->all(),
+        ];
+    }
+
+    /**
+     * Bezeichnung im Aktivitätsprotokoll, z. B. „Sommerfest“ (04.07.2026).
+     */
+    public function activityName(): string
+    {
+        return '„'.$this->title.'“ ('.$this->starts_at->format('d.m.Y').')';
+    }
+
     public function responses(): HasMany
     {
         return $this->hasMany(ClubEventResponse::class, 'eventID', 'eventID');

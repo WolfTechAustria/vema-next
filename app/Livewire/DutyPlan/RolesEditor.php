@@ -2,9 +2,11 @@
 
 namespace App\Livewire\DutyPlan;
 
+use App\Models\DutyPlan;
 use App\Models\DutyPlanRole;
 use App\Models\RecipientGroup;
 use App\Models\Skill;
+use App\Services\ActivityLogger;
 use Livewire\Attributes\Reactive;
 use Livewire\Component;
 
@@ -18,12 +20,19 @@ class RolesEditor extends Component
     public ?int $editingRoleID = null;
 
     public string $name = '';
+
     public int $required_helpers = 1;
+
     public array $weekdays = [];
+
     public ?string $start_time = null;
+
     public ?string $end_time = null;
+
     public ?int $requiredGroupID = null;
+
     public int $required_group_min = 1;
+
     public ?int $requiredSkillID = null;
 
     public function mount(): void
@@ -76,7 +85,7 @@ class RolesEditor extends Component
 
     public function saveRole(): void
     {
-        if (!$this->planId) {
+        if (! $this->planId) {
             return;
         }
 
@@ -106,12 +115,26 @@ class RolesEditor extends Component
             $role = DutyPlanRole::where('planID', $this->planId)
                 ->findOrFail($this->editingRoleID);
 
+            $before = $role->activitySnapshot();
+
             $role->update($attributes);
 
             // Umbenennung sofort auf bereits erzeugte Termine übertragen.
             $role->events()->update([
                 'duty_name' => $validated['name'],
             ]);
+
+            $changes = ActivityLogger::changes($before, $role->fresh()->activitySnapshot(), DutyPlanRole::ACTIVITY_LABELS);
+
+            if ($changes !== []) {
+                ActivityLogger::log(
+                    'duty.role_updated',
+                    $this->roleDescription($role, 'wurde geändert.'),
+                    'DutyPlanRole',
+                    $role->roleID,
+                    $changes
+                );
+            }
 
             session()->flash('success', 'Dienstbezeichnung wurde gespeichert.');
         } else {
@@ -120,7 +143,15 @@ class RolesEditor extends Component
             $attributes['sort_order'] = ($maxSortOrder ?? -1) + 1;
             $attributes['active'] = true;
 
-            DutyPlanRole::create($attributes);
+            $role = DutyPlanRole::create($attributes);
+
+            ActivityLogger::log(
+                'duty.role_created',
+                $this->roleDescription($role, 'wurde angelegt.'),
+                'DutyPlanRole',
+                $role->roleID,
+                ActivityLogger::created($role->fresh()->activitySnapshot(), DutyPlanRole::ACTIVITY_LABELS)
+            );
 
             session()->flash('success', 'Dienstbezeichnung wurde angelegt.');
         }
@@ -140,7 +171,15 @@ class RolesEditor extends Component
     {
         $role = DutyPlanRole::where('planID', $this->planId)->findOrFail($roleID);
 
-        $role->update(['active' => !$role->active]);
+        $role->update(['active' => ! $role->active]);
+
+        ActivityLogger::log(
+            $role->active ? 'duty.role_activated' : 'duty.role_deactivated',
+            $this->roleDescription($role, $role->active ? 'wurde aktiviert.' : 'wurde deaktiviert.'),
+            'DutyPlanRole',
+            $role->roleID,
+            ActivityLogger::changes(['active' => ! $role->active], ['active' => $role->active], ['active' => 'Aktiv'])
+        );
 
         $this->dispatch('duty-plan-roles-updated');
     }
@@ -181,6 +220,28 @@ class RolesEditor extends Component
 
         $a->update(['sort_order' => $bOrder]);
         $b->update(['sort_order' => $aOrder]);
+
+        // Gleiche Sortierwerte: Tausch ändert die Reihenfolge nicht.
+        if ($aOrder === $bOrder) {
+            return;
+        }
+
+        $orderBefore = $roles->pluck('name')->implode(', ');
+
+        $roles[$index] = $b;
+        $roles[$swapIndex] = $a;
+
+        ActivityLogger::log(
+            'duty.role_reordered',
+            $this->roleDescription($a, $direction < 0 ? 'wurde nach oben verschoben.' : 'wurde nach unten verschoben.'),
+            'DutyPlanRole',
+            $a->roleID,
+            ActivityLogger::changes(
+                ['order' => $orderBefore],
+                ['order' => $roles->pluck('name')->implode(', ')],
+                ['order' => 'Reihenfolge']
+            )
+        );
     }
 
     public function deleteRole(int $roleID): void
@@ -195,15 +256,22 @@ class RolesEditor extends Component
             session()->flash(
                 'error',
                 'Dienstbezeichnung kann nicht gelöscht werden: '
-                . $eventsWithAssignments
-                . ' Termin(e) haben bereits Helfer eingeteilt. Bitte stattdessen deaktivieren.'
+                .$eventsWithAssignments
+                .' Termin(e) haben bereits Helfer eingeteilt. Bitte stattdessen deaktivieren.'
             );
 
             return;
         }
 
-        $role->events()->delete();
+        $removedEvents = $role->events()->delete();
         $role->delete();
+
+        ActivityLogger::log(
+            'duty.role_deleted',
+            $this->roleDescription($role, 'wurde gelöscht ('.$removedEvents.' Termine ohne Einteilung entfernt).'),
+            'DutyPlanRole',
+            $role->roleID
+        );
 
         if ($this->editingRoleID === $roleID) {
             $this->resetForm();
@@ -212,6 +280,19 @@ class RolesEditor extends Component
         session()->flash('success', 'Dienstbezeichnung wurde gelöscht.');
 
         $this->dispatch('duty-plan-roles-updated');
+    }
+
+    /**
+     * Beschreibung im Aktivitätsprotokoll, z. B.
+     * Dienstbezeichnung „Bar“ (Dienstplan „Saison 2026“) wurde geändert.
+     */
+    private function roleDescription(DutyPlanRole $role, string $action): string
+    {
+        $plan = DutyPlan::find($role->planID);
+
+        return 'Dienstbezeichnung „'.$role->name.'“'
+            .($plan ? ' (Dienstplan '.$plan->activityName().')' : '')
+            .' '.$action;
     }
 
     protected function resetForm(): void

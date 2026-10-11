@@ -4,12 +4,24 @@ namespace App\Livewire\Skills;
 
 use App\Models\DutyPlanRole;
 use App\Models\Skill;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 
 class Index extends Component
 {
+    /**
+     * @var array<string, string>
+     */
+    private const ACTIVITY_LABELS = [
+        'name' => 'Name',
+        'description' => 'Beschreibung',
+        'active' => 'Aktiv',
+    ];
+
     public string $name = '';
+
     public string $description = '';
+
     public bool $active = true;
 
     public ?int $editingSkillID = null;
@@ -22,11 +34,19 @@ class Index extends Component
             'active' => ['boolean'],
         ]);
 
-        Skill::create([
+        $skill = Skill::create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?: null,
             'active' => $validated['active'],
         ]);
+
+        ActivityLogger::log(
+            'skill.created',
+            'Fähigkeit „'.$skill->name.'“ wurde angelegt.',
+            'Skill',
+            $skill->skillID,
+            ActivityLogger::created($skill->fresh()->only(array_keys(self::ACTIVITY_LABELS)), self::ACTIVITY_LABELS)
+        );
 
         $this->resetForm();
 
@@ -50,18 +70,35 @@ class Index extends Component
         abort_unless($this->editingSkillID, 404);
 
         $validated = $this->validate([
-            'name' => ['required', 'string', 'max:100', 'unique:tb_skills,name,' . $this->editingSkillID . ',skillID'],
+            'name' => ['required', 'string', 'max:100', 'unique:tb_skills,name,'.$this->editingSkillID.',skillID'],
             'description' => ['nullable', 'string'],
             'active' => ['boolean'],
         ]);
 
         $skill = Skill::findOrFail($this->editingSkillID);
+        $before = $skill->only(array_keys(self::ACTIVITY_LABELS));
 
         $skill->update([
             'name' => $validated['name'],
             'description' => $validated['description'] ?: null,
             'active' => $validated['active'],
         ]);
+
+        $changes = ActivityLogger::changes(
+            $before,
+            $skill->fresh()->only(array_keys(self::ACTIVITY_LABELS)),
+            self::ACTIVITY_LABELS
+        );
+
+        if ($changes !== []) {
+            ActivityLogger::log(
+                'skill.updated',
+                'Fähigkeit „'.$skill->name.'“ wurde geändert.',
+                'Skill',
+                $skill->skillID,
+                $changes
+            );
+        }
 
         $this->resetForm();
 
@@ -84,15 +121,24 @@ class Index extends Component
             session()->flash(
                 'error',
                 'Fähigkeit kann nicht gelöscht werden: sie wird noch von '
-                . $rolesUsingSkill . ' Dienstbezeichnung(en) als Voraussetzung verwendet.'
+                .$rolesUsingSkill.' Dienstbezeichnung(en) als Voraussetzung verwendet.'
             );
 
             return;
         }
 
+        $assignedCount = $skill->members()->count() + $skill->externalContacts()->count();
+
         $skill->members()->detach();
         $skill->externalContacts()->detach();
         $skill->delete();
+
+        ActivityLogger::log(
+            'skill.deleted',
+            'Fähigkeit „'.$skill->name.'“ ('.$assignedCount.' Zuordnungen) wurde gelöscht.',
+            'Skill',
+            $skillID
+        );
 
         if ($this->editingSkillID === $skillID) {
             $this->resetForm();

@@ -6,6 +6,7 @@ use App\Enums\EventResponseStatus;
 use App\Models\ClubEvent;
 use App\Models\ClubEventSource;
 use App\Models\Member;
+use App\Services\ActivityLogger;
 use App\Services\ExternalCalendarException;
 use App\Services\ExternalCalendarSyncService;
 use Carbon\Carbon;
@@ -109,10 +110,12 @@ class Index extends Component
 
         if ($this->editingEventID) {
             $event = ClubEvent::query()->whereNull('sourceID')->findOrFail($this->editingEventID);
+            $before = $event->activitySnapshot();
             $event->update($attributes);
 
             session()->flash('success', 'Termin wurde aktualisiert.');
         } else {
+            $before = null;
             $event = ClubEvent::create($attributes);
 
             session()->flash('success', 'Termin wurde angelegt.');
@@ -120,6 +123,8 @@ class Index extends Component
 
         // Keine Auswahl = für alle Mitglieder sichtbar.
         $event->members()->sync(array_map('intval', $this->selectedMembers));
+
+        $this->logEventSaved($event->fresh(), $before);
 
         $this->resetForm();
     }
@@ -156,7 +161,15 @@ class Index extends Component
 
     public function deleteEvent(int $eventID): void
     {
-        ClubEvent::query()->whereNull('sourceID')->findOrFail($eventID)->delete();
+        $event = ClubEvent::query()->whereNull('sourceID')->findOrFail($eventID);
+        $event->delete();
+
+        ActivityLogger::log(
+            'event.deleted',
+            'Termin '.$event->activityName().' wurde gelöscht.',
+            'ClubEvent',
+            $event->eventID
+        );
 
         if ($this->editingEventID === $eventID) {
             $this->resetForm();
@@ -198,12 +211,42 @@ class Index extends Component
 
         if ($this->editingSourceID) {
             $source = ClubEventSource::findOrFail($this->editingSourceID);
+            $before = $source->activitySnapshot();
             $source->update($attributes);
 
             // Zu-/Absage gilt sofort auch für bereits übernommene Termine.
             $source->events()->update(['rsvp_enabled' => $source->rsvp_enabled]);
+
+            $changes = ActivityLogger::changes(
+                $before,
+                $source->fresh()->activitySnapshot(),
+                ClubEventSource::ACTIVITY_LABELS,
+                ClubEventSource::ACTIVITY_MASKED
+            );
+
+            if ($changes !== []) {
+                ActivityLogger::log(
+                    'event.source_updated',
+                    'Externer Kalender „'.$source->name.'“ wurde geändert.',
+                    'ClubEventSource',
+                    $source->sourceID,
+                    $changes
+                );
+            }
         } else {
             $source = ClubEventSource::create($attributes);
+
+            ActivityLogger::log(
+                'event.source_created',
+                'Externer Kalender „'.$source->name.'“ wurde hinzugefügt.',
+                'ClubEventSource',
+                $source->sourceID,
+                ActivityLogger::created(
+                    $source->activitySnapshot(),
+                    ClubEventSource::ACTIVITY_LABELS,
+                    ClubEventSource::ACTIVITY_MASKED
+                )
+            );
         }
 
         if ($source->active) {
@@ -244,6 +287,15 @@ class Index extends Component
 
         $count = $syncService->sync($source);
 
+        ActivityLogger::log(
+            'event.source_synced',
+            $source->last_sync_error
+                ? 'Externer Kalender „'.$source->name.'“ konnte nicht synchronisiert werden: '.$source->last_sync_error
+                : 'Externer Kalender „'.$source->name.'“ wurde manuell synchronisiert ('.$count.' Termine).',
+            'ClubEventSource',
+            $source->sourceID
+        );
+
         if ($source->last_sync_error) {
             session()->flash('error', $source->name.': '.$source->last_sync_error);
         } else {
@@ -253,7 +305,16 @@ class Index extends Component
 
     public function deleteSource(int $sourceID): void
     {
-        ClubEventSource::findOrFail($sourceID)->delete();
+        $source = ClubEventSource::findOrFail($sourceID);
+        $eventCount = $source->events()->count();
+        $source->delete();
+
+        ActivityLogger::log(
+            'event.source_deleted',
+            'Externer Kalender „'.$source->name.'“ wurde mit '.$eventCount.' übernommenen Terminen entfernt.',
+            'ClubEventSource',
+            $source->sourceID
+        );
 
         if ($this->editingSourceID === $sourceID) {
             $this->resetSourceForm();
@@ -275,6 +336,43 @@ class Index extends Component
     public function toggleResponses(int $eventID): void
     {
         $this->viewingResponsesEventID = $this->viewingResponsesEventID === $eventID ? null : $eventID;
+    }
+
+    /**
+     * Neuanlage mit allen Feldern, Änderung nur mit den geänderten Feldern
+     * (kein Eintrag, wenn sich nichts geändert hat).
+     *
+     * @param  array<string, mixed>|null  $before
+     */
+    private function logEventSaved(ClubEvent $event, ?array $before): void
+    {
+        $after = $event->activitySnapshot();
+
+        if ($before === null) {
+            ActivityLogger::log(
+                'event.created',
+                'Termin '.$event->activityName().' wurde angelegt.',
+                'ClubEvent',
+                $event->eventID,
+                ActivityLogger::created($after, ClubEvent::ACTIVITY_LABELS)
+            );
+
+            return;
+        }
+
+        $changes = ActivityLogger::changes($before, $after, ClubEvent::ACTIVITY_LABELS);
+
+        if ($changes === []) {
+            return;
+        }
+
+        ActivityLogger::log(
+            'event.updated',
+            'Termin '.$event->activityName().' wurde geändert.',
+            'ClubEvent',
+            $event->eventID,
+            $changes
+        );
     }
 
     /**

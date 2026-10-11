@@ -302,4 +302,56 @@ class Member extends Model
             'memberID'
         )->whereNull('date_to');
     }
+
+    /**
+     * Anzeigenamen der Felder für das Aktivitätsprotokoll.
+     *
+     * @var array<string, string>
+     */
+    public const ACTIVITY_LABELS = [
+        'name' => 'Vorname',
+        'surname' => 'Nachname',
+        'gender' => 'Anrede',
+        'dateOfBirth' => 'Geburtsdatum',
+        'dateOfJoin' => 'Eintrittsdatum',
+        'street' => 'Straße',
+        'zip' => 'PLZ',
+        'competitionMember' => 'Wettkampfmitglied',
+        'supportingMember' => 'Unterstützendes Mitglied',
+        'emails' => 'E-Mail-Adressen',
+        'phones' => 'Telefonnummern',
+        'skills' => 'Fähigkeiten',
+    ];
+
+    /**
+     * Momentaufnahme der Stammdaten für das Aktivitätsprotokoll
+     * (vor und nach einer Änderung, siehe ActivityLogger::changes()).
+     *
+     * @return array<string, mixed>
+     */
+    public function activitySnapshot(): array
+    {
+        $this->unsetRelation('emails')->unsetRelation('phones')->unsetRelation('skills');
+
+        return [
+            'name' => $this->name,
+            'surname' => $this->surname,
+            'gender' => match ($this->gender) {
+                'm' => 'Herr',
+                'w' => 'Frau',
+                default => $this->gender,
+            },
+            'dateOfBirth' => $this->dateOfBirth,
+            'dateOfJoin' => $this->dateOfJoin,
+            'street' => $this->street,
+            'zip' => $this->zip,
+            'competitionMember' => (bool) $this->competitionMember,
+            'supportingMember' => (bool) $this->supportingMember,
+            'emails' => $this->emails->pluck('email')->all(),
+            'phones' => $this->phones
+                ->map(fn ($phone) => $phone->phoneNumber.' ('.$phone->category_name.')')
+                ->all(),
+            'skills' => $this->skills->pluck('name')->all(),
+        ];
+    }
 }

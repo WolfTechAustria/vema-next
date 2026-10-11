@@ -3,25 +3,58 @@
 namespace App\Livewire\Invoices\Recipients;
 
 use App\Models\InvoiceRecipient;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 
 class Index extends Component
 {
+    /**
+     * Felder für das Aktivitätsprotokoll (auch beim Anlegen aus der
+     * Rechnungserstellung verwendet).
+     *
+     * @var array<string, string>
+     */
+    public const ACTIVITY_LABELS = [
+        'company_name' => 'Firma / Organisation',
+        'name' => 'Vorname',
+        'surname' => 'Nachname',
+        'street' => 'Straße',
+        'zip' => 'PLZ',
+        'city' => 'Ort',
+        'country' => 'Land',
+        'email' => 'E-Mail',
+        'phone' => 'Telefon',
+        'vat_id' => 'UID-Nummer',
+        'note' => 'Notiz',
+        'active' => 'Empfänger aktiv',
+    ];
+
     public bool $showForm = false;
 
     public ?int $editingRecipientID = null;
 
     public string $company_name = '';
+
     public string $name = '';
+
     public string $surname = '';
+
     public string $street = '';
+
     public string $zip = '';
+
     public string $city = '';
+
     public string $country = 'Österreich';
+
     public string $email = '';
+
     public string $phone = '';
+
     public string $vat_id = '';
+
     public string $note = '';
+
     public bool $active = true;
 
     public string $search = '';
@@ -75,11 +108,38 @@ class Index extends Component
         ];
 
         if ($this->editingRecipientID) {
-            InvoiceRecipient::findOrFail($this->editingRecipientID)->update($data);
+            $recipient = InvoiceRecipient::findOrFail($this->editingRecipientID);
+            $before = $recipient->only(array_keys(self::ACTIVITY_LABELS));
+
+            $recipient->update($data);
+
+            $changes = ActivityLogger::changes(
+                $before,
+                $recipient->fresh()->only(array_keys(self::ACTIVITY_LABELS)),
+                self::ACTIVITY_LABELS
+            );
+
+            if ($changes !== []) {
+                ActivityLogger::log(
+                    'invoice.recipient_updated',
+                    'Rechnungsempfänger „'.$recipient->display_name.'“ wurde geändert.',
+                    'InvoiceRecipient',
+                    $recipient->recipientID,
+                    $changes
+                );
+            }
 
             session()->flash('success', 'Rechnungsempfänger wurde aktualisiert.');
         } else {
-            InvoiceRecipient::create($data);
+            $recipient = InvoiceRecipient::create($data);
+
+            ActivityLogger::log(
+                'invoice.recipient_created',
+                'Rechnungsempfänger „'.$recipient->display_name.'“ wurde angelegt.',
+                'InvoiceRecipient',
+                $recipient->recipientID,
+                ActivityLogger::created($recipient->fresh()->only(array_keys(self::ACTIVITY_LABELS)), self::ACTIVITY_LABELS)
+            );
 
             session()->flash('success', 'Rechnungsempfänger wurde angelegt.');
         }
@@ -127,8 +187,15 @@ class Index extends Component
         $recipient = InvoiceRecipient::findOrFail($recipientID);
 
         $recipient->update([
-            'active' => !$recipient->active,
+            'active' => ! $recipient->active,
         ]);
+
+        ActivityLogger::log(
+            $recipient->active ? 'invoice.recipient_activated' : 'invoice.recipient_deactivated',
+            'Rechnungsempfänger „'.$recipient->display_name.'“ wurde '.($recipient->active ? 'aktiviert' : 'deaktiviert').'.',
+            'InvoiceRecipient',
+            $recipient->recipientID
+        );
     }
 
     private function resetForm(): void
@@ -158,7 +225,7 @@ class Index extends Component
             ->when(
                 trim($this->search) !== '',
                 function ($query) {
-                    $search = '%' . trim($this->search) . '%';
+                    $search = '%'.trim($this->search).'%';
 
                     $query->where(function ($query) use ($search) {
                         $query

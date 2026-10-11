@@ -21,10 +21,9 @@
             class="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
         >
             <option value="all">Alle Ereignisse</option>
-            <option value="login">Anmeldungen</option>
-            <option value="member">Mitglieder</option>
-            <option value="user">Benutzerverwaltung</option>
-            <option value="settings">Einstellungen</option>
+            @foreach($areas as $areaKey => $area)
+                <option value="{{ $areaKey }}">{{ $area['label'] }}</option>
+            @endforeach
         </select>
 
     </div>
@@ -47,7 +46,7 @@
                 <tbody class="divide-y divide-slate-100">
 
                 @forelse($entries as $entry)
-                    <tr class="hover:bg-slate-50" wire:key="activity-{{ $entry->activityLogID }}">
+                    <tr class="align-top hover:bg-slate-50" wire:key="activity-{{ $entry->activityLogID }}">
 
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
                             {{ $entry->created_at->format('d.m.Y H:i') }}
@@ -57,8 +56,44 @@
                             {{ $entry->actor_name }}
                         </td>
 
-                        <td class="px-6 py-4 text-sm text-slate-700">
-                            {{ $entry->description }}
+                        <td class="px-6 py-4 text-sm text-slate-700" x-data="{ open: false }">
+                            <div>{{ $entry->description }}</div>
+
+                            @if(! empty($entry->changes))
+                                <button
+                                    type="button"
+                                    @click="open = !open"
+                                    :aria-expanded="open"
+                                    class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-900"
+                                >
+                                    <span x-text="open ? 'Details ausblenden' : 'Details ({{ count($entry->changes) }})'"></span>
+                                    <svg class="h-3 w-3 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+
+                                <dl x-show="open" x-cloak class="mt-2 space-y-1 rounded-lg bg-slate-50 p-3 text-xs">
+                                    @foreach($entry->changes as $change)
+                                        <div class="grid gap-x-3 sm:grid-cols-[minmax(0,10rem)_1fr]">
+                                            <dt class="font-medium text-slate-600">{{ $change['field'] }}</dt>
+                                            <dd class="break-words text-slate-700">
+                                                @if($change['masked'] ?? false)
+                                                    <span class="italic text-slate-500">geändert</span>
+                                                @elseif($change['old'] === null)
+                                                    <span class="text-emerald-700">{{ $change['new'] }}</span>
+                                                @elseif($change['new'] === null)
+                                                    <span class="text-red-700 line-through decoration-red-300">{{ $change['old'] }}</span>
+                                                    <span class="text-slate-400">(entfernt)</span>
+                                                @else
+                                                    <span class="text-red-700 line-through decoration-red-300">{{ $change['old'] }}</span>
+                                                    <span class="text-slate-400">→</span>
+                                                    <span class="text-emerald-700">{{ $change['new'] }}</span>
+                                                @endif
+                                            </dd>
+                                        </div>
+                                    @endforeach
+                                </dl>
+                            @endif
                         </td>
 
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-400">

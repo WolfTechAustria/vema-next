@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ActivityLog;
 use App\Models\Member;
 use App\Models\MemberAccount;
 use App\Models\MemberEmail;
@@ -87,12 +88,15 @@ function setUpCashBookSchema(): void
             'database/migrations/2026_09_20_122656_create_permission_tables.php',
             'database/migrations/2026_09_20_130000_create_settings_table.php',
             'database/migrations/2026_09_20_140000_create_activity_log_table.php',
+            'database/migrations/2026_10_11_204429_add_changes_to_activity_log_table.php',
+            'database/migrations/2026_09_21_090400_create_invoice_number_sequences_table.php',
             'database/migrations/2026_09_21_090500_add_invoice_fields_to_settings_table.php',
             'database/migrations/2026_09_25_031630_create_cash_book_years_table.php',
             'database/migrations/2026_09_25_031632_create_cash_book_entries_table.php',
             'database/migrations/2026_09_25_031634_create_cash_book_attachments_table.php',
             'database/migrations/2026_09_25_184245_add_demo_mode_to_settings_table.php',
             'database/migrations/2026_09_26_191133_add_branding_and_mail_to_settings_table.php',
+            'database/migrations/2026_10_11_164902_add_invoice_number_format_to_settings_table.php',
         ],
     ])->assertSuccessful();
 }
@@ -139,6 +143,17 @@ function loginPortalMember(string $surname = 'Muster'): Member
     session(['active_member_id' => $member->memberID]);
 
     return $member;
+}
+
+/**
+ * Geänderte Felder des einzigen Protokolleintrags einer Aktion, nach
+ * Anzeigename indiziert.
+ *
+ * @return array<string, array{field: string, old: ?string, new: ?string, masked: bool}>
+ */
+function loggedChanges(string $action): array
+{
+    return collect(ActivityLog::query()->where('action', $action)->sole()->changes)->keyBy('field')->all();
 }
 
 /*

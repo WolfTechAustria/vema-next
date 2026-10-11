@@ -121,7 +121,18 @@ class Index extends Component
             'user.created',
             'Benutzer "'.$user->username.'" wurde angelegt'.($validated['grantAdmin'] ? ' (mit Admin-Rechten)' : '').'.',
             'User',
-            $user->id
+            $user->id,
+            ActivityLogger::created([
+                'username' => $user->username,
+                'email' => $user->email,
+                'member' => $user->member?->full_name,
+                'roles' => $user->getRoleNames()->map(fn (string $role): string => ucfirst($role))->all(),
+            ], [
+                'username' => 'Benutzername',
+                'email' => 'E-Mail',
+                'member' => 'Mitglied',
+                'roles' => 'Rollen',
+            ])
         );
 
         $this->cancelInvite();
@@ -253,6 +264,13 @@ class Index extends Component
                 );
             }
         }
+
+        ActivityLogger::log(
+            'user.invitation_resent',
+            'Benutzer "'.$user->username.'" wurde der Link zum Festlegen des Passworts erneut an '.$user->email.' gesendet.',
+            'User',
+            $user->id
+        );
 
         session()->flash('success', 'Link zum Zurücksetzen des Passworts wurde erneut an '.$user->email.' verschickt.');
     }

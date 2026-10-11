@@ -7,6 +7,7 @@ use App\Models\Circular;
 use App\Models\CircularAttachment;
 use App\Models\CircularRecipient;
 use App\Models\Member;
+use App\Services\ActivityLogger;
 use App\Services\CircularPdfService;
 use App\Services\ImapSentMailService;
 use App\Services\PdfLetterheadService;
@@ -154,6 +155,13 @@ class CircularController extends Controller
             }
         }
 
+        ActivityLogger::log(
+            'circular.test_mail_sent',
+            'Testmail zum Rundschreiben „'.$circular->title.'“ wurde an „'.$recipient->display_name.'“ ('.$recipient->email.') versendet.',
+            'Circular',
+            $circular->circularID
+        );
+
         return back()->with(
             'success',
             'Testmail wurde an '
@@ -282,6 +290,14 @@ class CircularController extends Controller
             ]);
         }
 
+        ActivityLogger::log(
+            'circular.emails_sent',
+            'Rundschreiben „'.$circular->title.'“ wurde an '.$sentCount.' Empfänger per E-Mail versendet.'
+                .($failedCount > 0 ? ' '.$failedCount.' E-Mail(s) konnten nicht versendet werden.' : ''),
+            'Circular',
+            $circular->circularID
+        );
+
         if ($failedCount > 0) {
 
             return back()->with(
@@ -329,6 +345,13 @@ class CircularController extends Controller
                 'sent_at' => now(),
             ]);
         }
+
+        ActivityLogger::log(
+            'circular.post_marked_sent',
+            'Postversand des Rundschreibens „'.$circular->title.'“ an '.$postRecipients->count().' Empfänger wurde als erledigt markiert.',
+            'Circular',
+            $circular->circularID
+        );
 
         return back()->with(
             'success',

@@ -35,6 +35,38 @@ class ClubEventSource extends Model
         'last_synced_at' => 'datetime',
     ];
 
+    /**
+     * Feldnamen für das Aktivitätsprotokoll (siehe activitySnapshot()).
+     *
+     * @var array<string, string>
+     */
+    public const ACTIVITY_LABELS = [
+        'name' => 'Beschriftung',
+        'url' => 'iCal-Link',
+        'rsvp_enabled' => 'Zu-/Absage möglich',
+        'active' => 'Aktiv',
+    ];
+
+    /**
+     * Der iCal-Link enthält ein Geheimnis und erscheint nur als „geändert“.
+     *
+     * @var list<string>
+     */
+    public const ACTIVITY_MASKED = ['url'];
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function activitySnapshot(): array
+    {
+        return [
+            'name' => $this->name,
+            'url' => $this->url,
+            'rsvp_enabled' => (bool) $this->rsvp_enabled,
+            'active' => (bool) $this->active,
+        ];
+    }
+
     public function events(): HasMany
     {
         return $this->hasMany(ClubEvent::class, 'sourceID', 'sourceID');

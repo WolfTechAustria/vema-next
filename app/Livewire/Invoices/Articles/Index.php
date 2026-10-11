@@ -4,6 +4,7 @@ namespace App\Livewire\Invoices\Articles;
 
 use App\Models\Article;
 use App\Models\Setting;
+use App\Services\ActivityLogger;
 use Livewire\Component;
 
 class Index extends Component
@@ -13,10 +14,15 @@ class Index extends Component
     public ?int $editingArticleID = null;
 
     public string $name = '';
+
     public string $description = '';
+
     public string $unit = 'Stk';
+
     public string $price_net = '';
+
     public string $tax_rate = '20';
+
     public bool $active = true;
 
     public string $search = '';
@@ -45,13 +51,13 @@ class Index extends Component
         $priceNet = str_replace(',', '.', (string) $validated['price_net']);
         $taxRate = str_replace(',', '.', (string) $validated['tax_rate']);
 
-        if (!is_numeric($priceNet)) {
+        if (! is_numeric($priceNet)) {
             $this->addError('price_net', 'Bitte einen gültigen Preis eingeben.');
 
             return;
         }
 
-        if (!is_numeric($taxRate)) {
+        if (! is_numeric($taxRate)) {
             $this->addError('tax_rate', 'Bitte einen gültigen USt.-Satz eingeben.');
 
             return;
@@ -67,11 +73,34 @@ class Index extends Component
         ];
 
         if ($this->editingArticleID) {
-            Article::findOrFail($this->editingArticleID)->update($data);
+            $article = Article::findOrFail($this->editingArticleID);
+            $before = $this->articleSnapshot($article);
+
+            $article->update($data);
+
+            $changes = ActivityLogger::changes($before, $this->articleSnapshot($article->fresh()), self::ACTIVITY_LABELS);
+
+            if ($changes !== []) {
+                ActivityLogger::log(
+                    'invoice.article_updated',
+                    'Artikel „'.$article->name.'“ wurde geändert.',
+                    'Article',
+                    $article->articleID,
+                    $changes
+                );
+            }
 
             session()->flash('success', 'Artikel wurde aktualisiert.');
         } else {
-            Article::create($data);
+            $article = Article::create($data);
+
+            ActivityLogger::log(
+                'invoice.article_created',
+                'Artikel „'.$article->name.'“ wurde angelegt.',
+                'Article',
+                $article->articleID,
+                ActivityLogger::created($this->articleSnapshot($article->fresh()), self::ACTIVITY_LABELS)
+            );
 
             session()->flash('success', 'Artikel wurde angelegt.');
         }
@@ -113,8 +142,42 @@ class Index extends Component
         $article = Article::findOrFail($articleID);
 
         $article->update([
-            'active' => !$article->active,
+            'active' => ! $article->active,
         ]);
+
+        ActivityLogger::log(
+            $article->active ? 'invoice.article_activated' : 'invoice.article_deactivated',
+            'Artikel „'.$article->name.'“ wurde '.($article->active ? 'aktiviert' : 'deaktiviert').'.',
+            'Article',
+            $article->articleID
+        );
+    }
+
+    /**
+     * @var array<string, string>
+     */
+    private const ACTIVITY_LABELS = [
+        'name' => 'Bezeichnung',
+        'description' => 'Beschreibung',
+        'unit' => 'Einheit',
+        'price_net' => 'Preis netto',
+        'tax_rate' => 'USt. %',
+        'active' => 'Artikel aktiv',
+    ];
+
+    /**
+     * @return array{name: string, description: ?string, unit: ?string, price_net: string, tax_rate: string, active: bool}
+     */
+    private function articleSnapshot(Article $article): array
+    {
+        return [
+            'name' => $article->name,
+            'description' => $article->description,
+            'unit' => $article->unit,
+            'price_net' => number_format((float) $article->price_net, 2, ',', '.'),
+            'tax_rate' => number_format((float) $article->tax_rate, 2, ',', ''),
+            'active' => (bool) $article->active,
+        ];
     }
 
     private function resetForm(): void
@@ -137,7 +200,7 @@ class Index extends Component
         $articles = Article::query()
             ->when(
                 trim($this->search) !== '',
-                fn ($query) => $query->where('name', 'like', '%' . trim($this->search) . '%')
+                fn ($query) => $query->where('name', 'like', '%'.trim($this->search).'%')
             )
             ->orderBy('name')
             ->get();

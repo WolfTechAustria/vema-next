@@ -3,34 +3,44 @@
 namespace App\Livewire\Circulars;
 
 use App\Models\Circular;
-use Livewire\Component;
-use Livewire\WithFileUploads;
 use App\Models\CircularAttachment;
 use App\Models\CircularRecipient;
+use App\Models\ExternalContact;
+use App\Models\Member;
+use App\Models\RecipientGroup;
+use App\Models\Template;
+use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Index extends Component
 {
-
     use WithFileUploads;
 
     public array $existingAttachments = [];
+
     public string $recipientSearch = '';
+
     public ?int $editingCircularID = null;
 
     public string $recipientEmailFilter = 'all';
 
     public array $selectedRecipients = [];
+
     public array $selectedExternalRecipients = [];
 
     public array $attachments = [];
+
     public bool $showCreateDialog = false;
 
     public string $title = '';
-    public ?int $templateID = null;
-    public string $subject = '';
-    public string $bodyHtml = '';
 
+    public ?int $templateID = null;
+
+    public string $subject = '';
+
+    public string $bodyHtml = '';
 
     public function createCircular(): void
     {
@@ -64,11 +74,15 @@ class Index extends Component
             ],
         ]);
 
+        $before = null;
+
         if ($this->editingCircularID) {
 
             $circular = Circular::findOrFail(
                 $this->editingCircularID
             );
+
+            $before = $this->circularSnapshot($circular);
 
             $circular->update([
                 'title' => $validated['title'],
@@ -95,7 +109,7 @@ class Index extends Component
          */
         foreach ($this->selectedRecipients as $memberID) {
 
-            $member = \App\Models\Member::query()
+            $member = Member::query()
                 ->with('emails')
                 ->findOrFail((int) $memberID);
 
@@ -116,7 +130,7 @@ class Index extends Component
          */
         foreach ($this->selectedExternalRecipients as $externalContactID) {
 
-            $contact = \App\Models\ExternalContact::query()
+            $contact = ExternalContact::query()
                 ->where('active', true)
                 ->findOrFail((int) $externalContactID);
 
@@ -137,7 +151,7 @@ class Index extends Component
             $originalName = $file->getClientOriginalName();
 
             $path = $file->store(
-                'circulars/' . $circular->circularID,
+                'circulars/'.$circular->circularID,
                 'local'
             );
 
@@ -148,6 +162,30 @@ class Index extends Component
                 'mime_type' => $file->getMimeType(),
                 'file_size' => $file->getSize(),
             ]);
+        }
+
+        $after = $this->circularSnapshot($circular->fresh());
+
+        if ($before === null) {
+            ActivityLogger::log(
+                'circular.created',
+                'Rundschreiben „'.$circular->title.'“ wurde als Entwurf angelegt.',
+                'Circular',
+                $circular->circularID,
+                ActivityLogger::created($after, self::ACTIVITY_LABELS, self::ACTIVITY_MASKED)
+            );
+        } else {
+            $changes = ActivityLogger::changes($before, $after, self::ACTIVITY_LABELS, self::ACTIVITY_MASKED);
+
+            if ($changes !== []) {
+                ActivityLogger::log(
+                    'circular.updated',
+                    'Rundschreiben „'.$circular->title.'“ wurde geändert.',
+                    'Circular',
+                    $circular->circularID,
+                    $changes
+                );
+            }
         }
 
         $this->reset([
@@ -171,14 +209,14 @@ class Index extends Component
 
     public function updatedTemplateID(): void
     {
-        if (!$this->templateID) {
+        if (! $this->templateID) {
             $this->subject = '';
             $this->bodyHtml = '';
 
             return;
         }
 
-        $template = \App\Models\Template::findOrFail(
+        $template = Template::findOrFail(
             $this->templateID
         );
 
@@ -188,7 +226,7 @@ class Index extends Component
 
     public function removeAttachment(int $index): void
     {
-        if (!isset($this->attachments[$index])) {
+        if (! isset($this->attachments[$index])) {
             return;
         }
 
@@ -201,7 +239,7 @@ class Index extends Component
 
     public function selectAllFilteredRecipients(): void
     {
-        $members = \App\Models\Member::query()
+        $members = Member::query()
             ->with('emails')
             ->where('active', 1)
             ->when(
@@ -209,8 +247,8 @@ class Index extends Component
                 function ($query) {
                     $query->where(function ($query) {
                         $query
-                            ->where('name', 'like', '%' . $this->recipientSearch . '%')
-                            ->orWhere('surname', 'like', '%' . $this->recipientSearch . '%');
+                            ->where('name', 'like', '%'.$this->recipientSearch.'%')
+                            ->orWhere('surname', 'like', '%'.$this->recipientSearch.'%');
                     });
                 }
             )
@@ -240,7 +278,7 @@ class Index extends Component
 
     public function addRecipientGroup(int $groupID): void
     {
-        $group = \App\Models\RecipientGroup::query()
+        $group = RecipientGroup::query()
             ->with([
                 'members',
                 'externalContacts',
@@ -280,7 +318,7 @@ class Index extends Component
 
     public function editCircular(int $circularID): void
     {
-        $circular = \App\Models\Circular::query()
+        $circular = Circular::query()
             ->with([
                 'recipients',
                 'attachments',
@@ -328,12 +366,24 @@ class Index extends Component
     public function removeExistingAttachment(int $attachmentID): void
     {
         $attachment = CircularAttachment::findOrFail($attachmentID);
+        $circular = Circular::find($attachment->circularID);
+        $before = $circular ? $this->circularSnapshot($circular) : null;
 
         if ($attachment->file_path && Storage::disk('local')->exists($attachment->file_path)) {
             Storage::disk('local')->delete($attachment->file_path);
         }
 
         $attachment->delete();
+
+        if ($circular) {
+            ActivityLogger::log(
+                'circular.updated',
+                'Anhang „'.$attachment->file_name.'“ wurde aus dem Rundschreiben „'.$circular->title.'“ entfernt.',
+                'Circular',
+                $circular->circularID,
+                ActivityLogger::changes($before, $this->circularSnapshot($circular->fresh()), self::ACTIVITY_LABELS, self::ACTIVITY_MASKED)
+            );
+        }
 
         $this->existingAttachments = array_values(
             array_filter(
@@ -343,9 +393,60 @@ class Index extends Component
         );
     }
 
+    /**
+     * @var array<string, string>
+     */
+    private const ACTIVITY_LABELS = [
+        'title' => 'Titel',
+        'template' => 'Template',
+        'subject' => 'Betreff',
+        'body_html' => 'Text',
+        'recipients' => 'Empfänger',
+        'attachments' => 'Anhänge',
+    ];
+
+    /**
+     * Lange Texte erscheinen im Protokoll nur als „geändert“.
+     *
+     * @var list<string>
+     */
+    private const ACTIVITY_MASKED = ['body_html'];
+
+    /**
+     * Empfänger als Anzahl plus sortierte Namensliste, damit auch der
+     * Austausch einzelner Empfänger erkannt wird.
+     *
+     * @return array{title: string, template: ?string, subject: ?string, body_html: ?string, recipients: ?string, attachments: list<string>}
+     */
+    private function circularSnapshot(Circular $circular): array
+    {
+        $circular->load([
+            'template',
+            'recipients.member',
+            'recipients.externalContact',
+            'attachments',
+        ]);
+
+        $recipientNames = $circular->recipients
+            ->map(fn ($recipient) => $recipient->display_name)
+            ->sort(SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+
+        return [
+            'title' => $circular->title,
+            'template' => $circular->template?->name,
+            'subject' => $circular->subject,
+            'body_html' => $circular->body_html,
+            'recipients' => $recipientNames->isEmpty()
+                ? null
+                : $recipientNames->count().' ('.$recipientNames->implode(', ').')',
+            'attachments' => $circular->attachments->pluck('file_name')->all(),
+        ];
+    }
+
     public function render()
     {
-        $templates = \App\Models\Template::query()
+        $templates = Template::query()
             ->where('active', true)
             ->orderBy('name')
             ->get();
@@ -354,16 +455,13 @@ class Index extends Component
             ->with('recipients')
             ->withCount('recipients')
             ->withCount([
-                'recipients as post_recipients_count' => fn ($query) =>
-                $query->where('delivery_method', 'post'),
+                'recipients as post_recipients_count' => fn ($query) => $query->where('delivery_method', 'post'),
 
-                'recipients as open_post_recipients_count' => fn ($query) =>
-                $query
+                'recipients as open_post_recipients_count' => fn ($query) => $query
                     ->where('delivery_method', 'post')
                     ->whereNull('sent_at'),
 
-                'recipients as open_email_recipients_count' => fn ($query) =>
-                $query
+                'recipients as open_email_recipients_count' => fn ($query) => $query
                     ->where('delivery_method', 'email')
                     ->whereNotNull('email')
                     ->whereNull('sent_at'),
@@ -371,12 +469,12 @@ class Index extends Component
             ->latest('created_at')
             ->get();
 
-        $recipientGroups = \App\Models\RecipientGroup::query()
+        $recipientGroups = RecipientGroup::query()
             ->withCount('members')
             ->orderBy('name')
             ->get();
 
-        $members = \App\Models\Member::query()
+        $members = Member::query()
             ->with('emails')
             ->where('active', 1)
             ->when(
@@ -384,8 +482,8 @@ class Index extends Component
                 function ($query) {
                     $query->where(function ($query) {
                         $query
-                            ->where('name', 'like', '%' . $this->recipientSearch . '%')
-                            ->orWhere('surname', 'like', '%' . $this->recipientSearch . '%');
+                            ->where('name', 'like', '%'.$this->recipientSearch.'%')
+                            ->orWhere('surname', 'like', '%'.$this->recipientSearch.'%');
                     });
                 }
             )
@@ -401,7 +499,7 @@ class Index extends Component
             ->orderBy('name')
             ->get();
 
-        $externalContacts = \App\Models\ExternalContact::query()
+        $externalContacts = ExternalContact::query()
             ->where('active', true)
             ->orderBy('surname')
             ->orderBy('name')
@@ -420,7 +518,6 @@ class Index extends Component
             'title' => 'Rundschreiben | VEMA',
             'heading' => 'Rundschreiben',
         ]);
-
 
     }
 }

@@ -4,6 +4,7 @@ namespace App\Livewire\MemberPortal;
 
 use App\Models\Member;
 use App\Models\MemberDutySettings;
+use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -38,6 +39,19 @@ class MyDuties extends Component
 
         $this->reminderEnabled = $settings->duty_reminder_enabled;
 
+        ActivityLogger::log(
+            'portal.duty_reminder_toggled',
+            'Mitglied "'.$member->full_name.'" (#'.$member->memberID.') hat die E-Mail-Erinnerung an Dienste '
+                .($this->reminderEnabled ? 'aktiviert.' : 'deaktiviert.'),
+            'Member',
+            $member->memberID,
+            ActivityLogger::changes(
+                ['duty_reminder_enabled' => ! $this->reminderEnabled],
+                ['duty_reminder_enabled' => $this->reminderEnabled],
+                ['duty_reminder_enabled' => 'E-Mail-Erinnerung an Dienste']
+            )
+        );
+
         session()->flash(
             'success',
             $this->reminderEnabled
@@ -52,9 +66,24 @@ class MyDuties extends Component
 
         $settings = MemberDutySettings::forMember($member);
 
+        $previousToken = $settings->ical_token;
+
         $token = $settings->regenerateIcalToken();
 
         $this->icalUrl = route('member-calendar.ical', $token);
+
+        ActivityLogger::log(
+            'portal.calendar_link_renewed',
+            'Mitglied "'.$member->full_name.'" (#'.$member->memberID.') hat seinen Kalender-Link erneuert.',
+            'Member',
+            $member->memberID,
+            ActivityLogger::changes(
+                ['ical_token' => $previousToken],
+                ['ical_token' => $token],
+                ['ical_token' => 'Kalender-Link'],
+                ['ical_token']
+            )
+        );
 
         session()->flash(
             'success',

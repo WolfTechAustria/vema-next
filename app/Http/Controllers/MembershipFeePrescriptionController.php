@@ -6,6 +6,7 @@ use App\Models\MembershipFeeEntry;
 use App\Models\MembershipFeePrescription;
 use App\Models\MembershipFeeYear;
 use App\Models\Template;
+use App\Services\ActivityLogger;
 use App\Services\PdfLetterheadService;
 use App\Services\TemplateRendererService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -606,6 +607,22 @@ class MembershipFeePrescriptionController extends Controller
                 'sent_at' => now(),
             ]);
         }
+
+        $years = $entries->pluck('year.year')->filter()->unique()->sort()->implode(', ');
+        $yearIds = $entries->pluck('yearID')->unique();
+
+        ActivityLogger::log(
+            'fee.reminders_printed',
+            $entries->count() === 1
+                ? 'Erinnerung '.$years.' für „'.$entries->first()->member?->full_name.'“ wurde für den Postversand als PDF erstellt.'
+                : 'Erinnerungen '.$years.' für '.$entries->count().' Mitglieder wurden für den Postversand als PDF erstellt.',
+            $yearIds->count() === 1 ? 'MembershipFeeYear' : null,
+            $yearIds->count() === 1 ? $yearIds->first() : null,
+            ActivityLogger::created(
+                ['members' => $entries->map(fn ($entry) => $entry->member?->full_name)->filter()->values()->all()],
+                ['members' => 'Mitglieder']
+            )
+        );
 
         return response(
             $finalPdf,

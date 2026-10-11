@@ -2,19 +2,23 @@
 
 namespace App\Livewire\DutyPlan;
 
+use App\Exports\DutyPlanExport;
+use App\Models\DutyPlan;
+use App\Models\DutyPlanAbsence;
+use App\Models\DutyPlanAssignment;
 use App\Models\DutyPlanEvent;
-use Carbon\Carbon;
-use Livewire\Component;
+use App\Models\DutyPlanRole;
+use App\Models\DutyPlanVolunteer;
+use App\Models\ExternalContact;
+use App\Models\Member;
+use App\Services\ActivityLogger;
 use App\Services\DutyPlanAssignmentService;
 use App\Services\DutyPlanGeneratorService;
-use App\Models\DutyPlanAssignment;
-use App\Models\DutyPlanVolunteer;
-use App\Exports\DutyPlanExport;
-use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\DutyPlan;
+use Carbon\Carbon;
 use Livewire\Attributes\On;
-
+use Livewire\Component;
+use Maatwebsite\Excel\Facades\Excel;
 
 class Index extends Component
 {
@@ -25,12 +29,17 @@ class Index extends Component
     public string $planName = '';
 
     public bool $showCreatePlan = false;
+
     public bool $copyFromCurrentPlan = true;
+
     public string $dateFrom = '';
+
     public string $dateTo = '';
 
     public string $exportWeekday = 'all';
+
     public string $exportRole = 'all';
+
     public bool $excludeHolidays = true;
 
     #[On('duty-plan-roles-updated')]
@@ -112,17 +121,30 @@ class Index extends Component
             'date_from' => $validated['dateFrom'],
             'date_to' => $validated['dateTo'],
 
-            'exclude_holidays' =>
-                $validated['excludeHolidays'],
+            'exclude_holidays' => $validated['excludeHolidays'],
         ]);
+
+        $description = 'Dienstplan '.$plan->activityName().' wurde angelegt.';
 
         if ($sourcePlanId) {
             $source = DutyPlan::find($sourcePlanId);
 
             if ($source) {
-                $this->copyRolesAndVolunteers($source, $plan);
+                $copied = $this->copyRolesAndVolunteers($source, $plan);
+
+                $description .= ' Von '.$source->activityName().' übernommen: '
+                    .$copied['roles'].' Dienstbezeichnungen, '
+                    .$copied['volunteers'].' Helfer.';
             }
         }
+
+        ActivityLogger::log(
+            'duty.plan_created',
+            $description,
+            'DutyPlan',
+            $plan->planID,
+            ActivityLogger::created($plan->fresh()->activitySnapshot(), DutyPlan::ACTIVITY_LABELS)
+        );
 
         $this->selectPlan($plan->planID);
 
@@ -131,7 +153,7 @@ class Index extends Component
         session()->flash(
             'success',
             'Dienstplan wurde angelegt.'
-            . ($sourcePlanId ? ' Dienstbezeichnungen und Helferliste wurden vom vorherigen Plan übernommen.' : '')
+            .($sourcePlanId ? ' Dienstbezeichnungen und Helferliste wurden vom vorherigen Plan übernommen.' : '')
         );
     }
 
@@ -139,19 +161,25 @@ class Index extends Component
      * Kopiert Dienstbezeichnungen und Helferliste (Mitglieder + externe
      * Helfer) eines bestehenden Plans in einen neuen/anderen Plan. Termine
      * und bereits erfolgte Einteilungen werden bewusst NICHT übernommen.
+     *
+     * @return array{roles: int, volunteers: int} Anzahl der übernommenen Einträge
      */
-    protected function copyRolesAndVolunteers(DutyPlan $source, DutyPlan $target): void
+    protected function copyRolesAndVolunteers(DutyPlan $source, DutyPlan $target): array
     {
+        $copied = ['roles' => 0, 'volunteers' => 0];
+
         foreach ($source->roles as $role) {
             $target->roles()->create(
                 collect($role->toArray())
                     ->except(['roleID', 'planID', 'created_at', 'updated_at'])
                     ->all()
             );
+
+            $copied['roles']++;
         }
 
         foreach (DutyPlanVolunteer::where('planID', $source->planID)->get() as $volunteer) {
-            DutyPlanVolunteer::firstOrCreate(
+            $copy = DutyPlanVolunteer::firstOrCreate(
                 [
                     'planID' => $target->planID,
                     'memberID' => $volunteer->memberID,
@@ -162,12 +190,18 @@ class Index extends Component
                     'weekday_mask' => $volunteer->weekday_mask,
                 ]
             );
+
+            if ($copy->wasRecentlyCreated) {
+                $copied['volunteers']++;
+            }
         }
+
+        return $copied;
     }
 
     public function savePlan(): void
     {
-        if (!$this->planId) {
+        if (! $this->planId) {
             return;
         }
 
@@ -194,14 +228,27 @@ class Index extends Component
             ],
         ]);
 
-        DutyPlan::whereKey($this->planId)
-            ->update([
-                'name' => $validated['planName'],
-                'date_from' => $validated['dateFrom'],
-                'date_to' => $validated['dateTo'],
-                'exclude_holidays' =>
-                    $validated['excludeHolidays'],
-            ]);
+        $plan = DutyPlan::findOrFail($this->planId);
+        $before = $plan->activitySnapshot();
+
+        $plan->update([
+            'name' => $validated['planName'],
+            'date_from' => $validated['dateFrom'],
+            'date_to' => $validated['dateTo'],
+            'exclude_holidays' => $validated['excludeHolidays'],
+        ]);
+
+        $changes = ActivityLogger::changes($before, $plan->fresh()->activitySnapshot(), DutyPlan::ACTIVITY_LABELS);
+
+        if ($changes !== []) {
+            ActivityLogger::log(
+                'duty.plan_updated',
+                'Dienstplan '.$plan->activityName().' wurde geändert.',
+                'DutyPlan',
+                $plan->planID,
+                $changes
+            );
+        }
 
         session()->flash(
             'success',
@@ -211,20 +258,28 @@ class Index extends Component
 
     public function duplicatePlan(): void
     {
-        if (!$this->planId) {
+        if (! $this->planId) {
             return;
         }
 
         $source = DutyPlan::findOrFail($this->planId);
 
         $copy = DutyPlan::create([
-            'name' => $source->name . ' Kopie',
+            'name' => $source->name.' Kopie',
             'date_from' => $source->date_from,
             'date_to' => $source->date_to,
             'exclude_holidays' => $source->exclude_holidays,
         ]);
 
-        $this->copyRolesAndVolunteers($source, $copy);
+        $copied = $this->copyRolesAndVolunteers($source, $copy);
+
+        ActivityLogger::log(
+            'duty.plan_duplicated',
+            'Dienstplan '.$source->activityName().' wurde als '.$copy->activityName().' dupliziert ('
+                .$copied['roles'].' Dienstbezeichnungen, '.$copied['volunteers'].' Helfer übernommen).',
+            'DutyPlan',
+            $copy->planID
+        );
 
         $this->selectPlan($copy->planID);
 
@@ -236,13 +291,21 @@ class Index extends Component
 
     public function deletePlan(): void
     {
-        if (!$this->planId) {
+        if (! $this->planId) {
             return;
         }
 
         $plan = DutyPlan::findOrFail($this->planId);
 
         $plan->delete();
+
+        ActivityLogger::log(
+            'duty.plan_deleted',
+            'Dienstplan '.$plan->activityName().' ('.$plan->date_from->format('d.m.Y').' – '
+                .$plan->date_to->format('d.m.Y').') wurde gelöscht.',
+            'DutyPlan',
+            $plan->planID
+        );
 
         $nextPlan = DutyPlan::query()
             ->orderByDesc('date_from')
@@ -284,8 +347,7 @@ class Index extends Component
             ])
             ->when(
                 $weekday,
-                fn ($query) =>
-                $query->whereRaw(
+                fn ($query) => $query->whereRaw(
                     'WEEKDAY(tb_dutyplan_events.duty_date) + 1 = ?',
                     [$weekday]
                 )
@@ -323,7 +385,7 @@ class Index extends Component
             ->setPaper('a4', 'landscape');
 
         return response()->streamDownload(
-            fn () => print($pdf->output()),
+            fn () => print ($pdf->output()),
             $filename
         );
     }
@@ -360,6 +422,7 @@ class Index extends Component
             $filename
         );
     }
+
     public function updateAssignment(
         int $eventId,
         int $slotNo,
@@ -370,8 +433,14 @@ class Index extends Component
             ->where('slot_no', $slotNo)
             ->first();
 
-        if (!$volunteerKey) {
-            $assignment?->delete();
+        $previousHelper = $this->assignmentHelperName($assignment);
+
+        if (! $volunteerKey) {
+            if ($assignment) {
+                $assignment->delete();
+
+                $this->logAssignmentChange(DutyPlanEvent::find($eventId), $slotNo, $previousHelper, null);
+            }
 
             return;
         }
@@ -385,7 +454,7 @@ class Index extends Component
         $id = (int) $id;
 
         if (
-            !in_array($type, ['member', 'external'], true)
+            ! in_array($type, ['member', 'external'], true)
             || $id <= 0
         ) {
             return;
@@ -449,38 +518,87 @@ class Index extends Component
 
         if ($requiredSkillID) {
             $hasSkill = $type === 'member'
-                ? \App\Models\Member::find($id)?->skills->contains('skillID', $requiredSkillID)
-                : \App\Models\ExternalContact::find($id)?->skills->contains('skillID', $requiredSkillID);
+                ? Member::find($id)?->skills->contains('skillID', $requiredSkillID)
+                : ExternalContact::find($id)?->skills->contains('skillID', $requiredSkillID);
 
-            if (!$hasSkill) {
+            if (! $hasSkill) {
                 session()->flash(
                     'error',
-                    'Dieser Helfer hat nicht die für "' . $event->duty_name . '" erforderliche Fähigkeit.'
+                    'Dieser Helfer hat nicht die für "'.$event->duty_name.'" erforderliche Fähigkeit.'
                 );
 
                 return;
             }
         }
 
-        DutyPlanAssignment::updateOrCreate(
+        $assignment = DutyPlanAssignment::updateOrCreate(
             [
                 'eventID' => $eventId,
                 'slot_no' => $slotNo,
             ],
             [
-                'memberID' =>
-                    $type === 'member'
+                'memberID' => $type === 'member'
                         ? $id
                         : null,
 
-                'externalContactID' =>
-                    $type === 'external'
+                'externalContactID' => $type === 'external'
                         ? $id
                         : null,
             ]
         );
+
+        $this->logAssignmentChange(
+            $event,
+            $slotNo,
+            $previousHelper,
+            $this->assignmentHelperName($assignment->fresh())
+        );
     }
 
+    /**
+     * Name des eingeteilten Helfers für das Aktivitätsprotokoll.
+     */
+    private function assignmentHelperName(?DutyPlanAssignment $assignment): ?string
+    {
+        if (! $assignment) {
+            return null;
+        }
+
+        if ($assignment->externalContactID) {
+            return $assignment->externalContact?->full_name.' (extern)';
+        }
+
+        return $assignment->member?->full_name;
+    }
+
+    /**
+     * Protokolliert die Änderung eines einzelnen Helferplatzes
+     * (kein Eintrag, wenn derselbe Helfer erneut gewählt wurde).
+     */
+    private function logAssignmentChange(
+        ?DutyPlanEvent $event,
+        int $slotNo,
+        ?string $previousHelper,
+        ?string $newHelper
+    ): void {
+        $changes = ActivityLogger::changes(
+            ['slot' => $previousHelper],
+            ['slot' => $newHelper],
+            ['slot' => 'Helfer '.$slotNo]
+        );
+
+        if (! $event || $changes === []) {
+            return;
+        }
+
+        ActivityLogger::log(
+            'duty.assignment_changed',
+            'Einteilung für „'.$event->duty_name.'“ am '.$event->duty_date->format('d.m.Y').' wurde geändert.',
+            'DutyPlanEvent',
+            $event->eventID,
+            $changes
+        );
+    }
 
     protected function rules(): array
     {
@@ -494,11 +612,11 @@ class Index extends Component
 
     public function getEventsProperty()
     {
-        if (!$this->planId) {
+        if (! $this->planId) {
             return collect();
         }
 
-        if (!$this->dateFrom || !$this->dateTo) {
+        if (! $this->dateFrom || ! $this->dateTo) {
             return collect();
         }
 
@@ -523,11 +641,11 @@ class Index extends Component
 
     public function getExportableRolesProperty()
     {
-        if (!$this->planId) {
+        if (! $this->planId) {
             return collect();
         }
 
-        return \App\Models\DutyPlanRole::where('planID', $this->planId)
+        return DutyPlanRole::where('planID', $this->planId)
             ->orderBy('sort_order')
             ->get();
     }
@@ -540,7 +658,7 @@ class Index extends Component
     {
         $role = $event->role;
 
-        if (!$role || !$role->requiresGroup()) {
+        if (! $role || ! $role->requiresGroup()) {
             return null;
         }
 
@@ -558,10 +676,10 @@ class Index extends Component
         }
 
         return 'Mindestens '
-            . $role->required_group_min
-            . ' Helfer aus "'
-            . $role->requiredGroup->name
-            . '" fehlt.';
+            .$role->required_group_min
+            .' Helfer aus "'
+            .$role->requiredGroup->name
+            .'" fehlt.';
     }
 
     public function autoAssign(
@@ -572,7 +690,7 @@ class Index extends Component
             'dateTo' => ['required', 'date', 'after_or_equal:dateFrom'],
         ]);
 
-        if (!$this->planId) {
+        if (! $this->planId) {
             $this->addError(
                 'planId',
                 'Bitte zuerst einen Dienstplan auswählen.'
@@ -587,27 +705,37 @@ class Index extends Component
             $this->dateTo
         );
 
+        ActivityLogger::log(
+            'duty.auto_assigned',
+            'Automatische Einteilung im Dienstplan '.DutyPlan::find($this->planId)?->activityName()
+                .' für '.$this->formattedPeriod().': '
+                .$result['assigned'].' Helfer eingeteilt, '
+                .$result['unfilled'].' Plätze nicht besetzt.',
+            'DutyPlan',
+            $this->planId
+        );
+
         session()->flash(
             'success',
             $result['assigned']
-            . ' Helfer wurden eingeteilt.'
-            . (
-            $result['unfilled'] > 0
-                ? ' '
-                . $result['unfilled']
-                . ' Plätze konnten nicht besetzt werden.'
-                : ''
+            .' Helfer wurden eingeteilt.'
+            .(
+                $result['unfilled'] > 0
+                    ? ' '
+                    .$result['unfilled']
+                    .' Plätze konnten nicht besetzt werden.'
+                    : ''
             )
         );
 
-        if (!empty($result['group_violations'])) {
+        if (! empty($result['group_violations'])) {
             $lines = collect($result['group_violations'])
-                ->map(fn ($v) => Carbon::parse($v['date'])->format('d.m.Y') . ' (' . $v['duty_name'] . '): kein Helfer aus "' . $v['group'] . '" verfügbar')
+                ->map(fn ($v) => Carbon::parse($v['date'])->format('d.m.Y').' ('.$v['duty_name'].'): kein Helfer aus "'.$v['group'].'" verfügbar')
                 ->implode('; ');
 
             session()->flash(
                 'warning',
-                'Pflichtgruppen-Anforderung nicht erfüllt bei: ' . $lines
+                'Pflichtgruppen-Anforderung nicht erfüllt bei: '.$lines
             );
         }
     }
@@ -630,7 +758,7 @@ class Index extends Component
     ): void {
         $this->validate();
 
-        if (!$this->planId) {
+        if (! $this->planId) {
             $this->addError(
                 'planId',
                 'Bitte zuerst einen Dienstplan auswählen oder erstellen.'
@@ -658,24 +786,43 @@ class Index extends Component
             $this->dateTo
         );
 
+        ActivityLogger::log(
+            'duty.events_generated',
+            'Termine für Dienstplan '.$plan->activityName().' ('.$this->formattedPeriod().') erzeugt: '
+                .$result['created'].' neu, '
+                .$result['updated'].' aktualisiert, '
+                .$result['removed'].' entfernt, '
+                .$result['skipped_holidays'].' Feiertagstermine ausgelassen.',
+            'DutyPlan',
+            $plan->planID
+        );
+
         $message = $result['created']
-            . ' Termine erzeugt, '
-            . $result['updated']
-            . ' aktualisiert.';
+            .' Termine erzeugt, '
+            .$result['updated']
+            .' aktualisiert.';
 
         if ($result['skipped_holidays'] > 0) {
-            $message .= ' ' . $result['skipped_holidays'] . ' Feiertagstermine wurden ausgelassen.';
+            $message .= ' '.$result['skipped_holidays'].' Feiertagstermine wurden ausgelassen.';
         }
 
         if ($result['removed'] > 0) {
-            $message .= ' ' . $result['removed'] . ' verwaiste Termine ohne Einteilung wurden entfernt.';
+            $message .= ' '.$result['removed'].' verwaiste Termine ohne Einteilung wurden entfernt.';
         }
 
         if ($result['orphaned'] > 0) {
-            $message .= ' ' . $result['orphaned'] . ' verwaiste Termine mit bestehenden Einteilungen wurden NICHT entfernt — bitte prüfen.';
+            $message .= ' '.$result['orphaned'].' verwaiste Termine mit bestehenden Einteilungen wurden NICHT entfernt — bitte prüfen.';
         }
 
         session()->flash('success', $message);
+    }
+
+    /**
+     * Gewählter Zeitraum für das Aktivitätsprotokoll, z. B. „01.01.2026 – 31.12.2026“.
+     */
+    private function formattedPeriod(): string
+    {
+        return Carbon::parse($this->dateFrom)->format('d.m.Y').' – '.Carbon::parse($this->dateTo)->format('d.m.Y');
     }
 
     public function holidayName($date): ?string
@@ -688,9 +835,9 @@ class Index extends Component
 
     public function memberAvailableForEvent(
         int $memberId,
-            $date
+        $date
     ): bool {
-        return !\App\Models\DutyPlanAbsence::query()
+        return ! DutyPlanAbsence::query()
             ->where('memberID', $memberId)
             ->whereDate('date_from', '<=', $date)
             ->whereDate('date_to', '>=', $date)
@@ -706,12 +853,10 @@ class Index extends Component
             ->whereNotNull('memberID')
             ->where('active', 1)
             ->get()
-            ->filter(fn ($volunteer) =>
-                $volunteer->member !== null
+            ->filter(fn ($volunteer) => $volunteer->member !== null
                 && (bool) $volunteer->member->active
             )
-            ->sortBy(fn ($volunteer) =>
-                $volunteer->member->surname . ' ' . $volunteer->member->name
+            ->sortBy(fn ($volunteer) => $volunteer->member->surname.' '.$volunteer->member->name
             )
             ->values();
 
@@ -726,10 +871,9 @@ class Index extends Component
             )
             ->get()
             ->sortBy(
-                fn ($volunteer) =>
-                    $volunteer->externalContact->surname
-                    . ' '
-                    . $volunteer->externalContact->name
+                fn ($volunteer) => $volunteer->externalContact->surname
+                    .' '
+                    .$volunteer->externalContact->name
             )
             ->values();
 

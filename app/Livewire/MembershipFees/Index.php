@@ -8,10 +8,12 @@ use App\Models\MembershipFeeEntry;
 use App\Models\MembershipFeePrescription;
 use App\Models\MembershipFeeYear;
 use App\Models\Template;
+use App\Services\ActivityLogger;
 use App\Services\ImapSentMailService;
 use App\Services\PdfLetterheadService;
 use App\Services\TemplateRendererService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -153,7 +155,7 @@ class Index extends Component
                 'member.city',
                 'member.emails',
                 'year',
-                'prescription',
+                'prescriptions',
             ])
             ->whereIn('entryID', $this->selectedEntries)
             ->whereHas('member.emails')
@@ -176,6 +178,7 @@ class Index extends Component
         $renderer = app(TemplateRendererService::class);
 
         $sent = 0;
+        $sentEntries = collect();
 
         foreach ($entries as $entry) {
             $member = $entry->member;
@@ -263,6 +266,8 @@ class Index extends Component
                 ->first();
 
             if ($alreadySent) {
+                $this->logDispatch('fee.prescriptions_sent', $sentEntries);
+
                 $this->resendEntryID = $entry->entryID;
                 $this->showResendDialog = true;
 
@@ -319,7 +324,10 @@ class Index extends Component
             ]);
 
             $sent++;
+            $sentEntries->push($entry);
         }
+
+        $this->logDispatch('fee.prescriptions_sent', $sentEntries);
 
         session()->flash(
             'success',
@@ -353,6 +361,7 @@ class Index extends Component
 
         $sent = 0;
         $skipped = 0;
+        $sentEntries = collect();
 
         foreach ($entries as $entry) {
 
@@ -386,7 +395,10 @@ class Index extends Component
             );
 
             $sent++;
+            $sentEntries->push($entry);
         }
+
+        $this->logDispatch('fee.reminders_sent', $sentEntries);
 
         session()->flash(
             'success',
@@ -509,6 +521,8 @@ class Index extends Component
         }
 
         $this->sendSinglePrescription($entryID);
+
+        $this->logDispatch('fee.prescriptions_sent', MembershipFeeEntry::query()->whereKey($entryID)->get());
     }
 
     private function sendSinglePrescription(
@@ -681,6 +695,8 @@ class Index extends Component
             null
         );
 
+        $this->logDispatch('fee.prescriptions_sent', MembershipFeeEntry::query()->whereKey($this->resendEntryID)->get());
+
         $this->showResendDialog = false;
         $this->resendEntryID = null;
 
@@ -708,6 +724,8 @@ class Index extends Component
             'reminder',
             $nextLevel
         );
+
+        $this->logDispatch('fee.reminders_sent', MembershipFeeEntry::query()->whereKey($this->resendEntryID)->get());
 
         $this->showResendDialog = false;
         $this->resendEntryID = null;
@@ -778,6 +796,16 @@ class Index extends Component
             return $year;
         });
 
+        $year->refresh();
+
+        ActivityLogger::log(
+            'fee.year_created',
+            'Beitragsjahr '.$year->year.' „'.$year->display_name.'“ wurde mit '.$year->entries()->count().' Beiträgen angelegt.',
+            'MembershipFeeYear',
+            $year->yearID,
+            ActivityLogger::created($this->yearSnapshot($year), self::YEAR_ACTIVITY_LABELS)
+        );
+
         $this->yearId = $year->yearID;
         $this->defaultAmount = number_format((float) $year->default_amount, 2, ',', '');
 
@@ -802,6 +830,13 @@ class Index extends Component
 
         $year->active = ! $year->active;
         $year->save();
+
+        ActivityLogger::log(
+            $year->active ? 'fee.year_reopened' : 'fee.year_closed',
+            'Beitragsjahr '.$year->year.' wurde '.($year->active ? 'wieder geöffnet.' : 'abgeschlossen.'),
+            'MembershipFeeYear',
+            $year->yearID
+        );
 
         $this->firstReminderAfterDays =
             (int) $year->first_reminder_after_days;
@@ -857,9 +892,22 @@ class Index extends Component
         }
 
         $year = MembershipFeeYear::findOrFail($this->yearId);
+        $before = $this->yearSnapshot($year);
 
         $year->default_amount = round((float) $normalized, 2);
         $year->save();
+
+        $changes = ActivityLogger::changes($before, $this->yearSnapshot($year->fresh()), self::YEAR_ACTIVITY_LABELS);
+
+        if ($changes !== []) {
+            ActivityLogger::log(
+                'fee.default_amount_updated',
+                'Standardbetrag für das Beitragsjahr '.$year->year.' wurde geändert.',
+                'MembershipFeeYear',
+                $year->yearID,
+                $changes
+            );
+        }
 
         session()->flash(
             'success',
@@ -893,6 +941,15 @@ class Index extends Component
             return;
         }
 
+        $changedEntries = MembershipFeeEntry::query()
+            ->with('member')
+            ->where('yearID', $year->yearID)
+            ->where('status', 'open')
+            ->whereHas('member', fn ($query) => $query->where('active', 1)
+            )
+            ->get()
+            ->filter(fn ($entry) => $entry->amount !== $year->default_amount);
+
         MembershipFeeEntry::query()
             ->where('yearID', $year->yearID)
             ->where('status', 'open')
@@ -901,6 +958,19 @@ class Index extends Component
             ->update([
                 'amount' => $year->default_amount,
             ]);
+
+        if ($changedEntries->isNotEmpty()) {
+            ActivityLogger::log(
+                'fee.default_amount_applied',
+                'Standardbetrag '.$this->formatAmount($year->default_amount).' wurde im Beitragsjahr '.$year->year.' auf '.$changedEntries->count().' offene Beiträge angewendet.',
+                'MembershipFeeYear',
+                $year->yearID,
+                ActivityLogger::created(
+                    ['amount' => $this->formatAmount($year->default_amount), 'members' => $this->memberNames($changedEntries)],
+                    ['amount' => 'Betrag', 'members' => 'Mitglieder']
+                )
+            );
+        }
 
         session()->flash(
             'success',
@@ -928,6 +998,8 @@ class Index extends Component
             ->where('yearID', $this->yearId)
             ->firstOrFail();
 
+        $before = $this->entrySnapshot($entry);
+
         $entry->status = $status;
 
         if ($status === 'paid') {
@@ -937,6 +1009,12 @@ class Index extends Component
         }
 
         $entry->save();
+
+        $this->logEntryUpdate($entry, $before, match ($status) {
+            'paid' => 'wurde als bezahlt markiert.',
+            'exempt' => 'wurde als befreit markiert.',
+            default => 'wurde wieder auf offen gesetzt.',
+        });
     }
 
     public function saveReminderSettings(): void
@@ -964,6 +1042,8 @@ class Index extends Component
             ],
         ]);
 
+        $before = $year->only(array_keys(self::REMINDER_ACTIVITY_LABELS));
+
         $year->update([
             'first_reminder_after_days' => $this->firstReminderAfterDays,
 
@@ -971,6 +1051,22 @@ class Index extends Component
 
             'max_reminders' => $this->maxReminders,
         ]);
+
+        $changes = ActivityLogger::changes(
+            $before,
+            $year->fresh()->only(array_keys(self::REMINDER_ACTIVITY_LABELS)),
+            self::REMINDER_ACTIVITY_LABELS
+        );
+
+        if ($changes !== []) {
+            ActivityLogger::log(
+                'fee.reminder_settings_updated',
+                'Erinnerungseinstellungen für das Beitragsjahr '.$year->year.' wurden geändert.',
+                'MembershipFeeYear',
+                $year->yearID,
+                $changes
+            );
+        }
 
         session()->flash(
             'success',
@@ -990,10 +1086,13 @@ class Index extends Component
         }
 
         $entry = MembershipFeeEntry::findOrFail($entryId);
+        $before = $this->entrySnapshot($entry);
 
         if ($amount === '' || $amount === null) {
             $entry->amount = null;
             $entry->save();
+
+            $this->logEntryUpdate($entry, $before, 'wurde geändert.');
 
             return;
         }
@@ -1006,6 +1105,156 @@ class Index extends Component
 
         $entry->amount = round((float) $normalized, 2);
         $entry->save();
+
+        $this->logEntryUpdate($entry, $before, 'wurde geändert.');
+    }
+
+    /**
+     * @var array<string, string>
+     */
+    private const YEAR_ACTIVITY_LABELS = [
+        'year' => 'Jahr',
+        'name' => 'Bezeichnung',
+        'default_amount' => 'Standardbetrag',
+        'due_date' => 'Fälligkeit',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    private const REMINDER_ACTIVITY_LABELS = [
+        'first_reminder_after_days' => 'Erste Erinnerung nach Tagen',
+        'reminder_interval_days' => 'Abstand zwischen Erinnerungen',
+        'max_reminders' => 'Maximale Erinnerungen',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    private const ENTRY_ACTIVITY_LABELS = [
+        'amount' => 'Betrag',
+        'status' => 'Status',
+        'paid_at' => 'Bezahlt am',
+    ];
+
+    /**
+     * Texte der Protokolleinträge für Versand und Druck.
+     *
+     * @var array<string, array{0: string, 1: string, 2: string}>
+     */
+    private const DISPATCH_ACTIVITY_TEXTS = [
+        'fee.prescriptions_sent' => ['Beitragsvorschreibung', 'Beitragsvorschreibungen', 'per E-Mail versendet'],
+        'fee.reminders_sent' => ['Erinnerung', 'Erinnerungen', 'per E-Mail versendet'],
+    ];
+
+    /**
+     * @return array{year: int, name: ?string, default_amount: ?string, due_date: mixed}
+     */
+    private function yearSnapshot(MembershipFeeYear $year): array
+    {
+        return [
+            'year' => $year->year,
+            'name' => $year->name,
+            'default_amount' => $this->formatAmount($year->default_amount),
+            'due_date' => $year->due_date,
+        ];
+    }
+
+    /**
+     * @return array{amount: ?string, status: string, paid_at: ?string}
+     */
+    private function entrySnapshot(MembershipFeeEntry $entry): array
+    {
+        return [
+            'amount' => $this->formatAmount($entry->amount),
+            'status' => match ($entry->status) {
+                'paid' => 'Bezahlt',
+                'exempt' => 'Befreit',
+                'open' => 'Offen',
+                default => (string) $entry->status,
+            },
+            'paid_at' => $entry->paid_at?->format('d.m.Y'),
+        ];
+    }
+
+    /**
+     * Ein Eintrag je Inline-Änderung; nichts, wenn sich nichts geändert hat.
+     *
+     * @param  array<string, mixed>  $before
+     */
+    private function logEntryUpdate(MembershipFeeEntry $entry, array $before, string $what): void
+    {
+        $entry = $entry->fresh(['member', 'year']);
+
+        $changes = ActivityLogger::changes($before, $this->entrySnapshot($entry), self::ENTRY_ACTIVITY_LABELS);
+
+        if ($changes === []) {
+            return;
+        }
+
+        ActivityLogger::log(
+            'fee.entry_updated',
+            'Beitrag '.$entry->year?->year.' von „'.($entry->member?->full_name ?? 'Unbekannt').'“ '.$what,
+            'MembershipFeeEntry',
+            $entry->entryID,
+            $changes
+        );
+    }
+
+    /**
+     * Ein zusammenfassender Eintrag je Versand, nicht einer je Mitglied.
+     *
+     * @param  Collection<int, MembershipFeeEntry>  $entries
+     */
+    private function logDispatch(string $action, Collection $entries): void
+    {
+        if ($entries->isEmpty()) {
+            return;
+        }
+
+        $entries = MembershipFeeEntry::query()
+            ->with(['member', 'year'])
+            ->whereKey($entries->pluck('entryID'))
+            ->get();
+
+        [$singular, $plural, $channel] = self::DISPATCH_ACTIVITY_TEXTS[$action];
+
+        $years = $entries->pluck('year.year')->filter()->unique()->sort()->implode(', ');
+        $yearIds = $entries->pluck('yearID')->unique();
+
+        $description = $entries->count() === 1
+            ? $singular.' '.$years.' wurde an „'.($entries->first()->member?->full_name ?? 'Unbekannt').'“ '.$channel.'.'
+            : $plural.' '.$years.' wurden an '.$entries->count().' Mitglieder '.$channel.'.';
+
+        ActivityLogger::log(
+            $action,
+            $description,
+            $entries->count() === 1 ? 'MembershipFeeEntry' : ($yearIds->count() === 1 ? 'MembershipFeeYear' : null),
+            $entries->count() === 1 ? $entries->first()->entryID : ($yearIds->count() === 1 ? $yearIds->first() : null),
+            $entries->count() > 1
+                ? ActivityLogger::created(['members' => $this->memberNames($entries)], ['members' => 'Mitglieder'])
+                : null
+        );
+    }
+
+    /**
+     * @param  Collection<int, MembershipFeeEntry>  $entries
+     * @return list<string>
+     */
+    private function memberNames(Collection $entries): array
+    {
+        return $entries
+            ->map(fn ($entry) => $entry->member?->full_name)
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function formatAmount(mixed $amount): ?string
+    {
+        return $amount === null
+            ? null
+            : number_format((float) $amount, 2, ',', '.').' €';
     }
 
     public function render()
