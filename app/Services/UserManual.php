@@ -39,9 +39,13 @@ class UserManual
     {
         $path = $this->markdownPath();
 
+        $imagesChangedAt = collect(glob($this->imagePath('*.png')) ?: [])
+            ->map(fn (string $image) => filemtime($image))
+            ->max();
+
         return Cache::remember(
-            // Neu aufbauen, sobald sich das Markdown oder dieser Parser ändert.
-            'user-manual:'.md5($path.filemtime($path).filemtime(__FILE__)),
+            // Neu aufbauen, sobald sich das Markdown, ein Bild oder dieser Parser ändert.
+            'user-manual:'.md5($path.filemtime($path).$imagesChangedAt.filemtime(__FILE__)),
             now()->addDay(),
             fn () => $this->parse((string) file_get_contents($path))
         );
@@ -143,6 +147,13 @@ class UserManual
                 $class = str_contains($match[1], 'mobil') ? 'manual-figure manual-figure-mobile' : 'manual-figure';
                 // Relativ, weil das gecachte HTML von allen Vereinen (Domains) genutzt wird.
                 $src = route('user-manual.image', $match[1], false);
+
+                // Version aus dem Bildinhalt, damit Browser ersetzte Screenshots neu laden.
+                $imagePath = $this->imagePath($match[1]);
+
+                if (is_file($imagePath)) {
+                    $src .= '?v='.substr(md5_file($imagePath), 0, 8);
+                }
 
                 return '<figure class="'.$class.'"><img src="'.e($src).'" alt="'.$match[2].'" loading="lazy">'
                     .'<figcaption>'.$match[2].'</figcaption></figure>';

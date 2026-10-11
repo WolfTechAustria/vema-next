@@ -50,6 +50,16 @@ it('every screenshot referenced in the manual exists', function () {
     }
 });
 
+it('versions screenshot urls by content so replaced images are not served from the browser cache', function () {
+    $manual = app(UserManual::class);
+    $version = substr(md5_file($manual->imagePath('01-login.png')), 0, 8);
+
+    $contents = $manual->parse("# H\n\n## 1. A\n\n![Login](bilder/01-login.png)\n");
+
+    expect($contents['chapters'][0]['html'])
+        ->toContain(route('user-manual.image', '01-login.png', false).'?v='.$version);
+});
+
 it('gives repeated headings unique anchors', function () {
     $contents = app(UserManual::class)->parse("# H\n\n## 1. A\n\n### Tipps\n\nx\n\n## 2. B\n\n### Tipps\n\ny\n");
 
