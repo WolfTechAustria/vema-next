@@ -136,6 +136,61 @@
 
         </div>
 
+        <div class="mt-6 border-t border-slate-100 pt-6">
+
+            <h4 class="text-sm font-semibold text-slate-900">Nummernkreis</h4>
+
+            <p class="mt-1 text-xs text-slate-500">
+                Platzhalter: <code>{JAHR}</code> = 2026, <code>{JJ}</code> = 26,
+                <code>{NR}</code> = fortlaufende Nummer, <code>{NR:4}</code> = mit führenden Nullen auf 4 Stellen.
+                Mit Jahr im Format beginnt die Nummer jedes Jahr neu, ohne Jahr läuft sie durchgehend weiter.
+            </p>
+
+            <div class="mt-4 grid gap-4 md:grid-cols-2">
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Format</label>
+                    <input
+                        type="text"
+                        wire:model.live.debounce.300ms="invoice_number_format"
+                        placeholder="{JAHR}-{NR:4}"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm"
+                    >
+                    @error('invoice_number_format')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Nächste Nummer</label>
+                    <input
+                        type="number"
+                        min="1"
+                        wire:model.live.debounce.300ms="invoice_next_number"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    >
+                    @error('invoice_next_number')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+            </div>
+
+            <p class="mt-3 text-sm text-slate-600">
+                Nächste Rechnungsnummer:
+                @if($preview = $this->invoiceNumberPreview())
+                    <span class="font-mono font-semibold text-slate-900">{{ $preview }}</span>
+                @else
+                    <span class="text-slate-400">–</span>
+                @endif
+            </p>
+
+            <p class="mt-1 text-xs text-slate-500">
+                Bereits vergebene Nummern werden automatisch übersprungen.
+            </p>
+
+        </div>
+
         <div class="mt-6">
             <button
                 type="button"

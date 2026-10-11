@@ -7,7 +7,9 @@ use App\Models\Setting;
 use App\Services\ActivityLogger;
 use App\Services\DemoDatabaseResetter;
 use App\Services\DemoMode;
+use App\Services\InvoiceNumberGenerator;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Throwable;
 
@@ -41,6 +43,18 @@ class Index extends Component
 
     public string $invoice_footer_text = '';
 
+    public string $invoice_number_format = InvoiceNumberGenerator::DEFAULT_FORMAT;
+
+    public string $invoice_next_number = '1';
+
+    /**
+     * Beim Laden angezeigter Zählerstand — der Zähler wird nur überschrieben,
+     * wenn er im Formular geändert wurde (sonst könnte ein zwischenzeitlich
+     * vergebener Wert zurückgesetzt werden).
+     */
+    #[Locked]
+    public int $loadedInvoiceNextNumber = 1;
+
     public bool $demo_enabled = false;
 
     public string $demo_reset_mode = 'nightly';
@@ -68,6 +82,25 @@ class Index extends Component
         $this->small_business_default = (bool) $setting->small_business_default;
         $this->invoice_default_tax_rate = number_format((float) ($setting->invoice_default_tax_rate ?? 20), 2, ',', '');
         $this->invoice_footer_text = $setting->invoice_footer_text ?? '';
+
+        $numberGenerator = app(InvoiceNumberGenerator::class);
+        $this->invoice_number_format = $numberGenerator->currentFormat();
+        $this->loadedInvoiceNextNumber = $numberGenerator->nextNumberFor($this->invoice_number_format, (int) now()->year);
+        $this->invoice_next_number = (string) $this->loadedInvoiceNextNumber;
+    }
+
+    /**
+     * Beispiel der nächsten Rechnungsnummer für die Vorschau im Formular.
+     */
+    public function invoiceNumberPreview(): ?string
+    {
+        $numberGenerator = app(InvoiceNumberGenerator::class);
+
+        if ($numberGenerator->validationError($this->invoice_number_format) !== null || ! ctype_digit($this->invoice_next_number)) {
+            return null;
+        }
+
+        return $numberGenerator->format($this->invoice_number_format, (int) now()->year, (int) $this->invoice_next_number);
     }
 
     protected function rules(): array
@@ -88,6 +121,8 @@ class Index extends Component
             'small_business_default' => ['boolean'],
             'invoice_default_tax_rate' => ['required'],
             'invoice_footer_text' => ['nullable', 'string'],
+            'invoice_number_format' => ['required', 'string', 'max:50'],
+            'invoice_next_number' => ['required', 'integer', 'min:1', 'max:99999999'],
         ];
     }
 
@@ -102,6 +137,25 @@ class Index extends Component
 
             return;
         }
+
+        $numberGenerator = app(InvoiceNumberGenerator::class);
+        $numberFormat = trim($validated['invoice_number_format']);
+        $nextNumber = (int) $validated['invoice_next_number'];
+        $currentYear = (int) now()->year;
+
+        if ($formatError = $numberGenerator->validationError($numberFormat)) {
+            $this->addError('invoice_number_format', $formatError);
+
+            return;
+        }
+
+        if (mb_strlen($numberGenerator->format($numberFormat, $currentYear, $nextNumber)) > InvoiceNumberGenerator::MAX_LENGTH) {
+            $this->addError('invoice_number_format', 'Rechnungsnummern dürfen höchstens '.InvoiceNumberGenerator::MAX_LENGTH.' Zeichen lang sein.');
+
+            return;
+        }
+
+        $previousFormat = $numberGenerator->currentFormat();
 
         Setting::current()->update([
             'name' => $validated['name'],
@@ -119,7 +173,19 @@ class Index extends Component
             'small_business_default' => $validated['small_business_default'],
             'invoice_default_tax_rate' => round((float) $normalizedTaxRate, 2),
             'invoice_footer_text' => $validated['invoice_footer_text'] ?: null,
+            'invoice_number_format' => $numberFormat,
         ]);
+
+        // Zähler nur setzen, wenn er geändert wurde oder das Format auf einen
+        // anderen Zähler (jährlich ↔ durchgehend) wechselt.
+        $counterChanged = $numberGenerator->usesYearlyCounter($numberFormat) !== $numberGenerator->usesYearlyCounter($previousFormat);
+
+        if ($nextNumber !== $this->loadedInvoiceNextNumber || $counterChanged) {
+            $numberGenerator->setNextNumber($numberFormat, $currentYear, $nextNumber);
+        }
+
+        $this->invoice_number_format = $numberFormat;
+        $this->loadedInvoiceNextNumber = $nextNumber;
 
         ActivityLogger::log(
             'settings.updated',
