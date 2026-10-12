@@ -60,19 +60,20 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | will be used by the PHP date and date-time functions. VEMA speichert
+    | alle Zeiten als Wanduhrzeit des Vereins, der Scheduler plant in dieser
+    | Zeitzone (z. B. Erinnerungen um 07:00 Wiener Zeit).
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Europe/Vienna'),
 
     /*
      * Zeitzone des Vereins: Termine aus externen iCal-Kalendern werden in
      * diese Zeitzone umgerechnet und – wie eigene Termine – als Wanduhrzeit
      * gespeichert.
      */
-    'club_timezone' => env('CLUB_TIMEZONE', 'Europe/Vienna'),
+    'club_timezone' => env('CLUB_TIMEZONE', env('APP_TIMEZONE', 'Europe/Vienna')),
 
     /*
     |--------------------------------------------------------------------------
