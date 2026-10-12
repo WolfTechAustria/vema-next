@@ -4,6 +4,7 @@ namespace App\Livewire\Templates;
 
 use App\Models\Template;
 use App\Services\ActivityLogger;
+use App\Services\WelcomeMailService;
 use Livewire\Component;
 
 class Index extends Component
@@ -135,6 +136,24 @@ class Index extends Component
         'subject' => 'Betreff',
         'body_html' => 'Text',
     ];
+
+    /**
+     * Platzhalter der gewählten Vorlage — Willkommens-E-Mails kennen z. B.
+     * keine Beitragsdaten.
+     *
+     * @return list<string>
+     */
+    public function availablePlaceholders(): array
+    {
+        $key = $this->selectedTemplate()?->key;
+
+        return array_keys(WelcomeMailService::PLACEHOLDERS[$key] ?? $this->placeholders);
+    }
+
+    public function selectedTemplate(): ?Template
+    {
+        return $this->templates?->firstWhere('templateID', $this->selectedTemplateID);
+    }
 
     public function render()
     {

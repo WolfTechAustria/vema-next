@@ -74,7 +74,7 @@ describe('internal login', function () {
             ->post('/login', ['username' => '  ', 'password' => ''])
             ->assertRedirect('/login')
             ->assertSessionHasErrors([
-                'username' => 'Bitte gib deinen Benutzernamen ein.',
+                'username' => 'Bitte gib deinen Benutzernamen oder deine E-Mail-Adresse ein.',
                 'password' => 'Bitte gib dein Passwort ein.',
             ]);
     });

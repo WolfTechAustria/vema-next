@@ -102,6 +102,9 @@ class MembershipFeePrescriptionController extends Controller
 
     public function preview(Template $template)
     {
+        // E-Mail-Vorlagen (Willkommens-E-Mails) haben keine Briefansicht.
+        abort_if($template->isMailOnly(), 404);
+
         $entry = MembershipFeeEntry::query()
             ->with([
                 'member.city',

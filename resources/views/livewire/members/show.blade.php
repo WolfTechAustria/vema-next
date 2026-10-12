@@ -42,7 +42,7 @@
 
         </div>
 
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
 
             <a
                 href="{{ route('members.index') }}"
@@ -67,6 +67,20 @@
                     class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
                 >
                     Wiedereintritt erfassen
+                </button>
+            @endif
+
+            @if($member->active && $member->emails->isNotEmpty())
+                <button
+                    type="button"
+                    wire:click="sendWelcomeMail"
+                    wire:confirm="Willkommens-E-Mail an {{ $member->emails->pluck('email')->join(', ') }} senden?"
+                    wire:loading.attr="disabled"
+                    wire:target="sendWelcomeMail"
+                    class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                >
+                    <span wire:loading.remove wire:target="sendWelcomeMail">Willkommens-E-Mail senden</span>
+                    <span wire:loading wire:target="sendWelcomeMail">Wird gesendet …</span>
                 </button>
             @endif
 

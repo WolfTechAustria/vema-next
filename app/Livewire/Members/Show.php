@@ -9,12 +9,14 @@ use App\Services\ActivityLogger;
 use App\Services\BoardFunctionService;
 use App\Services\MembershipFeeEntryService;
 use App\Services\MembershipPeriodService;
+use App\Services\WelcomeMailService;
+use Carbon\Carbon;
 use Livewire\Component;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Throwable;
 
 class Show extends Component
 {
-
     public bool $showCircularEmailModal = false;
 
     public ?int $selectedCircularRecipientID = null;
@@ -22,18 +24,25 @@ class Show extends Component
     public Member $member;
 
     public bool $showResignModal = false;
+
     public ?string $resignDate = null;
+
     public ?string $resignNote = null;
 
     public bool $showReenterModal = false;
+
     public ?string $reenterDate = null;
+
     public ?string $reenterNote = null;
 
     public bool $showAssignFunctionModal = false;
+
     public ?int $newBoardFunctionID = null;
+
     public ?string $newBoardFunctionDate = null;
 
     public ?int $endingAssignmentID = null;
+
     public ?string $endFunctionDate = null;
 
     public function mount(Member $member): void
@@ -44,8 +53,7 @@ class Show extends Component
             'phones',
             'dutyAssignments.event',   // NEU
 
-            'circularRecipients' => fn ($query) =>
-            $query
+            'circularRecipients' => fn ($query) => $query
                 ->with(['circular.attachments'])
                 ->latest('sent_at'),
         ]);
@@ -68,7 +76,7 @@ class Show extends Component
             'currentFunctions' => app(BoardFunctionService::class)->currentFunctionsFor($this->member),
         ])
             ->layout('layouts.app', [
-                'title' => $this->member->full_name . ' | VEMA',
+                'title' => $this->member->full_name.' | VEMA',
                 'heading' => 'Mitglied',
             ]);
     }
@@ -77,6 +85,27 @@ class Show extends Component
     {
         $this->selectedCircularRecipientID = $recipientID;
         $this->showCircularEmailModal = true;
+    }
+
+    public function sendWelcomeMail(WelcomeMailService $welcomeMail): void
+    {
+        abort_unless($this->member->active, 422);
+
+        try {
+            $sent = $welcomeMail->sendToMember($this->member);
+        } catch (Throwable $exception) {
+            report($exception);
+            session()->flash('error', 'Die Willkommens-E-Mail konnte nicht versendet werden.');
+
+            return;
+        }
+
+        session()->flash(
+            $sent ? 'success' : 'error',
+            $sent
+                ? 'Willkommens-E-Mail wurde versendet.'
+                : 'Für dieses Mitglied ist keine E-Mail-Adresse hinterlegt.'
+        );
     }
 
     public function openResignModal(): void
@@ -104,7 +133,7 @@ class Show extends Component
 
         ActivityLogger::log(
             'member.resigned',
-            'Mitglied "' . $this->member->full_name . '" (#' . $this->member->memberID . ') wurde per ' . \Carbon\Carbon::parse($this->resignDate)->format('d.m.Y') . ' als ausgetreten erfasst.',
+            'Mitglied "'.$this->member->full_name.'" (#'.$this->member->memberID.') wurde per '.Carbon::parse($this->resignDate)->format('d.m.Y').' als ausgetreten erfasst.',
             'Member',
             $this->member->memberID
         );
@@ -143,7 +172,7 @@ class Show extends Component
 
         ActivityLogger::log(
             'member.reentered',
-            'Mitglied "' . $this->member->full_name . '" (#' . $this->member->memberID . ') wurde per ' . \Carbon\Carbon::parse($this->reenterDate)->format('d.m.Y') . ' als wiedereingetreten erfasst.',
+            'Mitglied "'.$this->member->full_name.'" (#'.$this->member->memberID.') wurde per '.Carbon::parse($this->reenterDate)->format('d.m.Y').' als wiedereingetreten erfasst.',
             'Member',
             $this->member->memberID
         );
@@ -184,7 +213,7 @@ class Show extends Component
 
         ActivityLogger::log(
             'member.board_function_assigned',
-            'Mitglied "' . $this->member->full_name . '" (#' . $this->member->memberID . ') wurde die Funktion "' . $assignment->boardFunction->name . '" ab ' . \Carbon\Carbon::parse($this->newBoardFunctionDate)->format('d.m.Y') . ' zugewiesen.',
+            'Mitglied "'.$this->member->full_name.'" (#'.$this->member->memberID.') wurde die Funktion "'.$assignment->boardFunction->name.'" ab '.Carbon::parse($this->newBoardFunctionDate)->format('d.m.Y').' zugewiesen.',
             'Member',
             $this->member->memberID
         );
@@ -209,7 +238,7 @@ class Show extends Component
 
         $assignment = MemberBoardFunctionAssignment::with('boardFunction')->find($this->endingAssignmentID);
 
-        if (!$assignment) {
+        if (! $assignment) {
             $this->endingAssignmentID = null;
 
             return;
@@ -226,7 +255,7 @@ class Show extends Component
 
         ActivityLogger::log(
             'member.board_function_ended',
-            'Die Funktion "' . $assignment->boardFunction->name . '" von Mitglied "' . $this->member->full_name . '" (#' . $this->member->memberID . ') wurde per ' . \Carbon\Carbon::parse($this->endFunctionDate)->format('d.m.Y') . ' beendet.',
+            'Die Funktion "'.$assignment->boardFunction->name.'" von Mitglied "'.$this->member->full_name.'" (#'.$this->member->memberID.') wurde per '.Carbon::parse($this->endFunctionDate)->format('d.m.Y').' beendet.',
             'Member',
             $this->member->memberID
         );
@@ -236,5 +265,4 @@ class Show extends Component
 
         session()->flash('success', 'Funktion wurde beendet.');
     }
-
 }

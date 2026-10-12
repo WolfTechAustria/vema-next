@@ -34,7 +34,7 @@ class LoginController extends Controller
             'username' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ], [
-            'username.required' => 'Bitte gib deinen Benutzernamen ein.',
+            'username.required' => 'Bitte gib deinen Benutzernamen oder deine E-Mail-Adresse ein.',
             'username.max' => 'Der Benutzername darf höchstens 255 Zeichen lang sein.',
             'password.required' => 'Bitte gib dein Passwort ein.',
         ]);
@@ -49,23 +49,18 @@ class LoginController extends Controller
             ]);
         }
 
-        $user = User::where('username', $credentials['username'])
-            ->first();
+        $user = $this->resolveUser($credentials['username'], $credentials['password']);
 
-        if (
-            ! $user ||
-            ! $user->enabled ||
-            ! Hash::check($credentials['password'], $user->password)
-        ) {
+        if (! $user) {
             RateLimiter::hit($throttleKey, 300);
 
             ActivityLogger::log(
                 'user.login_failed',
-                'Fehlgeschlagener Anmeldeversuch für Benutzername "'.$credentials['username'].'".'
+                'Fehlgeschlagener Anmeldeversuch für "'.$credentials['username'].'".'
             );
 
             throw ValidationException::withMessages([
-                'username' => 'Benutzername oder Passwort ist falsch.',
+                'username' => 'Benutzername/E-Mail oder Passwort ist falsch.',
             ]);
         }
 
@@ -83,6 +78,34 @@ class LoginController extends Controller
         );
 
         return redirect()->intended('/dashboard');
+    }
+
+    /**
+     * Anmeldung mit Benutzername oder E-Mail-Adresse. Der Benutzername hat
+     * Vorrang; E-Mail-Adressen sind nicht eindeutig (z. B. zwei Zugänge
+     * einer Person) — dann gilt der aktive Zugang, dessen Passwort passt.
+     */
+    private function resolveUser(string $login, string $password): ?User
+    {
+        $user = User::query()->where('username', $login)->first();
+
+        if ($user) {
+            return $this->acceptsPassword($user, $password) ? $user : null;
+        }
+
+        if (! str_contains($login, '@')) {
+            return null;
+        }
+
+        return User::query()
+            ->whereRaw('LOWER(email) = ?', [Str::lower($login)])
+            ->get()
+            ->first(fn (User $candidate) => $this->acceptsPassword($candidate, $password));
+    }
+
+    private function acceptsPassword(User $user, string $password): bool
+    {
+        return $user->enabled && Hash::check($password, $user->password);
     }
 
     public function destroy(Request $request)

@@ -373,6 +373,23 @@
 
                 @endforelse
 
+                @if(count($emails) > 0)
+                    <label class="flex items-start gap-3 rounded-lg bg-slate-50 px-4 py-3">
+                        <input
+                            type="checkbox"
+                            wire:model="sendWelcomeMail"
+                            class="mt-0.5 h-4 w-4 rounded border-slate-300"
+                        >
+                        <span class="text-sm">
+                            <span class="font-medium text-slate-900">Willkommens-E-Mail senden</span>
+                            <span class="block text-slate-500">
+                                Mit Begrüßung, Link zum Mitgliederbereich und – falls hinterlegt – zur WhatsApp-Community.
+                                Beim Nacherfassen bestehender Mitglieder abwählen.
+                            </span>
+                        </span>
+                    </label>
+                @endif
+
             </div>
 
         </section>

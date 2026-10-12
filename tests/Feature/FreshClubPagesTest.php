@@ -76,9 +76,9 @@ it('creates members without an address', function () {
         ->and($member->zip)->toBeNull();
 });
 
-it('ships default templates for fee prescriptions and reminders', function () {
+it('ships default templates for fee letters and welcome mails', function () {
     expect(Template::query()->pluck('key')->sort()->values()->all())
-        ->toBe(['membership_fee_prescription', 'membership_fee_reminder']);
+        ->toBe(['member_welcome', 'membership_fee_prescription', 'membership_fee_reminder', 'staff_welcome']);
 });
 
 it('creates a fee prescription for a new club', function () {

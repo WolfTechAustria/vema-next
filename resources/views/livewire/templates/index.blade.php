@@ -100,19 +100,7 @@
 
                     <div class="flex flex-wrap gap-2 text-xs">
 
-                        @foreach([
-                            '@{{first_name}}',
-                            '@{{last_name}}',
-                            '@{{full_name}}',
-                            '@{{street}}',
-                            '@{{zip}}',
-                            '@{{city}}',
-                            '@{{year}}',
-                            '@{{amount}}',
-                            '@{{due_date}}',
-                            '@{{salutation}}',
-                            '@{{reminder_level}}'
-                        ] as $placeholder)
+                        @foreach($this->availablePlaceholders() as $placeholder)
 
                             <code class="rounded border border-slate-200 bg-white px-2 py-1">
                                 {{ $placeholder }}
@@ -121,6 +109,13 @@
                         @endforeach
 
                     </div>
+
+                    @if($this->selectedTemplate()?->isMailOnly())
+                        <p class="mt-3 text-xs text-slate-500">
+                            Diese Vorlage ist der Text einer E-Mail. Die Buttons (Mitgliederbereich, WhatsApp-Community
+                            bzw. Passwort festlegen und Anmeldung) fügt VEMA automatisch unter dem Text an.
+                        </p>
+                    @endif
 
                 </div>
 
@@ -137,13 +132,15 @@
                     Template speichern
                 </button>
 
-                <a
-                    href="{{ route('templates.preview', $selectedTemplateID) }}"
-                    target="_blank"
-                    class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                    PDF Vorschau
-                </a>
+                @unless($this->selectedTemplate()?->isMailOnly())
+                    <a
+                        href="{{ route('templates.preview', $selectedTemplateID) }}"
+                        target="_blank"
+                        class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                        PDF Vorschau
+                    </a>
+                @endunless
 
             </div>
 

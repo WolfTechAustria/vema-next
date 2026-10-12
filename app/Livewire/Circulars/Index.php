@@ -447,6 +447,7 @@ class Index extends Component
     public function render()
     {
         $templates = Template::query()
+            ->letters()
             ->where('active', true)
             ->orderBy('name')
             ->get();

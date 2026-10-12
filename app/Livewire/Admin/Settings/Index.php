@@ -29,6 +29,8 @@ class Index extends Component
 
     public string $website = '';
 
+    public string $whatsapp_community_url = '';
+
     public string $bank_name = '';
 
     public string $iban = '';
@@ -74,6 +76,7 @@ class Index extends Component
         $this->email = $setting->email ?? '';
         $this->phone = $setting->phone ?? '';
         $this->website = $setting->website ?? '';
+        $this->whatsapp_community_url = $setting->whatsapp_community_url ?? '';
 
         $this->bank_name = $setting->bank_name ?? '';
         $this->iban = $setting->iban ?? '';
@@ -113,6 +116,7 @@ class Index extends Component
             'email' => ['nullable', 'email', 'max:150'],
             'phone' => ['nullable', 'string', 'max:50'],
             'website' => ['nullable', 'string', 'max:150'],
+            'whatsapp_community_url' => ['nullable', 'url:https', 'max:255'],
 
             'bank_name' => ['nullable', 'string', 'max:150'],
             'iban' => ['nullable', 'string', 'max:50'],
@@ -169,6 +173,7 @@ class Index extends Component
             'email' => $validated['email'] ?: null,
             'phone' => $validated['phone'] ?: null,
             'website' => $validated['website'] ?: null,
+            'whatsapp_community_url' => $validated['whatsapp_community_url'] ?: null,
 
             'bank_name' => $validated['bank_name'] ?: null,
             'iban' => $validated['iban'] ?: null,
@@ -216,6 +221,7 @@ class Index extends Component
         'email' => 'E-Mail',
         'phone' => 'Telefon',
         'website' => 'Website',
+        'whatsapp_community_url' => 'WhatsApp-Community-Link',
         'bank_name' => 'Bank',
         'iban' => 'IBAN',
         'bic' => 'BIC',

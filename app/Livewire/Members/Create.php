@@ -10,8 +10,10 @@ use App\Services\ActivityLogger;
 use App\Services\MembershipFeeEntryService;
 use App\Services\MembershipPeriodService;
 use App\Services\PlanEntitlements;
+use App\Services\WelcomeMailService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Throwable;
 
 class Create extends Component
 {
@@ -38,6 +40,8 @@ class Create extends Component
     public array $phones = [];
 
     public array $selectedSkills = [];
+
+    public bool $sendWelcomeMail = true;
 
     public $possibleDuplicates = [];
 
@@ -186,7 +190,21 @@ class Create extends Component
             ActivityLogger::created($member->activitySnapshot(), Member::ACTIVITY_LABELS)
         );
 
-        session()->flash('success', 'Mitglied wurde angelegt.');
+        $welcomeMailSent = false;
+
+        if ($this->sendWelcomeMail) {
+            try {
+                $welcomeMailSent = app(WelcomeMailService::class)->sendToMember($member);
+            } catch (Throwable $exception) {
+                report($exception);
+
+                session()->flash('warning', 'Mitglied wurde angelegt, die Willkommens-E-Mail konnte aber nicht versendet werden.');
+            }
+        }
+
+        session()->flash('success', $welcomeMailSent
+            ? 'Mitglied wurde angelegt und die Willkommens-E-Mail versendet.'
+            : 'Mitglied wurde angelegt.');
 
         return $this->redirectRoute(
             'members.show',

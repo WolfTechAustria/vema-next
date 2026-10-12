@@ -68,7 +68,7 @@ Rufen Sie die VEMA-Adresse Ihres Vereins im Browser auf. Es erscheint die Anmeld
 
 ![Anmeldeseite für Funktionäre](bilder/01-login.png)
 
-1. **Benutzername** eingeben (nicht die E-Mail-Adresse – Ausnahme: der Admin eines auf vemat.at registrierten Vereins, siehe unten).
+1. **Benutzername oder E-Mail-Adresse** eingeben. Teilen sich mehrere Zugänge dieselbe E-Mail-Adresse, wird der Zugang angemeldet, zu dem das Passwort passt.
 2. **Passwort** eingeben.
 3. Auf **Anmelden** klicken.
 
@@ -91,7 +91,7 @@ Aus Datenschutzgründen zeigt VEMA nie an, ob eine E-Mail-Adresse bekannt ist �
 
 ### 2.3 Erstzugang
 
-Neue Funktionäre werden vom Admin eingeladen (Kapitel 12.3). Sie erhalten eine E-Mail mit einem Link, über den sie ihr erstes Passwort festlegen – der Ablauf ist derselbe wie bei „Passwort vergessen“.
+Neue Funktionäre werden vom Admin eingeladen (Kapitel 12.3). Sie erhalten eine **Willkommens-E-Mail** mit ihrem Benutzernamen, einem Link zum Festlegen des ersten Passworts (60 Minuten gültig) und einem Link zur Anmeldeseite. Ist der Link abgelaufen, hilft „Passwort vergessen?“ oder der Admin schickt mit **Link erneut senden** einen neuen.
 
 ### 2.4 Abmelden
 
@@ -172,6 +172,8 @@ Pflichtfelder sind **Anrede, Vorname und Nachname**. Die **Adresse ist freiwilli
 
 Mit **Mitglied anlegen** speichern.
 
+**Willkommens-E-Mail:** Hat das neue Mitglied eine E-Mail-Adresse, ist unter den E-Mail-Adressen das Häkchen **Willkommens-E-Mail senden** gesetzt. Das Mitglied erhält dann eine Begrüßung mit Link zum Mitgliederbereich und – falls in den Einstellungen hinterlegt – einem Button zur WhatsApp-Community des Vereins (Kapitel 12.1). Beim Nacherfassen langjähriger Mitglieder das Häkchen einfach entfernen. Den Text passen Sie unter **Kommunikation → Templates** an (Vorlage „Willkommen – neues Mitglied“).
+
 > **Wichtig:** Die **Anrede** kann nur beim Anlegen festgelegt werden – beim späteren Bearbeiten ist sie nicht mehr änderbar.
 
 > **Tipp – Doppelte Mitglieder vermeiden:** Sobald Sie Vor- und Nachname eingeben, prüft VEMA, ob es bereits ein **ausgetretenes** Mitglied mit gleichem Namen gibt. In diesem Fall erscheint ein Hinweis mit Link zum bestehenden Mitglied. Erfassen Sie dort besser einen **Wiedereintritt**, damit die Vereinsgeschichte erhalten bleibt.
@@ -196,7 +198,7 @@ Die Detailseite zeigt alle Informationen zu einem Mitglied.
 - **Beitragsvorschreibungen** – alle versendeten Vorschreibungen und Erinnerungen mit Datum, Versandart und **PDF öffnen**.
 - **Rundschreiben** – was das Mitglied erhalten hat; **E-Mail anzeigen** zeigt die versendete Nachricht.
 
-Oben rechts: **Zurück**, **Austritt erfassen** (bzw. **Wiedereintritt erfassen** bei inaktiven Mitgliedern) und **Bearbeiten**.
+Oben rechts: **Zurück**, **Austritt erfassen** (bzw. **Wiedereintritt erfassen** bei inaktiven Mitgliedern), **Willkommens-E-Mail senden** (bei aktiven Mitgliedern mit E-Mail-Adresse – z. B. wenn die erste E-Mail nicht angekommen ist) und **Bearbeiten**.
 
 ### 5.4 Austritt und Wiedereintritt
 
@@ -562,13 +564,15 @@ Fähigkeiten beschreiben Qualifikationen wie *Standaufsicht*, *Schießleiter* od
 
 ![Templates](bilder/19-templates.png)
 
-Hier bearbeiten Sie die Texte für Beitragsvorschreibungen, Erinnerungen und Rundschreiben:
+Hier bearbeiten Sie die Texte für Beitragsvorschreibungen, Erinnerungen, Rundschreiben und die Willkommens-E-Mails:
 
 1. **Template auswählen**.
 2. **Bezeichnung**, **Betreff** und **Text** anpassen (mit Fett, Kursiv, Listen usw.).
 3. **Template speichern**; **PDF Vorschau** zeigt das Ergebnis auf dem Briefpapier.
 
-Neue Vereine starten mit zwei fertigen Vorlagen: **„Mitgliedsbeitragsvorschreibung“** und **„Mitgliedsbeitrag Erinnerung“**, die Sie an Ihren Verein anpassen können.
+Neue Vereine starten mit fertigen Vorlagen, die Sie an Ihren Verein anpassen können: **„Mitgliedsbeitragsvorschreibung“** und **„Mitgliedsbeitrag Erinnerung“** sowie die Willkommens-E-Mails **„Willkommen – neues Mitglied“** und **„Willkommen – neuer Funktionärszugang“**.
+
+> **Willkommens-E-Mails:** Hier bearbeiten Sie nur Betreff und Begrüßungstext. Die Buttons (Mitgliederbereich, WhatsApp-Community bzw. Passwort festlegen und Anmeldung) fügt VEMA automatisch darunter an. Unter der Vorlage stehen die jeweils passenden Platzhalter, z. B. `{{club_name}}` für den Vereinsnamen oder `{{username}}` für den Benutzernamen; eine PDF-Vorschau gibt es für E-Mail-Vorlagen nicht. Sie erscheinen auch nicht als Vorlage für Rundschreiben.
 
 **Verfügbare Platzhalter:**
 
@@ -698,6 +702,7 @@ Entwürfe haben stattdessen die Knöpfe **Bearbeiten** und **Rechnung erstellen*
 ![Einstellungen](bilder/34-einstellungen.png)
 
 - **Vereinsdaten:** Name, Adresse, E-Mail, Telefon und Website. Diese erscheinen in E-Mails, auf dem Briefkopf und auf der Anmeldeseite.
+- **WhatsApp-Community-Link:** Einladungslink zur WhatsApp-Community des Vereins (in WhatsApp: Community → Mitglieder einladen → Link, beginnt mit `https://chat.whatsapp.com/`). Er erscheint als Button in der Willkommens-E-Mail für neue Mitglieder. Mitglieder können damit selbst beitreten; je nach Community-Einstellung bestätigt ein Admin die Anfrage. Telefonnummern automatisch in die Community aufzunehmen ist mit WhatsApp nicht möglich.
 - **Rechnungsdaten:** Bank, IBAN, BIC, UID-Nummer, Standard-Steuersatz, Kleinunternehmer-Voreinstellung und Standard-Fußtext für neue Rechnungen.
 - **Nummernkreis** für Rechnungen – siehe unten.
 - **Testmodus:** siehe 12.5.
@@ -768,7 +773,7 @@ Leere Felder verwenden die Einstellungen des Servers.
 1. **+ Mitglied einladen** klicken.
 2. Mitglied suchen und anklicken. Benutzername und E-Mail werden vorgeschlagen.
 3. Optional **Admin-Rechte geben**.
-4. **Benutzer anlegen & einladen** – die Person erhält per E-Mail einen Link zum Festlegen des Passworts.
+4. **Benutzer anlegen & einladen** – die Person erhält eine Willkommens-E-Mail mit Benutzernamen, einem Link zum Festlegen des Passworts und einem Link zur Anmeldeseite (Text anpassbar unter Kommunikation → Templates, Vorlage „Willkommen – neuer Funktionärszugang“).
 
 **In der Tabelle** können Sie per Klick:
 
