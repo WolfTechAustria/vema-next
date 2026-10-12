@@ -29,12 +29,14 @@ return new class extends Migration
 
             $table->timestamps();
 
+            // Eigene Namen: die automatisch erzeugten überschreiten die
+            // 64 Zeichen, die MySQL für Indexnamen erlaubt.
             $table->unique([
                 'groupID',
                 'externalContactID',
-            ]);
+            ], 'uq_rg_external_contacts_group_contact');
 
-            $table->index('externalContactID');
+            $table->index('externalContactID', 'idx_rg_external_contacts_contact');
         });
     }
 
