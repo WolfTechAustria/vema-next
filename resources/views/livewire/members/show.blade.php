@@ -831,9 +831,9 @@
             $selectedCircular = $selectedRecipient?->circular;
 
             $body = $selectedRecipient && $selectedCircular
-                ? app(\App\Services\TemplateRendererService::class)->circular(
+                ? app(\App\Services\TemplateRendererService::class)->circularForRecipients(
                     $selectedCircular->body_html ?? '',
-                    $member
+                    $selectedRecipient->emailHousehold()->map->addressee()->filter()
                 )
                 : '';
         @endphp

@@ -182,4 +182,80 @@ class TemplateRendererService
             $bodyHtml
         );
     }
+
+    /**
+     * Rundschreiben für mehrere Empfänger mit derselben E-Mail-Adresse:
+     * eine Nachricht, in der jede Person angesprochen wird — aus
+     * „{{salutation}} {{first_name}}“ wird „Liebe Anna, lieber Max und
+     * liebe Lisa“. Einzelne Platzhalter werden zu Aufzählungen.
+     *
+     * @param  iterable<Member|ExternalContact>  $recipients
+     */
+    public function circularForRecipients(string $bodyHtml, iterable $recipients): string
+    {
+        $recipients = collect($recipients)->values();
+
+        if ($recipients->count() === 1) {
+            return $this->circular($bodyHtml, $recipients->first());
+        }
+
+        $greetings = $recipients->map(function (Member|ExternalContact $recipient, int $index) {
+            $salutation = $this->circularSalutation($recipient);
+
+            return trim(($index === 0 ? $salutation : mb_strtolower(mb_substr($salutation, 0, 1)).mb_substr($salutation, 1))
+                .' '.($recipient->name ?? ''));
+        });
+
+        // Die übliche Anrede „{{salutation}} {{first_name}}“ als Ganzes ersetzen.
+        $bodyHtml = preg_replace(
+            '/\{\{salutation\}\}(?:\s|&nbsp;)+\{\{first_name\}\}/u',
+            $this->naturalList($greetings->all()),
+            $bodyHtml
+        );
+
+        $firstMember = $recipients->first(fn ($recipient) => $recipient instanceof Member);
+        $firstMember?->loadMissing('city');
+
+        return str_replace(
+            ['{{first_name}}', '{{last_name}}', '{{full_name}}', '{{street}}', '{{zip}}', '{{city}}', '{{salutation}}'],
+            [
+                $this->naturalList($recipients->pluck('name')->filter()->all()),
+                $this->naturalList($recipients->pluck('surname')->filter()->unique()->all()),
+                $this->naturalList($recipients->map(fn ($recipient) => $recipient->full_name)->filter()->all()),
+                $firstMember?->street ?? '',
+                $firstMember?->zip ?? '',
+                $firstMember?->city?->city ?? '',
+                $this->circularSalutation($recipients->first()),
+            ],
+            $bodyHtml
+        );
+    }
+
+    private function circularSalutation(Member|ExternalContact $recipient): string
+    {
+        if (! $recipient instanceof Member) {
+            return 'Guten Tag';
+        }
+
+        return match (strtolower((string) $recipient->gender)) {
+            'm', 'male', 'mann', 'männlich' => 'Lieber',
+            default => 'Liebe',
+        };
+    }
+
+    /**
+     * „Anna“, „Anna und Max“, „Anna, Max und Lisa“.
+     *
+     * @param  list<string>|array<int, string>  $items
+     */
+    private function naturalList(array $items): string
+    {
+        $items = array_values($items);
+
+        if (count($items) <= 1) {
+            return $items[0] ?? '';
+        }
+
+        return implode(', ', array_slice($items, 0, -1)).' und '.end($items);
+    }
 }

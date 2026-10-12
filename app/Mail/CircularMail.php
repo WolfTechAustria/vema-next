@@ -6,6 +6,7 @@ use App\Models\Circular;
 use App\Models\CircularRecipient;
 use App\Services\TemplateRendererService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
@@ -17,29 +18,36 @@ class CircularMail extends Mailable
     use Queueable, SerializesModels;
 
     public Circular $circular;
+
     public CircularRecipient $recipient;
+
     public string $body;
 
+    /**
+     * @param  Collection<int, CircularRecipient>|null  $household  Empfänger, die diese
+     *                                                              Nachricht gemeinsam erhalten (gleiche E-Mail-Adresse);
+     *                                                              ohne Angabe ermittelt aus $recipient.
+     */
     public function __construct(
         Circular $circular,
-        CircularRecipient $recipient
+        CircularRecipient $recipient,
+        ?Collection $household = null
     ) {
         $this->circular = $circular;
         $this->recipient = $recipient;
 
+        $household ??= $recipient->emailHousehold();
+        $household->loadMissing(['member.city', 'externalContact']);
+
         /*
-         * Mitglied oder externen Kontakt laden.
+         * Mitglieder bzw. externe Kontakte, die angesprochen werden.
          */
-        $this->recipient->loadMissing([
-            'member.city',
-            'externalContact',
-        ]);
+        $addressees = $household
+            ->map(fn (CircularRecipient $householdRecipient) => $householdRecipient->addressee())
+            ->filter()
+            ->values();
 
-        $recipientModel =
-            $this->recipient->member
-            ?? $this->recipient->externalContact;
-
-        if (!$recipientModel) {
+        if ($addressees->isEmpty()) {
             throw new \RuntimeException(
                 'Rundschreiben-Empfänger konnte nicht ermittelt werden.'
             );
@@ -47,9 +55,9 @@ class CircularMail extends Mailable
 
         $this->body = app(
             TemplateRendererService::class
-        )->circular(
+        )->circularForRecipients(
             $this->circular->body_html ?? '',
-            $recipientModel
+            $addressees
         );
     }
 

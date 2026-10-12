@@ -505,6 +505,8 @@ Die Übersicht zeigt alle Rundschreiben mit Status (*Entwurf* / *Versendet*), An
 
 **Versandart:** Mitglieder mit E-Mail-Adresse erhalten das Rundschreiben per **E-Mail**, Mitglieder ohne E-Mail werden für den **Postversand** vorgemerkt. Externe Kontakte erhalten es immer per E-Mail. Jeder Empfänger bekommt eine **eigene E-Mail** – niemand sieht die Adressen der anderen.
 
+**Gemeinsame E-Mail-Adresse (z. B. Familien):** Haben mehrere Empfänger dieselbe E-Mail-Adresse, kommt dort nur **eine** E-Mail an, in der jede Person angesprochen wird – aus `{{salutation}} {{first_name}}` wird z. B. „Liebe Anna, lieber Max und liebe Lisa“. Als versendet gilt das Rundschreiben trotzdem für jedes Mitglied einzeln, es erscheint also auch bei jedem im Mitgliederbereich und auf der Mitgliedsseite. Die **Testmail** geht weiterhin nur an die gewählte Person. Briefe per Post werden nicht zusammengefasst.
+
 **Versenden** (Knöpfe in der Spalte *Aktionen*):
 
 - **E-Mail versenden** – verschickt an alle noch offenen E-Mail-Empfänger.

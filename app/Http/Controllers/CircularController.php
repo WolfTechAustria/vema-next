@@ -13,6 +13,7 @@ use App\Services\ImapSentMailService;
 use App\Services\PdfLetterheadService;
 use App\Services\TemplateRendererService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
@@ -123,9 +124,11 @@ class CircularController extends Controller
 
         $rawMessage = null;
 
+        // Die Testmail geht bewusst nur an diese eine Person.
         $mail = new CircularMail(
             $circular,
-            $recipient
+            $recipient,
+            new EloquentCollection([$recipient])
         );
 
         $mail->withSymfonyMessage(
@@ -193,8 +196,20 @@ class CircularController extends Controller
 
         $sentCount = 0;
         $failedCount = 0;
+        $mailCount = 0;
 
-        foreach ($emailRecipients as $recipient) {
+        /*
+         * Empfänger mit derselben E-Mail-Adresse (z. B. Familien) bekommen
+         * gemeinsam eine Nachricht, in der jede Person angesprochen wird —
+         * statt mehrerer gleicher E-Mails. Versendet gilt sie für alle.
+         */
+        $households = $emailRecipients
+            ->groupBy(fn (CircularRecipient $recipient) => CircularRecipient::normalizeEmail($recipient->email));
+
+        foreach ($households as $householdRecipients) {
+
+            $household = new EloquentCollection($householdRecipients->values()->all());
+            $recipient = $household->first();
 
             try {
 
@@ -202,7 +217,8 @@ class CircularController extends Controller
 
                 $mail = new CircularMail(
                     $circular,
-                    $recipient
+                    $recipient,
+                    $household
                 );
 
                 $mail->withSymfonyMessage(
@@ -217,21 +233,22 @@ class CircularController extends Controller
                 Mail::to($recipient->email)->send($mail);
 
                 /*
-                 * Ab hier gilt die Mail als versendet.
+                 * Ab hier gilt die Mail für alle Personen dieser Adresse als versendet.
                  */
-                $recipient->update([
-                    'sent_at' => now(),
-                ]);
+                CircularRecipient::query()
+                    ->whereIn('recipientID', $household->modelKeys())
+                    ->update(['sent_at' => now()]);
 
-                $sentCount++;
+                $sentCount += $household->count();
+                $mailCount++;
 
                 /*
-                    * 2. Kopie zusätzlich per IMAP
-                    *    im Gesendet-Ordner speichern.
-                    *
-                    * Ein Fehler hier darf den eigentlichen
-                    * Versand NICHT als fehlgeschlagen markieren.
-                */
+                 * 2. Kopie zusätzlich per IMAP
+                 *    im Gesendet-Ordner speichern.
+                 *
+                 * Ein Fehler hier darf den eigentlichen
+                 * Versand NICHT als fehlgeschlagen markieren.
+                 */
                 if ($rawMessage) {
                     try {
                         app(ImapSentMailService::class)->append(
@@ -243,9 +260,7 @@ class CircularController extends Controller
                             'Rundschreiben wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
                             [
                                 'circularID' => $circular->circularID,
-                                'recipientID' => $recipient->recipientID,
-                                'memberID' => $recipient->memberID,
-                                'externalContactID' => $recipient->externalContactID,
+                                'recipientIDs' => $household->modelKeys(),
                                 'email' => $recipient->email,
                                 'error' => $imapException->getMessage(),
                             ]
@@ -255,15 +270,13 @@ class CircularController extends Controller
 
             } catch (\Throwable $e) {
 
-                $failedCount++;
+                $failedCount += $household->count();
 
                 \Log::error(
                     'Rundschreiben konnte nicht per E-Mail versendet werden.',
                     [
                         'circularID' => $circular->circularID,
-                        'recipientID' => $recipient->recipientID,
-                        'memberID' => $recipient->memberID,
-                        'externalContactID' => $recipient->externalContactID,
+                        'recipientIDs' => $household->modelKeys(),
                         'email' => $recipient->email,
                         'error' => $e->getMessage(),
                     ]
@@ -292,8 +305,9 @@ class CircularController extends Controller
 
         ActivityLogger::log(
             'circular.emails_sent',
-            'Rundschreiben „'.$circular->title.'“ wurde an '.$sentCount.' Empfänger per E-Mail versendet.'
-                .($failedCount > 0 ? ' '.$failedCount.' E-Mail(s) konnten nicht versendet werden.' : ''),
+            'Rundschreiben „'.$circular->title.'“ wurde an '.$sentCount.' Empfänger per E-Mail versendet'
+                .$this->sharedAddressNote($sentCount, $mailCount).'.'
+                .($failedCount > 0 ? ' '.$failedCount.' Empfänger konnten nicht erreicht werden.' : ''),
             'Circular',
             $circular->circularID
         );
@@ -303,17 +317,33 @@ class CircularController extends Controller
             return back()->with(
                 'warning',
                 $sentCount
-                .' E-Mail(s) erfolgreich versendet. '
+                .' Empfänger erfolgreich per E-Mail erreicht'
+                .$this->sharedAddressNote($sentCount, $mailCount).'. '
                 .$failedCount
-                .' E-Mail(s) konnten nicht versendet werden.'
+                .' Empfänger konnten nicht erreicht werden.'
             );
         }
 
         return back()->with(
             'success',
-            $sentCount
-            .' Rundschreiben wurden erfolgreich per E-Mail versendet.'
+            'Rundschreiben wurde an '
+            .$sentCount
+            .' Empfänger per E-Mail versendet'
+            .$this->sharedAddressNote($sentCount, $mailCount).'.'
         );
+    }
+
+    /**
+     * Hinweis, wenn mehrere Empfänger eine gemeinsame E-Mail bekommen haben,
+     * z. B. „ (5 E-Mails, gemeinsame Adressen zusammengefasst)“.
+     */
+    private function sharedAddressNote(int $recipientCount, int $mailCount): string
+    {
+        if ($mailCount === 0 || $mailCount === $recipientCount) {
+            return '';
+        }
+
+        return ' ('.$mailCount.' '.($mailCount === 1 ? 'E-Mail' : 'E-Mails').', gemeinsame Adressen zusammengefasst)';
     }
 
     public function markPostAsSent(Circular $circular)
@@ -377,19 +407,21 @@ class CircularController extends Controller
 
         $recipient->loadMissing([
             'member.city',
+            'externalContact',
         ]);
 
         $circular->loadMissing([
             'attachments',
         ]);
 
-        $body = $renderer->circular(
+        // So, wie die E-Mail verschickt wird: gemeinsam mit allen Empfängern derselben Adresse.
+        $body = $renderer->circularForRecipients(
             $circular->body_html ?? '',
-            $recipient->member
+            $recipient->emailHousehold()->map->addressee()->filter()
         );
 
         return view(
-            'circulars.email-preview',
+            'livewire.circulars.email-preview',
             [
                 'circular' => $circular,
                 'recipient' => $recipient,
