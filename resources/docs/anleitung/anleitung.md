@@ -33,14 +33,14 @@ Version: Oktober 2026
 
 VEMA ist die webbasierte Vereinsverwaltung. Sie bündelt alle wichtigen Aufgaben an einem Ort:
 
-- **Mitgliederverwaltung** mit Stammdaten, Kontakten, Vorstandsfunktionen, Ein- und Austritten
+- **Mitgliederverwaltung** mit Stammdaten, Kontakten, Vorstandsfunktionen, Ein- und Austritten sowie einer Dateiablage je Mitglied (z. B. Beitrittserklärungen)
 - **Dienstplan** mit automatischer, fairer Einteilung der Helfer
 - **Termine** für Sitzungen, Feste und Ausrückungen – mit Zu- und Absagen der Mitglieder und Übernahme externer Kalender
 - **Mitgliedsbeiträge** inklusive Vorschreibungen und Erinnerungen per E-Mail oder Post
 - **Rundschreiben** an Mitglieder, Gruppen und externe Kontakte
 - **Kassabuch** mit Belegen und Jahresabschluss
 - **Rechnungen** für Sponsoren, Firmenschießen und andere Leistungen
-- **Mitgliederbereich**, in dem sich Mitglieder selbst anmelden, ihre Daten pflegen, ihre Dienste und Termine sehen und alles als Kalender abonnieren
+- **Mitgliederbereich**, in dem sich Mitglieder selbst anmelden, ihre Daten pflegen, ihre Dienste, Termine und freigegebenen Dokumente sehen und alles als Kalender abonnieren
 
 VEMA läuft im Browser – am PC genauso wie am Smartphone oder Tablet. Eine Installation ist nicht nötig.
 
@@ -239,28 +239,48 @@ Zum Beenden einer Funktion auf **Beenden** klicken, das Enddatum eintragen und *
 
 *[Abbildung folgt: Dateien auf der Mitgliedsseite]*
 
-Auf der Mitgliedsseite bündelt der Kasten **Dateien** alles, was zu einem Mitglied an Unterlagen gehört – wie in einem Dateiexplorer mit Ordnern links:
+Auf der Mitgliedsseite bündelt der Kasten **Dateien** alles, was zu einem Mitglied an Unterlagen gehört – wie in einem Dateiexplorer. Links stehen die Ordner, jeweils mit der Anzahl der enthaltenen Dateien; am Smartphone stehen sie als Leiste über der Liste:
 
 | Ordner | Inhalt |
 |---|---|
-| **Alle** | alle Dateien der folgenden Ordner, neueste zuerst – diese Ansicht ist beim Öffnen gewählt |
-| **Dokumente** | selbst hochgeladene Unterlagen, z. B. Beitrittserklärung, Vereinbarungen, Einverständniserklärungen |
-| **Beitragsvorschreibungen** | alle versendeten Vorschreibungen und Erinnerungen |
-| **Rundschreiben** | alle erhaltenen Rundschreiben samt Anhängen |
+| **Alle** | alle Dateien der folgenden Ordner, neueste zuerst – diese Ansicht ist beim Öffnen gewählt; ein Etikett zeigt, aus welchem Ordner eine Datei stammt |
+| **Dokumente** | selbst hochgeladene Unterlagen, z. B. Beitrittserklärung, Austrittserklärung, Vereinbarungen, Einverständnis- oder Datenschutzerklärungen |
+| **Beitragsvorschreibungen** | alle versendeten Vorschreibungen und Erinnerungen (z. B. „Beitragsvorschreibung 2026“, „2. Erinnerung 2026“) mit Versandart |
+| **Rundschreiben** | alle erhaltenen Rundschreiben als PDF sowie deren Anhänge als eigene Dateien |
 
-Oben rechts wechseln Sie zwischen **Liste** und **Kacheln** und können im geöffneten Ordner **suchen**. Ein Klick auf eine Datei öffnet die **Vorschau** (PDFs und Bilder direkt auf der Seite, andere Dateien zum Herunterladen).
+Beitragsschreiben und Rundschreiben erscheinen hier automatisch, sobald sie versendet wurden – sie müssen nicht hochgeladen werden. Die bisherigen Abschnitte **Beitragsvorschreibungen** und **Rundschreiben** weiter unten auf der Mitgliedsseite bleiben unverändert.
 
-**Dokumente hochladen:**
+#### Ansicht, Suche und Vorschau
 
-1. Ordner **Dokumente** öffnen.
-2. Dateien in das Feld ziehen oder **auswählen** – mehrere auf einmal sind möglich (PDF, Bilder, Word, Excel, max. 10 MB je Datei).
-3. Optional eine **Kategorie** (z. B. „Beitrittserklärung“ – bereits verwendete Kategorien werden vorgeschlagen) und eine **Notiz** eintragen.
-4. Bei Bedarf **Im Mitgliederbereich für das Mitglied sichtbar** anhaken.
-5. **Datei(en) speichern**.
+- Oben rechts wechseln Sie zwischen **Liste** (mit Datum, Kategorie, Größe und Notiz) und **Kacheln** (Bilder als Vorschaubild).
+- Das **Suchfeld** durchsucht den geöffneten Ordner nach Name, Kategorie und Notiz – im Ordner **Alle** also sämtliche Dateien.
+- Ein Klick auf eine Datei öffnet die **Vorschau**: PDFs und Bilder werden direkt auf der Seite angezeigt, mit **Herunterladen** und **In neuem Tab**. Word-, Excel- und HEIC-Dateien (iPhone-Fotos) lassen sich nicht in der Vorschau anzeigen, sondern nur herunterladen.
+- Beim Herunterladen trägt die Datei ihren Namen aus VEMA (samt ursprünglicher Endung, z. B. „.pdf“).
 
-Über **Bearbeiten** ändern Sie Name, Kategorie, Notiz und die Freigabe für das Mitglied; dort und in der Liste lassen sich Dokumente auch **löschen**. Hochladen, Ändern und Löschen werden im Aktivitätsprotokoll festgehalten.
+#### Dokumente hochladen
 
-> **Datenschutz:** Dokumente sehen alle Funktionäre mit Zugang zu den Mitgliedern. Das Mitglied selbst sieht nur Dokumente, die ausdrücklich für den Mitgliederbereich freigegeben sind (Kapitel 13.8).
+1. In der Ansicht **Alle** oder im Ordner **Dokumente** die Dateien in das gestrichelte Feld ziehen – oder auf **auswählen** klicken. Mehrere Dateien auf einmal sind möglich, ebenso mehrere Auswahlen nacheinander (z. B. am Smartphone Foto für Foto).
+   - Erlaubt sind **PDF**, Bilder (**JPG, PNG, WEBP, HEIC**), **Word** (DOC, DOCX, ODT), **Excel** (XLS, XLSX, ODS) und **Text** (TXT), jeweils höchstens **10 MB**. Andere Dateien werden mit einem Hinweis abgelehnt.
+2. Die gewählten Dateien erscheinen in einer Liste. Mit **Entfernen** nehmen Sie eine versehentlich gewählte Datei wieder heraus – gespeichert ist noch nichts.
+3. Optional eine **Kategorie** eintragen, z. B. „Beitrittserklärung“. Die Kategorie ist frei wählbar; bereits verwendete Kategorien werden beim Tippen vorgeschlagen, damit die Schreibweise einheitlich bleibt.
+4. Optional eine **Notiz** eintragen, z. B. „Original im Vereinsordner“.
+5. Bei Bedarf **Im Mitgliederbereich für das Mitglied sichtbar** anhaken (Standard: aus).
+6. Auf **Datei speichern** bzw. **… Dateien speichern** klicken.
+
+Kategorie, Notiz und Freigabe gelten für alle Dateien dieses Speichervorgangs. Sollen Dateien unterschiedliche Kategorien bekommen, laden Sie sie einzeln hoch oder ändern Sie die Angaben anschließend über **Bearbeiten**. Hochgeladene Dokumente landen immer im Ordner **Dokumente** und stehen in **Alle** ganz oben.
+
+#### Dokumente bearbeiten, freigeben und löschen
+
+- **Bearbeiten** öffnet ein Fenster, in dem Sie **Name**, **Kategorie**, **Notiz** und die Freigabe **Im Mitgliederbereich für das Mitglied sichtbar** ändern. Mit **Speichern** übernehmen.
+- Freigegebene Dokumente sind in der Liste mit **im Mitgliederbereich** bzw. in der Kachelansicht mit **● sichtbar** markiert.
+- **Löschen** (in der Liste oder im Bearbeiten-Fenster) entfernt das Dokument nach einer Rückfrage **endgültig** – auch für das Mitglied.
+- Beitragsschreiben und Rundschreiben lassen sich hier nicht bearbeiten oder löschen; sie gehören zum jeweiligen Versand.
+
+Hochladen, Ändern und Löschen werden im **Aktivitätsprotokoll** festgehalten (Bereich „Mitglieder“), bei Änderungen mit vorher → nachher.
+
+> **Datenschutz:** Dokumente sehen alle Funktionäre mit Zugang zu den Mitgliedern. Das Mitglied selbst sieht nur Dokumente, die ausdrücklich für den Mitgliederbereich freigegeben sind (Kapitel 13.8). Die Dateien liegen geschützt in VEMA und sind nur nach Anmeldung abrufbar – Links funktionieren für Außenstehende nicht.
+
+> **Testmodus:** Im Testmodus hochgeladene oder gelöschte Dateien betreffen nur die Testdaten, nicht die echten Unterlagen.
 
 ---
 
@@ -1007,6 +1027,15 @@ Nein – der Abschluss ist endgültig. Korrekturen werden als neue Buchung im Fo
 
 **Kann ich eine erstellte Rechnung ändern?**
 Nein. Stornieren Sie die Rechnung und erstellen Sie eine neue.
+
+**Wo lege ich die unterschriebene Beitrittserklärung ab?**
+Auf der Mitgliedsseite im Kasten **Dateien**: Datei hineinziehen, Kategorie „Beitrittserklärung“ eintragen und speichern (Kapitel 5.8). Mit einem Handy-Foto geht das auch direkt unterwegs.
+
+**Ein Mitglied findet ein Dokument nicht im Mitgliederbereich.**
+Dokumente sind standardmäßig nur für den Vorstand sichtbar. Öffnen Sie beim Dokument **Bearbeiten** und haken Sie **Im Mitgliederbereich für das Mitglied sichtbar** an.
+
+**Eine Datei lässt sich nicht hochladen.**
+Erlaubt sind PDF, Bilder, Word-, Excel- und Textdateien bis 10 MB. Große Scans am besten als PDF mit geringerer Auflösung speichern oder Fotos verkleinern.
 
 **Wie probiere ich etwas aus, ohne echte Daten zu verändern?**
 Nutzen Sie den **Testmodus** (Kapitel 12.5) – dort gehen alle E-Mails nur an Sie selbst.
