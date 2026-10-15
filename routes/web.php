@@ -11,6 +11,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MemberAuthController;
 use App\Http\Controllers\MemberCalendarController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\MemberFileController;
 use App\Http\Controllers\MemberPortalDocumentController;
 use App\Http\Controllers\MembershipFeePrescriptionController;
 use App\Http\Controllers\UserManualController;
@@ -30,6 +31,7 @@ use App\Livewire\Invoices\Recipients\Index as InvoiceRecipientsIndex;
 use App\Livewire\Invoices\Show as InvoicesShow;
 use App\Livewire\MemberAuth\Login;
 use App\Livewire\MemberPortal\MyCirculars;
+use App\Livewire\MemberPortal\MyDocuments;
 use App\Livewire\MemberPortal\MyDuties as MemberPortalMyDuties;
 use App\Livewire\MemberPortal\MyEvents;
 use App\Livewire\MemberPortal\MyFees;
@@ -110,6 +112,9 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
 
     Route::livewire('/members/{member}/edit', MembersEdit::class)
         ->name('members.edit');
+
+    Route::get('/member-files/{memberFile}', [MemberFileController::class, 'show'])
+        ->name('member-files.show');
 
     Route::livewire('/duty-plan', DutyPlanIndex::class)
         ->middleware('feature:duty_plan')
@@ -299,6 +304,12 @@ Route::middleware(['auth:member', 'feature:member_portal'])->group(function () {
 
     Route::get('/member/circulars/attachments/{attachment}', [MemberPortalDocumentController::class, 'circularAttachment'])
         ->name('member.circulars.attachment');
+
+    Route::livewire('/member/documents', MyDocuments::class)
+        ->name('member.documents');
+
+    Route::get('/member/documents/{memberFile}', [MemberPortalDocumentController::class, 'memberFile'])
+        ->name('member.documents.file');
 });
 
 // Pfad bleibt aus Kompatibilität ".../duty/...", damit bestehende Abos weiterlaufen.

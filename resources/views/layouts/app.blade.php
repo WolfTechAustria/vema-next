@@ -413,6 +413,19 @@
 
 
                 <a
+                    href="{{ route('member.documents') }}"
+                    wire:navigate
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                    {{ request()->routeIs('member.documents*')
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
+                >
+                    <span>▤</span>
+                    Meine Dokumente
+                </a>
+
+
+                <a
                     href="{{ route('member.duties') }}"
                     wire:navigate
                     class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition

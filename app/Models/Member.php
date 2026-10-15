@@ -238,6 +238,14 @@ class Member extends Model
     }
 
     /**
+     * Hochgeladene Dokumente (Beitrittserklärung, Vereinbarungen …).
+     */
+    public function files(): HasMany
+    {
+        return $this->hasMany(MemberFile::class, 'memberID', 'memberID');
+    }
+
+    /**
      * Externe Kalender, deren Termine das Mitglied in sein iCal-Abo übernimmt.
      */
     public function subscribedEventSources(): BelongsToMany

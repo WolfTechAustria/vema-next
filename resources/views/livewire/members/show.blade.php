@@ -505,6 +505,9 @@
 
     </div>
 
+    <!-- Dateien -->
+    <livewire:members.files :member="$member" :key="'member-files-'.$member->memberID" />
+
     <!-- Beitragsvorschreibungen -->
     <div class="grid gap-6 xl:grid-cols-1">
         <div class="mt-8 rounded-xl border border-slate-200 bg-white shadow-sm">

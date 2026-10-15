@@ -196,6 +196,7 @@ Die Detailseite zeigt alle Informationen zu einem Mitglied.
 - **Vorstandsfunktionen** – aktuelle Funktionen mit Beginn (siehe 5.5).
 - **Dienste** – eingeteilte Dienste mit Kennzeichnung *Bevorstehend* / *Vergangen*.
 - **Beitragsvorschreibungen** – alle versendeten Vorschreibungen und Erinnerungen mit Datum, Versandart und **PDF öffnen**.
+- **Dateien** – Dokumente des Mitglieds sowie alle Beitragsschreiben und Rundschreiben wie in einem Dateiexplorer (siehe 5.8).
 - **Rundschreiben** – was das Mitglied erhalten hat; **E-Mail anzeigen** zeigt die versendete Nachricht.
 
 Oben rechts: **Zurück**, **Austritt erfassen** (bzw. **Wiedereintritt erfassen** bei inaktiven Mitgliedern), **Willkommens-E-Mail senden** (bei aktiven Mitgliedern mit E-Mail-Adresse – z. B. wenn die erste E-Mail nicht angekommen ist) und **Bearbeiten**.
@@ -233,6 +234,33 @@ Zum Beenden einer Funktion auf **Beenden** klicken, das Enddatum eintragen und *
 Über **Geburtstagsliste** sehen Sie alle Geburtstage aktiver Mitglieder im gewählten **Monat** mit dem Alter, das erreicht wird. Runde Geburtstage sind mit **🎉 rund**, halbrunde (25, 35, 45 …) mit **halbrund** markiert. **PDF drucken** erzeugt eine Liste zum Ausdrucken.
 
 > Der Vorstand erhält runde und halbrunde Geburtstage zusätzlich automatisch per E-Mail (Kapitel 14). Welche Empfängergruppe diese E-Mails bekommt, stellt der Admin unter **Einstellungen → Briefpapier & E-Mail** ein (Standard: „Vorstand“). Die Empfänger stehen dabei im **BCC** – sie sehen die Adressen der anderen nicht.
+
+### 5.8 Dateien zum Mitglied
+
+*[Abbildung folgt: Dateien auf der Mitgliedsseite]*
+
+Auf der Mitgliedsseite bündelt der Kasten **Dateien** alles, was zu einem Mitglied an Unterlagen gehört – wie in einem Dateiexplorer mit Ordnern links:
+
+| Ordner | Inhalt |
+|---|---|
+| **Alle** | alle Dateien der folgenden Ordner, neueste zuerst – diese Ansicht ist beim Öffnen gewählt |
+| **Dokumente** | selbst hochgeladene Unterlagen, z. B. Beitrittserklärung, Vereinbarungen, Einverständniserklärungen |
+| **Beitragsvorschreibungen** | alle versendeten Vorschreibungen und Erinnerungen |
+| **Rundschreiben** | alle erhaltenen Rundschreiben samt Anhängen |
+
+Oben rechts wechseln Sie zwischen **Liste** und **Kacheln** und können im geöffneten Ordner **suchen**. Ein Klick auf eine Datei öffnet die **Vorschau** (PDFs und Bilder direkt auf der Seite, andere Dateien zum Herunterladen).
+
+**Dokumente hochladen:**
+
+1. Ordner **Dokumente** öffnen.
+2. Dateien in das Feld ziehen oder **auswählen** – mehrere auf einmal sind möglich (PDF, Bilder, Word, Excel, max. 10 MB je Datei).
+3. Optional eine **Kategorie** (z. B. „Beitrittserklärung“ – bereits verwendete Kategorien werden vorgeschlagen) und eine **Notiz** eintragen.
+4. Bei Bedarf **Im Mitgliederbereich für das Mitglied sichtbar** anhaken.
+5. **Datei(en) speichern**.
+
+Über **Bearbeiten** ändern Sie Name, Kategorie, Notiz und die Freigabe für das Mitglied; dort und in der Liste lassen sich Dokumente auch **löschen**. Hochladen, Ändern und Löschen werden im Aktivitätsprotokoll festgehalten.
+
+> **Datenschutz:** Dokumente sehen alle Funktionäre mit Zugang zu den Mitgliedern. Das Mitglied selbst sieht nur Dokumente, die ausdrücklich für den Mitgliederbereich freigegeben sind (Kapitel 13.8).
 
 ---
 
@@ -871,6 +899,10 @@ Das Abo enthält:
 **Link erneuern** macht den alten Link ungültig (z. B. wenn er versehentlich weitergegeben wurde). Danach muss der neue Link im Kalender neu abonniert werden.
 
 ![Mitgliederbereich am Smartphone](bilder/44-portal-mobil.png)
+
+### 13.8 Meine Dokumente
+
+Unter **Meine Dokumente** findet das Mitglied Unterlagen, die der Verein für es freigegeben hat – etwa die eigene Beitrittserklärung. Sie lassen sich **ansehen** (PDF und Bilder) und **herunterladen**. Beitragsschreiben und Rundschreiben stehen weiterhin unter **Meine Beiträge** bzw. **Meine Rundschreiben**.
 
 ---
 

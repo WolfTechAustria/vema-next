@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Circular;
 use App\Models\CircularAttachment;
+use App\Models\MemberFile;
 use App\Models\MembershipFeePrescription;
 use App\Services\ActiveMemberResolver;
 use App\Services\CircularPdfService;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -85,6 +87,25 @@ class MemberPortalDocumentController extends Controller
                 'Content-Disposition' => 'inline; filename="'.$prescription->file_name.'"',
             ]
         );
+    }
+
+    /**
+     * Vom Verein freigegebenes Dokument des angemeldeten Mitglieds.
+     */
+    public function memberFile(
+        MemberFile $memberFile,
+        Request $request,
+        ActiveMemberResolver $activeMemberResolver
+    ): StreamedResponse {
+        $member = $activeMemberResolver->resolve();
+
+        abort_unless(
+            (int) $memberFile->memberID === (int) $member->memberID
+            && $memberFile->visible_to_member,
+            404
+        );
+
+        return MemberFileController::respond($memberFile, $request->boolean('download'));
     }
 
     private function ensureCircularWasSentTo(?Circular $circular, int $memberID): void
