@@ -1062,6 +1062,8 @@ Unter **Homepage → Beiträge** sehen Sie alle Beiträge mit Status, Datum und 
 
 **Bildergalerie:** Das erste Bild ist das **Titelbild** des Beitrags. Mit **↑ nach vorne** und **↓** ändern Sie die Reihenfolge, mit **Löschen** entfernen Sie ein Bild. Bildunterschriften werden mit **Änderungen speichern** übernommen. Bei einem neuen Beitrag werden die ausgewählten Bilder beim Anlegen gespeichert.
 
+> **Umstieg von WordPress:** Beiträge einer bisherigen WordPress-Seite übernimmt ein Administrator des Servers einmalig mit `php artisan homepage:import-wordpress https://mein-verein.at` (mit `--dry-run` zuerst nur anzeigen). Übernommen werden Text, Titelbild, Bilder und verlinkte PDFs; bereits übernommene Beiträge werden übersprungen.
+
 > **Hinweis:** Bilder werden beim Hochladen automatisch verkleinert und neu gespeichert. Dabei gehen versteckte Metadaten wie der Aufnahmeort (GPS) verloren – gewollt, aus Datenschutzgründen.
 
 *[Abbildung folgt: Beitrag bearbeiten mit Bildergalerie]*

@@ -96,6 +96,8 @@ class HomepageImageService
 
     private function read(UploadedFile $upload): GdImage
     {
+        $this->ensureMemoryFor($upload->getRealPath());
+
         $source = @imagecreatefromstring((string) file_get_contents($upload->getRealPath()));
 
         if ($source === false) {
@@ -103,6 +105,45 @@ class HomepageImageService
         }
 
         return $source;
+    }
+
+    /**
+     * GD hält Bilder unkomprimiert im Speicher (ca. 5 Byte je Pixel). Große
+     * Handyfotos sprengen sonst das übliche Limit von 128 MB — daher das
+     * Limit für diesen Request bei Bedarf anheben (höchstens 1 GB).
+     */
+    private function ensureMemoryFor(string $path): void
+    {
+        $size = @getimagesize($path);
+
+        if ($size === false) {
+            return;
+        }
+
+        $required = memory_get_usage() + (int) ($size[0] * $size[1] * 5 * 1.8) + 32 * 1024 * 1024;
+        $limit = $this->bytes((string) ini_get('memory_limit'));
+
+        if ($limit !== -1 && $required > $limit) {
+            ini_set('memory_limit', (string) min($required, 1024 * 1024 * 1024));
+        }
+    }
+
+    private function bytes(string $value): int
+    {
+        $value = trim($value);
+
+        if ($value === '-1') {
+            return -1;
+        }
+
+        $number = (int) $value;
+
+        return match (strtolower(substr($value, -1))) {
+            'g' => $number * 1024 ** 3,
+            'm' => $number * 1024 ** 2,
+            'k' => $number * 1024,
+            default => $number,
+        };
     }
 
     /**
