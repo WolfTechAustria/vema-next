@@ -191,6 +191,8 @@ Die Detailseite zeigt alle Informationen zu einem Mitglied.
 
 ![Detailseite eines Mitglieds](bilder/06-mitglied-detail.png)
 
+**Profilbild:** Links neben dem Namen steht das Profilbild – oder, solange keines hinterlegt ist, die Initialen. Ein Klick auf das Bild (kleines Kamera-Symbol) öffnet die Dateiauswahl (JPG, PNG oder WEBP). Danach legen Sie den Ausschnitt selbst fest: Bild verschieben, mit Mausrad, zwei Fingern oder **+ / −** zoomen, mit **↻** drehen, dann **Übernehmen**. VEMA speichert das Bild quadratisch in 400 × 400 Pixel; Ortsangaben und andere Metadaten aus Handyfotos werden dabei entfernt. **Entfernen** unter dem Bild löscht es wieder. Das Profilbild erscheint auch unten in der Seitenleiste, wenn Ihr Benutzerzugang mit einem Mitglied verknüpft ist.
+
 - **Stammdaten, Adresse, Kontakt** – E-Mail und Telefon sind direkt anklickbar.
 - **Vereinszugehörigkeit** – alle Mitgliedschaftsperioden (z. B. „01.04.2010 – laufend“).
 - **Vorstandsfunktionen** – aktuelle Funktionen mit Beginn (siehe 5.5).
@@ -877,6 +879,8 @@ Im Mitgliederbereich können sich **alle Mitglieder** selbst anmelden – ganz o
 Mitglieder können Vorname, Nachname, Straße, PLZ und ihre **Telefonnummern** selbst aktualisieren und mit **Änderungen speichern** sichern. Der Ort ergibt sich aus der PLZ. E-Mail-Adresse und Geburtsdatum können nur vom Verein geändert werden.
 
 ### 13.3 Meine Beiträge
+Ganz oben können Mitglieder unter **Profilbild** mit **Foto hochladen** bzw. **Foto ändern** ein eigenes Bild wählen und den Ausschnitt selbst festlegen (wie in Kapitel 5.3 beschrieben) oder es mit **Foto entfernen** löschen. Der Vorstand sieht das Bild auf der Mitgliedsseite.
+
 
 ![Meine Beiträge](bilder/41-portal-beitraege.png)
 

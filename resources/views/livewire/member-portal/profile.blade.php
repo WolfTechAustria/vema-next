@@ -6,6 +6,24 @@
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
         <div class="border-b border-slate-200 px-6 py-4">
+            <h2 class="text-lg font-semibold text-slate-900">
+                Profilbild
+            </h2>
+            <p class="mt-1 text-sm text-slate-500">
+                Dein Bild sieht der Vorstand in der Vereinsverwaltung.
+            </p>
+        </div>
+
+        <div class="p-6">
+            <livewire:members.profile-photo context="portal" />
+        </div>
+
+    </div>
+
+
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+        <div class="border-b border-slate-200 px-6 py-4">
 
             <h2 class="text-lg font-semibold text-slate-900">
                 Persönliche Daten

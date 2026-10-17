@@ -37,7 +37,16 @@
     $isMember = $memberAccount !== null;
     $isInternal = $webUser !== null;
 
-    $portalMember = $memberAccount?->member;
+    /*
+     * Im Mitgliederbereich gilt das gewählte Profil (Familien mit gemeinsamer
+     * E-Mail), sonst das Mitglied des Kontos.
+     */
+    $portalMember = $isMember
+        ? (\App\Models\Member::query()->whereKey(session('active_member_id'))->first() ?? $memberAccount->member)
+        : null;
+
+    $avatarUrl = null;
+    $avatarInitials = '';
 
     if ($isMember) {
 
@@ -45,6 +54,9 @@
             ?: $memberAccount->email;
 
         $displaySubline = $memberAccount->email;
+
+        $avatarUrl = app(\App\Services\MemberPhotoService::class)->url($portalMember, 'portal');
+        $avatarInitials = $portalMember?->initials() ?: mb_strtoupper(mb_substr($memberAccount->email, 0, 1));
 
     } elseif ($isInternal) {
 
@@ -56,6 +68,9 @@
         $displaySubline =
             $webUser->username
             ?? '';
+
+        $avatarUrl = app(\App\Services\MemberPhotoService::class)->url($webUser->member, 'staff');
+        $avatarInitials = $webUser->member?->initials() ?: mb_strtoupper(mb_substr((string) $webUser->username, 0, 1));
 
     } else {
 
@@ -461,16 +476,21 @@
         {{-- Benutzerbereich --}}
         <div class="shrink-0 border-t border-slate-200 p-4">
 
-            <div class="mb-3 px-3">
+            <div class="mb-3 flex items-center gap-3 px-3">
 
-                <div class="truncate text-sm font-semibold text-slate-900">
-                    {{ $displayName }}
-                </div>
+                @if($isMember || $isInternal)
+                    <x-member-avatar
+                        :url="$avatarUrl"
+                        :initials="$avatarInitials"
+                        :name="$displayName"
+                        size="h-9 w-9 text-xs"
+                    />
+                @endif
 
-                @if($displaySubline)
+                <div class="min-w-0">
 
-                    <div class="truncate text-xs text-slate-500">
-                        {{ $displaySubline }}
+                    <div class="truncate text-sm font-semibold text-slate-900">
+                        {{ $displayName }}
                     </div>
 
                 @endif
@@ -559,7 +579,15 @@
 
                     </form>
 
-                @endif
+                    @if($displaySubline)
+
+                        <div class="truncate text-xs text-slate-500">
+                            {{ $displaySubline }}
+                        </div>
+
+                    @endif
+
+                </div>
 
 
             @elseif($isInternal)

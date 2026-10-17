@@ -39,6 +39,19 @@ class Member extends Model
         return trim($this->name.' '.$this->surname);
     }
 
+    /**
+     * Initialen für den Avatar ohne Profilbild, z. B. „AH“.
+     */
+    public function initials(): string
+    {
+        return mb_strtoupper(mb_substr($this->name ?? '', 0, 1).mb_substr($this->surname ?? '', 0, 1));
+    }
+
+    public function hasPhoto(): bool
+    {
+        return filled($this->photo_path);
+    }
+
     public function emails()
     {
         return $this->hasMany(

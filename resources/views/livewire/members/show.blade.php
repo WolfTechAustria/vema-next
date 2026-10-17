@@ -7,10 +7,7 @@
 
         <div class="flex items-center gap-4">
 
-            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-200 text-xl font-bold text-slate-600">
-                {{ mb_strtoupper(mb_substr($member->name ?? '', 0, 1)) }}
-                {{ mb_strtoupper(mb_substr($member->surname ?? '', 0, 1)) }}
-            </div>
+            <livewire:members.profile-photo :member="$member" context="staff" :key="'profile-photo-'.$member->memberID" />
 
             <div>
                 <div class="flex items-center gap-3">

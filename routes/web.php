@@ -13,6 +13,7 @@ use App\Http\Controllers\MemberCalendarController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberFileController;
 use App\Http\Controllers\MemberPortalDocumentController;
+use App\Http\Controllers\MemberPhotoController;
 use App\Http\Controllers\MembershipFeePrescriptionController;
 use App\Http\Controllers\UserManualController;
 use App\Livewire\Admin\Settings\Documents;
@@ -123,6 +124,9 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/duty-plan/volunteers', DutyPlanVolunteers::class)
         ->middleware('feature:duty_plan')
         ->name('duty-plan.volunteers');
+    Route::get('/members/{member}/photo', [MemberPhotoController::class, 'show'])
+        ->name('members.photo');
+
 
     Route::livewire('/duty-plan/absences', DutyPlanAbsences::class)
         ->middleware('feature:duty_plan')
@@ -318,3 +322,6 @@ Route::get('/calendar/duty/{token}.ics', [MemberCalendarController::class, 'show
 
 Route::get('/branding/logo', [BrandingController::class, 'logo'])
     ->name('branding.logo');
+
+    Route::get('/member/photo', [MemberPhotoController::class, 'own'])
+        ->name('member.photo');
