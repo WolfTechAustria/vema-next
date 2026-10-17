@@ -369,6 +369,97 @@
                 </div>
 
 
+                @feature('homepage')
+                    @if($webUser?->hasAnyRole(['admin', 'homepage']))
+                        <div
+                            x-data="{ open: {{ request()->routeIs('homepage-admin.*') ? 'true' : 'false' }} }"
+                            class="space-y-1"
+                        >
+
+                            <button
+                                type="button"
+                                @click="open = !open"
+                                class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition
+                                {{ request()->routeIs('homepage-admin.*')
+                                    ? 'bg-slate-900 text-white'
+                                    : 'text-slate-700 hover:bg-slate-100' }}"
+                            >
+                                <span class="flex items-center gap-3">
+                                    <span>⌂</span>
+                                    Homepage
+                                </span>
+
+                                <svg
+                                    class="h-4 w-4 transition-transform duration-200"
+                                    :class="open ? 'rotate-180' : ''"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <div
+                                x-show="open"
+                                x-collapse
+                                x-cloak
+                                class="space-y-1 pl-6"
+                            >
+                                <a
+                                    href="{{ route('homepage-admin.posts.index') }}"
+                                    wire:navigate
+                                    class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+                                    {{ request()->routeIs('homepage-admin.posts.*')
+                                        ? 'bg-slate-100 text-slate-900'
+                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                                >
+                                    <span>✎</span>
+                                    Beiträge
+                                </a>
+
+                                <a
+                                    href="{{ route('homepage-admin.pages.index') }}"
+                                    wire:navigate
+                                    class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+                                    {{ request()->routeIs('homepage-admin.pages.*', 'homepage-admin.about')
+                                        ? 'bg-slate-100 text-slate-900'
+                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                                >
+                                    <span>▤</span>
+                                    Seiten
+                                </a>
+
+                                <a
+                                    href="{{ route('homepage-admin.content') }}"
+                                    wire:navigate
+                                    class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+                                    {{ request()->routeIs('homepage-admin.content')
+                                        ? 'bg-slate-100 text-slate-900'
+                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                                >
+                                    <span>☰</span>
+                                    Inhalte
+                                </a>
+
+                                <a
+                                    href="{{ route('homepage-admin.settings') }}"
+                                    wire:navigate
+                                    class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+                                    {{ request()->routeIs('homepage-admin.settings')
+                                        ? 'bg-slate-100 text-slate-900'
+                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                                >
+                                    <span>⚙</span>
+                                    Gestaltung
+                                </a>
+                            </div>
+
+                        </div>
+                    @endif
+                @endfeature
+
+
                 <a
                     href="#"
                     class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400"
@@ -493,7 +584,15 @@
                         {{ $displayName }}
                     </div>
 
-                @endif
+                    @if($displaySubline)
+
+                        <div class="truncate text-xs text-slate-500">
+                            {{ $displaySubline }}
+                        </div>
+
+                    @endif
+
+                </div>
 
             </div>
 
@@ -579,15 +678,7 @@
 
                     </form>
 
-                    @if($displaySubline)
-
-                        <div class="truncate text-xs text-slate-500">
-                            {{ $displaySubline }}
-                        </div>
-
-                    @endif
-
-                </div>
+                @endif
 
 
             @elseif($isInternal)

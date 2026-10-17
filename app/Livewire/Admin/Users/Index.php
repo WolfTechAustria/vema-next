@@ -230,6 +230,31 @@ class Index extends Component
         }
     }
 
+    public function toggleHomepage(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+
+        if ($user->hasRole('homepage')) {
+            $user->removeRole('homepage');
+
+            ActivityLogger::log(
+                'user.homepage_revoked',
+                'Benutzer "'.$user->username.'" wurde das Recht zur Homepage-Verwaltung entzogen.',
+                'User',
+                $user->id
+            );
+        } else {
+            $user->assignRole('homepage');
+
+            ActivityLogger::log(
+                'user.homepage_granted',
+                'Benutzer "'.$user->username.'" darf die Homepage verwalten.',
+                'User',
+                $user->id
+            );
+        }
+    }
+
     public function resendInvite(int $userId): void
     {
         $user = User::findOrFail($userId);

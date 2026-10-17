@@ -48,6 +48,12 @@ it('renders every staff page on an empty database', function (string $routeName)
     'invoices.create',
     'invoice-recipients.index',
     'invoice-articles.index',
+    'homepage-admin.posts.index',
+    'homepage-admin.posts.create',
+    'homepage-admin.pages.index',
+    'homepage-admin.settings',
+    'homepage-admin.content',
+    'homepage-admin.about',
 ]);
 
 it('renders the member login on an empty database', function () {

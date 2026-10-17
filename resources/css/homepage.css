@@ -1,0 +1,48 @@
+/* Öffentliche Vereinshomepage — eigenes Stylesheet, getrennt von VEMA. */
+@import 'tailwindcss' source(none);
+
+@source '../views/homepage';
+
+@theme inline {
+    --color-brand: var(--hp-brand, #1d4ed8);
+    --color-brand-dark: color-mix(in oklab, var(--hp-brand, #1d4ed8) 55%, black);
+    --color-brand-deep: color-mix(in oklab, var(--hp-brand, #1d4ed8) 35%, black);
+    --color-brand-soft: color-mix(in oklab, var(--hp-brand, #1d4ed8) 10%, white);
+    --color-accent: var(--hp-accent, #d7261e);
+}
+
+@theme {
+    --font-serif: Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Text aus dem Editor (Beiträge, Seiten, Über uns) */
+@layer components {
+    .hp-content { @apply text-[17px] leading-relaxed; }
+    .hp-content > * + * { @apply mt-4; }
+    .hp-content h2 { @apply mt-8 text-2xl font-bold; }
+    .hp-content h3 { @apply mt-6 text-xl font-semibold; }
+    .hp-content a { @apply text-brand underline underline-offset-2; }
+    .hp-content strong { @apply font-semibold; }
+    .hp-content blockquote { @apply border-l-4 border-brand pl-4 italic opacity-90; }
+    .hp-content ol { @apply list-decimal space-y-1 pl-6; }
+    .hp-content ul { @apply list-disc space-y-1 pl-6; }
+    /* Quill 2 speichert Aufzählungen als <ol><li data-list="bullet"> */
+    .hp-content ol:has(> li[data-list='bullet']) { @apply list-disc; }
+    /* Nummerierte Liste als Schritte mit Kreis-Nummern (Abschnitt „Text mit Info-Box“) */
+    .hp-steps .hp-content ol:not(:has(> li[data-list='bullet'])) { @apply list-none pl-0; counter-reset: hp-step; }
+    .hp-steps .hp-content ol:not(:has(> li[data-list='bullet'])) > li { @apply relative my-4 pl-12; counter-increment: hp-step; }
+    .hp-steps .hp-content ol:not(:has(> li[data-list='bullet'])) > li::before {
+        @apply absolute left-0 -top-0.5 grid h-8 w-8 place-items-center rounded-full bg-brand font-bold text-white;
+        content: counter(hp-step);
+    }
+    /* Vorlage „Verein“: Überschriften im Text in der dunklen Vereinsfarbe */
+    .hp-verein .hp-content :is(h2, h3) { @apply leading-[1.2] tracking-[-.01em] text-brand-deep; }
+    .hp-verein .hp-content h2 { @apply mt-[1.8em] text-[clamp(1.4rem,3vw,1.9rem)]; }
+    .hp-verein .hp-content h2:first-child { @apply mt-0; }
+
+    /* Erster Absatz als Einleitung (Vorlage „Verein“, Über uns) */
+    .hp-lead > p:first-child { @apply text-[1.25rem] font-semibold text-brand-deep; }
+    .hp-content .ql-align-center { @apply text-center; }
+    .hp-content .ql-align-right { @apply text-right; }
+}

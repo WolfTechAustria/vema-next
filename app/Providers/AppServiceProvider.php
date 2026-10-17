@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Enums\Feature;
 use App\Http\Middleware\EnsureFeatureEnabled;
+use App\Http\Middleware\EnsureUserCanManageHomepage;
 use App\Services\ClubMailSender;
 use App\Services\DemoMode;
+use App\Services\HomepageHosts;
 use App\Services\PlanEntitlements;
 use App\Services\TenantManager;
 use Carbon\CarbonImmutable;
@@ -29,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(TenantManager::class);
         $this->app->scoped(ClubMailSender::class);
         $this->app->scoped(PlanEntitlements::class);
+        $this->app->scoped(HomepageHosts::class);
     }
 
     /**
@@ -52,7 +55,7 @@ class AppServiceProvider extends ServiceProvider
         Blade::if('feature', fn (string $feature): bool => app(PlanEntitlements::class)->allows(Feature::from($feature)));
 
         // Auch Livewire-Aktionen auf einer bereits geöffneten Seite prüfen.
-        Livewire::addPersistentMiddleware([EnsureFeatureEnabled::class]);
+        Livewire::addPersistentMiddleware([EnsureFeatureEnabled::class, EnsureUserCanManageHomepage::class]);
     }
 
     /**

@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Middleware\EnsureFeatureEnabled;
+use App\Http\Middleware\EnsureHomepageIsPublished;
 use App\Http\Middleware\EnsureStaffAccountIsActive;
+use App\Http\Middleware\EnsureUserCanManageHomepage;
 use App\Http\Middleware\EnsureUserCanManageInvoices;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\IdentifyTenant;
+use App\Http\Middleware\ServeHomepageHost;
 use App\Http\Middleware\UseDemoDatabase;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,16 +22,22 @@ return Application::configure(basePath: dirname(__DIR__))
         web: [
             __DIR__.'/../routes/central.php',
             __DIR__.'/../routes/web.php',
+            __DIR__.'/../routes/homepage.php',
         ],
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Eigene Domain einer Vereinshomepage: vor dem Routing auf /site umleiten.
+        $middleware->prepend(ServeHomepageHost::class);
+
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
             'active.staff' => EnsureStaffAccountIsActive::class,
             'invoices' => EnsureUserCanManageInvoices::class,
             'feature' => EnsureFeatureEnabled::class,
+            'homepage.manage' => EnsureUserCanManageHomepage::class,
+            'homepage.published' => EnsureHomepageIsPublished::class,
         ]);
 
         // Plattform-Admin hat eigene Login-/Startseite, sonst wie bisher.

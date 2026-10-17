@@ -7,13 +7,14 @@ use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\CashBookController;
 use App\Http\Controllers\CircularController;
 use App\Http\Controllers\DemoModeController;
+use App\Http\Controllers\HomepagePreviewController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MemberAuthController;
 use App\Http\Controllers\MemberCalendarController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberFileController;
-use App\Http\Controllers\MemberPortalDocumentController;
 use App\Http\Controllers\MemberPhotoController;
+use App\Http\Controllers\MemberPortalDocumentController;
 use App\Http\Controllers\MembershipFeePrescriptionController;
 use App\Http\Controllers\UserManualController;
 use App\Livewire\Admin\Settings\Documents;
@@ -25,6 +26,12 @@ use App\Livewire\DutyPlan\Index as DutyPlanIndex;
 use App\Livewire\DutyPlan\Volunteers as DutyPlanVolunteers;
 use App\Livewire\Events\Index as EventsIndex;
 use App\Livewire\ExternalContacts\Index;
+use App\Livewire\Homepage\Content as HomepageContent;
+use App\Livewire\Homepage\Pages\Index as HomepagePagesIndex;
+use App\Livewire\Homepage\Posts\Edit as HomepagePostsEdit;
+use App\Livewire\Homepage\Posts\Index as HomepagePostsIndex;
+use App\Livewire\Homepage\Sections as HomepageSections;
+use App\Livewire\Homepage\Settings as HomepageSettings;
 use App\Livewire\Invoices\Articles\Index as InvoiceArticlesIndex;
 use App\Livewire\Invoices\Create as InvoicesCreate;
 use App\Livewire\Invoices\Index as InvoicesIndex;
@@ -117,6 +124,9 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::get('/member-files/{memberFile}', [MemberFileController::class, 'show'])
         ->name('member-files.show');
 
+    Route::get('/members/{member}/photo', [MemberPhotoController::class, 'show'])
+        ->name('members.photo');
+
     Route::livewire('/duty-plan', DutyPlanIndex::class)
         ->middleware('feature:duty_plan')
         ->name('duty-plan.index');
@@ -124,9 +134,6 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/duty-plan/volunteers', DutyPlanVolunteers::class)
         ->middleware('feature:duty_plan')
         ->name('duty-plan.volunteers');
-    Route::get('/members/{member}/photo', [MemberPhotoController::class, 'show'])
-        ->name('members.photo');
-
 
     Route::livewire('/duty-plan/absences', DutyPlanAbsences::class)
         ->middleware('feature:duty_plan')
@@ -203,6 +210,38 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/skills', App\Livewire\Skills\Index::class)
         ->middleware('feature:duty_plan')
         ->name('skills.index');
+
+    Route::middleware(['homepage.manage', 'feature:homepage'])
+        ->prefix('homepage')
+        ->name('homepage-admin.')
+        ->group(function () {
+            Route::livewire('/posts', HomepagePostsIndex::class)
+                ->name('posts.index');
+
+            Route::livewire('/posts/create', HomepagePostsEdit::class)
+                ->name('posts.create');
+
+            Route::livewire('/posts/{post}/edit', HomepagePostsEdit::class)
+                ->name('posts.edit');
+
+            Route::get('/posts/{post}/preview', [HomepagePreviewController::class, 'post'])
+                ->name('posts.preview');
+
+            Route::livewire('/pages', HomepagePagesIndex::class)
+                ->name('pages.index');
+
+            Route::livewire('/pages/{page}/sections', HomepageSections::class)
+                ->name('pages.sections');
+
+            Route::livewire('/about', HomepageSections::class)
+                ->name('about');
+
+            Route::livewire('/settings', HomepageSettings::class)
+                ->name('settings');
+
+            Route::livewire('/content', HomepageContent::class)
+                ->name('content');
+        });
 
     Route::livewire('/users', App\Livewire\Admin\Users\Index::class)
         ->middleware('admin')
@@ -314,6 +353,9 @@ Route::middleware(['auth:member', 'feature:member_portal'])->group(function () {
 
     Route::get('/member/documents/{memberFile}', [MemberPortalDocumentController::class, 'memberFile'])
         ->name('member.documents.file');
+
+    Route::get('/member/photo', [MemberPhotoController::class, 'own'])
+        ->name('member.photo');
 });
 
 // Pfad bleibt aus Kompatibilität ".../duty/...", damit bestehende Abos weiterlaufen.
@@ -322,6 +364,3 @@ Route::get('/calendar/duty/{token}.ics', [MemberCalendarController::class, 'show
 
 Route::get('/branding/logo', [BrandingController::class, 'logo'])
     ->name('branding.logo');
-
-    Route::get('/member/photo', [MemberPhotoController::class, 'own'])
-        ->name('member.photo');

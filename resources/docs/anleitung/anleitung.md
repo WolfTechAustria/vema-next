@@ -23,7 +23,8 @@ Version: Oktober 2026
 13. [Der Mitgliederbereich (Portal für Mitglieder)](#13-der-mitgliederbereich)
 14. [Automatische Abläufe im Hintergrund](#14-automatische-abläufe-im-hintergrund)
 15. [VEMA auf vemat.at: Registrierung, Pakete und Testphase](#15-vema-auf-vematat-registrierung-pakete-und-testphase)
-16. [Häufige Fragen und Tipps](#16-häufige-fragen-und-tipps)
+16. [Vereinshomepage](#16-vereinshomepage)
+17. [Häufige Fragen und Tipps](#17-häufige-fragen-und-tipps)
 
 > **Hinweis zu den Abbildungen:** Alle Screenshots zeigen den fiktiven Verein „Schützengilde Musterdorf“ mit erfundenen Demodaten. Namen, Adressen und Beträge haben keinen Bezug zu echten Personen.
 
@@ -54,6 +55,7 @@ Welche Menüpunkte Sie sehen, hängt von Ihrer Rolle ab:
 |---|---|
 | **Mitarbeiter** (ohne Zusatzrolle) | Dashboard, Mitglieder, Termine, Dienstplan, Mitgliedsbeiträge und Kommunikation nutzen |
 | **Kassier** | zusätzlich **Kassabuch** und **Rechnungen** |
+| **Homepage** | zusätzlich **Homepage** (Beiträge, Seiten, Gestaltung) |
 | **Admin** | alles, zusätzlich **Einstellungen**, **Benutzerverwaltung** und **Aktivitätsprotokoll** |
 
 Versucht jemand eine Seite ohne Berechtigung aufzurufen, erscheint die Meldung „Diese Seite ist nur für Kassier und Administratoren zugänglich“ bzw. „… nur für Administratoren zugänglich“.
@@ -189,9 +191,9 @@ Mit **Mitglied anlegen** speichern.
 
 Die Detailseite zeigt alle Informationen zu einem Mitglied.
 
-![Detailseite eines Mitglieds](bilder/06-mitglied-detail.png)
-
 **Profilbild:** Links neben dem Namen steht das Profilbild – oder, solange keines hinterlegt ist, die Initialen. Ein Klick auf das Bild (kleines Kamera-Symbol) öffnet die Dateiauswahl (JPG, PNG oder WEBP). Danach legen Sie den Ausschnitt selbst fest: Bild verschieben, mit Mausrad, zwei Fingern oder **+ / −** zoomen, mit **↻** drehen, dann **Übernehmen**. VEMA speichert das Bild quadratisch in 400 × 400 Pixel; Ortsangaben und andere Metadaten aus Handyfotos werden dabei entfernt. **Entfernen** unter dem Bild löscht es wieder. Das Profilbild erscheint auch unten in der Seitenleiste, wenn Ihr Benutzerzugang mit einem Mitglied verknüpft ist.
+
+![Detailseite eines Mitglieds](bilder/06-mitglied-detail.png)
 
 - **Stammdaten, Adresse, Kontakt** – E-Mail und Telefon sind direkt anklickbar.
 - **Vereinszugehörigkeit** – alle Mitgliedschaftsperioden (z. B. „01.04.2010 – laufend“).
@@ -832,6 +834,7 @@ Leere Felder verwenden die Einstellungen des Servers.
 - den **Status** zwischen *Aktiv* und *Gesperrt* umschalten (sich selbst kann man nicht sperren),
 - die Rolle **Admin** / *Mitarbeiter* vergeben (der letzte Admin kann seine Rechte nicht verlieren),
 - die Rolle **Kassier** vergeben oder entziehen,
+- die Rolle **Homepage** vergeben oder entziehen (Kapitel 16.7),
 - mit **Link erneut senden** eine neue Einladung bzw. einen Passwort-Link verschicken.
 
 > **Vereine auf vemat.at:** Die Zahl der aktiven Vorstandszugänge hängt vom Paket ab. Ist sie erreicht, können keine weiteren Benutzer angelegt oder entsperrt werden – sperren Sie bei Bedarf einen nicht mehr benötigten Zugang.
@@ -876,11 +879,11 @@ Im Mitgliederbereich können sich **alle Mitglieder** selbst anmelden – ganz o
 
 ![Mein Profil](bilder/40-portal-profil.png)
 
+Ganz oben können Mitglieder unter **Profilbild** mit **Foto hochladen** bzw. **Foto ändern** ein eigenes Bild wählen und den Ausschnitt selbst festlegen (wie in Kapitel 5.3 beschrieben) oder es mit **Foto entfernen** löschen. Der Vorstand sieht das Bild auf der Mitgliedsseite.
+
 Mitglieder können Vorname, Nachname, Straße, PLZ und ihre **Telefonnummern** selbst aktualisieren und mit **Änderungen speichern** sichern. Der Ort ergibt sich aus der PLZ. E-Mail-Adresse und Geburtsdatum können nur vom Verein geändert werden.
 
 ### 13.3 Meine Beiträge
-Ganz oben können Mitglieder unter **Profilbild** mit **Foto hochladen** bzw. **Foto ändern** ein eigenes Bild wählen und den Ausschnitt selbst festlegen (wie in Kapitel 5.3 beschrieben) oder es mit **Foto entfernen** löschen. Der Vorstand sieht das Bild auf der Mitgliedsseite.
-
 
 ![Meine Beiträge](bilder/41-portal-beitraege.png)
 
@@ -976,7 +979,7 @@ Jedes Paket enthält alles aus den kleineren Paketen. **Mitglieder, Beiträge, K
 |---|---|---|---|
 | **Starter** (kostenlos) | bis 10 | 1 | – |
 | **Basis** | bis 50 | 2 | Belegablage im Kassabuch, Eigene Vorlagen & Briefpapier |
-| **Verein** | bis 150 | 3 | Dienstplan, Rechnungen, Empfängergruppen & externe Kontakte, Vereinstermine |
+| **Verein** | bis 150 | 3 | Dienstplan, Rechnungen, Empfängergruppen & externe Kontakte, Vereinstermine, Vereinshomepage mit News |
 | **Verein Plus** | bis 500 | 10 | Mitgliederportal, Aktivitätsprotokoll, Testmodus |
 | **Großverein / Verband** | unbegrenzt | unbegrenzt | alles (individuelles Angebot) |
 
@@ -997,7 +1000,148 @@ Welches Paket gebucht ist, was enthalten ist und wie viel davon genutzt wird, se
 
 ---
 
-## 16. Häufige Fragen und Tipps
+## 16. Vereinshomepage
+
+*Nur für Admins und Benutzer mit der Rolle **Homepage**.* Bei Vereinen auf vemat.at ab Paket „Verein“.
+
+VEMA erstellt aus Ihren Inhalten eine öffentliche Homepage für den Verein. Sie wählen eine von vier Vorlagen und schreiben News-Beiträge direkt in VEMA – ohne zusätzliches Programm. Alle Einstellungen finden Sie im Menü unter **Homepage**.
+
+Die Homepage besteht aus diesen Seiten:
+
+| Seite | Inhalt |
+|---|---|
+| **Start** | Überschrift, Begrüßungstext und Titelbild, darunter die neuesten Beiträge (Vorlage „Verein“ zusätzlich Ankündigung, Kacheln und Kennzahlen, Kapitel 16.5) |
+| **News** | alle veröffentlichten Beiträge, neueste zuerst, mit Filter nach Jahr |
+| **Über uns** | freier Text und Abschnitte (nur sichtbar, wenn etwas eingetragen ist, Kapitel 16.4) |
+| **Vorstand** | automatisch aus den aktuellen Vorstandsfunktionen der Mitglieder (Kapitel 5.5) |
+| **Kontakt** | Anschrift, E-Mail, Telefon und WhatsApp-Community aus den Vereinseinstellungen |
+| **Eigene Seiten** | z. B. Impressum, Datenschutz, Training, „Mitglied werden“ – auch aus Abschnitten aufgebaut |
+
+### 16.1 Gestaltung und Einstellungen
+
+Unter **Homepage → Gestaltung**:
+
+1. **Vorlage** wählen:
+   - **Klassisch** – ruhig und seriös, Serifenschrift, News als Liste.
+   - **Modern** – hell und luftig, großes Titelbild, News als Karten.
+   - **Sportlich** – kräftig, dunkler Kopfbereich, große News-Kacheln.
+   - **Verein** – frisch und übersichtlich: Titelbild mit Farbverlauf, Ankündigung, Info-Kacheln, News-Karten, Kennzahlen, farbige Seitenköpfe und eine ausführliche Fußzeile. Die zusätzlichen Inhalte pflegen Sie unter **Homepage → Inhalte** (Kapitel 16.5).
+2. **Hauptfarbe** und **Akzentfarbe** festlegen, z. B. die Vereinsfarben. Die Akzentfarbe hebt Datum, aktiven Menüpunkt und Seitenköpfe hervor (Vorlage „Verein“). Die Vorschaubilder der Vorlagen zeigen beide sofort.
+3. Unter **Startseite** **Überschrift**, **Begrüßungstext** und **Titelbild** eintragen. Das Titelbild wird beim Hochladen gespeichert.
+4. Unter **Seiten & Daten** festlegen, ob **Kontaktseite** und **Vorstand** erscheinen und ob die Vorstandsseite **Profilbilder** zeigt.
+5. Den Text für **Über uns** schreiben.
+6. **Einstellungen speichern**.
+
+Das Vereinslogo kommt automatisch aus den Vereinseinstellungen (Kapitel 12).
+
+> **Datenschutz:** Auf der Vorstandsseite stehen nur Name und Funktion. Profilbilder erscheinen nur, wenn Sie **Mit Profilbildern** einschalten. Tun Sie das erst, wenn alle Vorstandsmitglieder der Veröffentlichung ihres Fotos zugestimmt haben.
+
+**Veröffentlichen:** Solange **Homepage ist öffentlich erreichbar** ausgeschaltet ist, sehen nur angemeldete Homepage-Verantwortliche die Seiten. Oben erscheint dann ein gelber Hinweis „Vorschau“. Über **Homepage ansehen** öffnen Sie die Homepage in einem neuen Fenster.
+
+*[Abbildung folgt: Homepage → Gestaltung mit den vier Vorlagen]*
+
+### 16.2 Beiträge schreiben
+
+Unter **Homepage → Beiträge** sehen Sie alle Beiträge mit Status, Datum und Anzahl der Bilder. Mit den Filtern **Veröffentlicht** und **Entwürfe** grenzen Sie die Liste ein.
+
+1. **Neuer Beitrag** klicken.
+2. **Titel** eingeben. Die **Adresse** (z. B. `/news/sommerfest-2026`) schlägt VEMA vor; Sie können sie ändern.
+3. Optional einen **Kurztext** eintragen. Er erscheint in der Übersicht und in Suchmaschinen. Ohne Kurztext nimmt VEMA den Anfang des Beitrags.
+4. Den **Text** schreiben: Überschriften, fett/kursiv, Links, Zitate und Aufzählungen.
+5. Unter **Bildergalerie** **Bilder auswählen** (JPG, PNG oder WebP, je max. 10 MB, mehrere auf einmal).
+6. Optional unter **Downloads** **PDF auswählen**, z. B. eine Ergebnisliste (je max. 20 MB). Die Bezeichnung können Sie ändern.
+7. **Status** wählen und **Beitrag anlegen** bzw. **Änderungen speichern**.
+
+**Status und Veröffentlichungsdatum:**
+
+- **Entwurf** – nur in VEMA sichtbar.
+- **Veröffentlicht** ohne Datum – sofort auf der Homepage.
+- **Veröffentlicht** mit Datum in der Zukunft – in der Liste als **Geplant** markiert und ab diesem Zeitpunkt automatisch sichtbar.
+
+**Vorschau** zeigt den Beitrag im Design der Homepage, auch als Entwurf.
+
+**Bildergalerie:** Das erste Bild ist das **Titelbild** des Beitrags. Mit **↑ nach vorne** und **↓** ändern Sie die Reihenfolge, mit **Löschen** entfernen Sie ein Bild. Bildunterschriften werden mit **Änderungen speichern** übernommen. Bei einem neuen Beitrag werden die ausgewählten Bilder beim Anlegen gespeichert.
+
+> **Hinweis:** Bilder werden beim Hochladen automatisch verkleinert und neu gespeichert. Dabei gehen versteckte Metadaten wie der Aufnahmeort (GPS) verloren – gewollt, aus Datenschutzgründen.
+
+*[Abbildung folgt: Beitrag bearbeiten mit Bildergalerie]*
+
+### 16.3 Eigene Seiten
+
+Unter **Homepage → Seiten** legen Sie weitere Seiten an:
+
+1. **Titel** eingeben. Die **Adresse** wird vorgeschlagen.
+2. Optional eine **Überschrift im Seitenkopf** eintragen.
+3. **Inhalt** schreiben – oder leer lassen und die Seite aus Abschnitten aufbauen (Kapitel 16.4).
+4. **Reihenfolge** festlegen (kleine Zahlen zuerst).
+5. **Im Menü anzeigen**: Ohne Häkchen erscheint die Seite nur als Link in der Fußzeile, z. B. das Impressum.
+6. **Veröffentlicht** anhaken und **Seite anlegen**.
+
+Die Adressen der festen Seiten (z. B. `news`, `vorstand`, `kontakt`) sind reserviert.
+
+**Überschrift im Seitenkopf:** Bei der Vorlage „Verein“ steht über jeder Seite ein farbiger Kopf. Ohne Eintrag zeigt er den Titel, mit Eintrag steht der Titel klein darüber – z. B. Titel „Training“, Überschrift „Jeden Montag ab 18 Uhr“.
+
+> **Hinweis:** Eine Homepage braucht in Österreich ein **Impressum** (Offenlegung nach Mediengesetz) und meist eine **Datenschutzerklärung**. Legen Sie beides als eigene Seiten an.
+
+### 16.4 Seiten aus Abschnitten aufbauen
+
+Eigene Seiten und „Über uns“ lassen sich aus **Abschnitten** zusammensetzen – wie mit einem Baukasten. Unter **Homepage → Seiten** klicken Sie bei einer Seite auf **Abschnitte**, für „Über uns“ auf **Abschnitte** in der grauen Zeile ganz oben.
+
+1. Links unter **Abschnitt hinzufügen** den passenden Baustein wählen.
+2. Rechts die Inhalte eintragen und **Abschnitt speichern**.
+3. Mit **↑** und **↓** die Reihenfolge ändern, mit **Löschen** entfernen.
+
+| Baustein | Wofür |
+|---|---|
+| **Text** | Überschrift und formatierter Text |
+| **Text mit Bild** | Text neben einem Bild; das Bild steht wahlweise links oder rechts |
+| **Zahlen-Kacheln** | bis zu vier Kacheln mit großer Zahl, Titel und Text, z. B. „8 – Elektronische Stände“ |
+| **Text mit Info-Box** | Text mit hervorgehobener Box, z. B. Mitgliedsbeitrag „€ 40,– pro Saison“ mit Button zur Beitrittserklärung. Nummerierte Listen im Text erscheinen als Schritte mit Kreis-Nummern |
+| **Bilderpaar** | zwei Bilder nebeneinander mit Bildunterschrift |
+| **Aufruf mit Button** | kurzer Text mit Button, z. B. „Zum Mitgliederbereich“ |
+| **Vorstand** | Tabelle „Funktion – Namen“, automatisch aus den aktuellen Vorstandsfunktionen (Kapitel 5.5) |
+
+**Buttons** führen zu einem hochgeladenen **PDF**, zum **Mitgliederbereich** von VEMA oder zu einem **Link**. Links auf eigene Seiten der Homepage beginnen mit „/“, z. B. `/kontakt`.
+
+**Grauer Hintergrund:** Damit heben sich aufeinanderfolgende Abschnitte voneinander ab (am besten abwechselnd setzen).
+
+Der Inhalt einer Seite (bzw. der Text „Über uns“ unter **Gestaltung**) steht über den Abschnitten. Er kann auch leer bleiben.
+
+*[Abbildung folgt: Seitenabschnitte bearbeiten]*
+
+### 16.5 Inhalte der Vorlage „Verein“
+
+Unter **Homepage → Inhalte** pflegen Sie die zusätzlichen Elemente der Vorlage „Verein“ (bei anderen Vorlagen bleiben sie unsichtbar):
+
+- **Titelbereich:** eine Zeile über der Überschrift (z. B. „Sportschießen in Angerberg seit 1991“) und ein zweiter Button (z. B. „Probetraining“ → `/training`). Ohne Eintrag führt der zweite Button zur Kontaktseite.
+- **Ankündigung:** großes Banner unter dem Titelbereich mit Kennzeichnung (z. B. „Einladung“), Titel, Text, Bild und Button. Ist ein PDF hochgeladen, öffnet der Button das PDF, sonst den eingetragenen Link. Bild und PDF werden sofort gespeichert.
+- **Kacheln:** bis zu drei Kacheln mit kleiner Zeile, Titel, Text und Link. Sind alle leer, erscheinen automatisch Kacheln zu den Seiten im Menü.
+- **Kennzahlen:** dunkle Leiste am Ende der Startseite mit bis zu vier Zahlen, z. B. „1991 – gegründet“.
+- **Überschriften der Seitenköpfe** für News, Über uns, Vorstand und Kontakt sowie die **Bezeichnung der News im Menü** (z. B. „Aktuelles“).
+- **Kontakt & Fußzeile:** ein Text auf der Kontaktseite, eine **Info-Spalte** (z. B. „Training – Jeden Montag ab 18:00 Uhr“; erscheint in der Fußzeile und als Karte auf der Kontaktseite) und der Link **Mitgliederbereich** in der Fußzeile.
+
+Alle Änderungen mit **Inhalte speichern** übernehmen.
+
+> **Tipp:** Soll der Vorstand wie auf vielen Vereinsseiten unter „Über uns“ stehen, schalten Sie unter **Gestaltung** die eigene Vorstandsseite aus und fügen bei „Über uns“ den Abschnitt **Vorstand** hinzu.
+
+### 16.6 Eigene Domain
+
+Die Homepage ist zunächst unter der Adresse von VEMA mit `/site` erreichbar, z. B. `https://vema.mein-verein.at/site`. Damit sie unter einer eigenen Domain wie `www.mein-verein.at` erscheint:
+
+- **Eigene Installation:** Die Domain unter **Homepage → Gestaltung → Eigene Domain** eintragen (ohne `https://` und ohne `www.` – beide Varianten funktionieren). Die Domain muss per DNS auf den VEMA-Server zeigen und dort im Webserver samt SSL-Zertifikat eingerichtet sein.
+- **Vereine auf vemat.at:** Teilen Sie dem Support Ihre Wunschdomain mit. Nach der Einrichtung steht sie unter **Eigene Domain**.
+
+Unter der eigenen Domain ist **nur die Homepage** erreichbar – Anmeldung und Verwaltung laufen weiter über die bisherige VEMA-Adresse.
+
+### 16.7 Berechtigung „Homepage“
+
+Damit z. B. ein Pressewart Beiträge schreiben kann, ohne Admin zu sein, vergibt ein Admin in der **Benutzerverwaltung** die Rolle **Homepage** (Kapitel 12.3). Wer diese Rolle hat, darf Beiträge, Seiten, Inhalte und Gestaltung bearbeiten, aber keine anderen Admin-Bereiche öffnen.
+
+Alle Änderungen an der Homepage stehen im Aktivitätsprotokoll (Kapitel 12.4).
+
+---
+
+## 17. Häufige Fragen und Tipps
 
 **Ich sehe den Menüpunkt „Kassabuch“ oder „Rechnungen“ nicht.**
 Diese Bereiche sind Kassier und Admin vorbehalten. Wenden Sie sich an einen Admin. Bei Vereinen auf vemat.at kann ein Menüpunkt außerdem fehlen, weil die Funktion nicht im gebuchten Paket enthalten ist (Kapitel 15.2).

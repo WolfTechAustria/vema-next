@@ -145,6 +145,7 @@
                     <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
                     <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Admin</th>
                     <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Kassier</th>
+                    <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Homepage</th>
                     <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500"></th>
                 </tr>
                 </thead>
@@ -153,11 +154,11 @@
 
                 @foreach($users as $user)
                     <tr
-                        class="grid grid-cols-3 gap-x-2 gap-y-2 p-4 hover:bg-slate-50 md:table-row md:p-0"
+                        class="grid grid-cols-2 gap-x-2 gap-y-2 p-4 sm:grid-cols-4 hover:bg-slate-50 md:table-row md:p-0"
                         wire:key="user-{{ $user->id }}"
                     >
 
-                        <td class="col-span-3 md:table-cell md:px-6 md:py-4">
+                        <td class="col-span-2 sm:col-span-4 md:table-cell md:px-6 md:py-4">
                             <div class="font-medium text-slate-900">
                                 {{ $user->username }}
                                 @if($user->id === auth()->id())
@@ -174,7 +175,7 @@
                             {{ $user->member?->full_name ?? '–' }}
                         </td>
 
-                        <td class="col-span-3 -mt-2 break-all text-sm text-slate-500 md:mt-0 md:table-cell md:px-6 md:py-4 md:text-slate-600">
+                        <td class="col-span-2 sm:col-span-4 -mt-2 break-all text-sm text-slate-500 md:mt-0 md:table-cell md:px-6 md:py-4 md:text-slate-600">
                             {{ $user->email }}
                         </td>
 
@@ -214,7 +215,19 @@
                             </button>
                         </td>
 
-                        <td class="col-span-3 md:table-cell md:px-6 md:py-4 md:text-right">
+                        <td class="md:table-cell md:px-6 md:py-4 md:text-center">
+                            <div class="mb-1 text-xs text-slate-400 md:hidden">Homepage</div>
+                            <button
+                                type="button"
+                                wire:click="toggleHomepage({{ $user->id }})"
+                                class="inline-flex w-full justify-center rounded-full px-3 py-2 text-xs font-semibold md:w-auto md:py-1
+                                {{ $user->hasRole('homepage') ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500' }}"
+                            >
+                                {{ $user->hasRole('homepage') ? 'Homepage' : '–' }}
+                            </button>
+                        </td>
+
+                        <td class="col-span-2 sm:col-span-4 md:table-cell md:px-6 md:py-4 md:text-right">
                             <button
                                 type="button"
                                 wire:click="resendInvite({{ $user->id }})"
