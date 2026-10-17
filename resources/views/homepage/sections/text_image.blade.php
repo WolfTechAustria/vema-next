@@ -12,7 +12,9 @@
 
     @if($imageUrl)
         <div class="{{ $imageLeft ? 'md:order-1' : '' }}">
-            <img src="{{ $imageUrl }}" alt="{{ $section->heading ?? '' }}" loading="lazy" class="w-full rounded-xl shadow-[0_1px_2px_rgba(0,0,0,.05),0_4px_16px_rgba(0,0,0,.06)]">
+            <a href="{{ $imageUrl }}" data-lightbox="section-{{ $section->sectionID }}" data-caption="{{ $section->heading }}" class="block cursor-zoom-in">
+                <img src="{{ $imageUrl }}" alt="{{ $section->heading ?? '' }}" loading="lazy" class="w-full rounded-xl shadow-[0_1px_2px_rgba(0,0,0,.05),0_4px_16px_rgba(0,0,0,.06)]">
+            </a>
         </div>
     @endif
 </div>

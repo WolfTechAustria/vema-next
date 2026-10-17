@@ -1060,7 +1060,14 @@ Unter **Homepage → Beiträge** sehen Sie alle Beiträge mit Status, Datum und 
 
 **Vorschau** zeigt den Beitrag im Design der Homepage, auch als Entwurf.
 
-**Bildergalerie:** Das erste Bild ist das **Titelbild** des Beitrags. Mit **↑ nach vorne** und **↓** ändern Sie die Reihenfolge, mit **Löschen** entfernen Sie ein Bild. Bildunterschriften werden mit **Änderungen speichern** übernommen. Bei einem neuen Beitrag werden die ausgewählten Bilder beim Anlegen gespeichert.
+**Bildergalerie:** Das erste Bild ist das **Titelbild** des Beitrags. So tauschen Sie es nachträglich:
+
+- bei einem Bild der Galerie auf **Als Titelbild** klicken, oder
+- oben im Kasten **Titelbild** auf **Titelbild ersetzen** klicken und ein neues Bild hochladen.
+
+Das bisherige Titelbild bleibt in beiden Fällen in der Galerie. Mit **↑** und **↓** ändern Sie die Reihenfolge, mit **Löschen** entfernen Sie ein Bild. Bildunterschriften werden mit **Änderungen speichern** übernommen. Bei einem neuen Beitrag werden die ausgewählten Bilder beim Anlegen gespeichert.
+
+**Auf der Homepage** öffnet ein Klick auf ein Bild die Vollbild-Ansicht im selben Fenster. Mit den Pfeil-Buttons, den Pfeiltasten oder durch Wischen am Handy blättern Sie durch alle Bilder des Beitrags; **Esc** oder **×** schließt die Ansicht. Der Button oben rechts schaltet zusätzlich in den echten Vollbildmodus des Browsers. Dasselbe gilt für Bilder in Seitenabschnitten.
 
 > **Umstieg von WordPress:** Beiträge einer bisherigen WordPress-Seite übernimmt ein Administrator des Servers einmalig mit `php artisan homepage:import-wordpress https://mein-verein.at` (mit `--dry-run` zuerst nur anzeigen). Übernommen werden Text, Titelbild, Bilder und verlinkte PDFs; bereits übernommene Beiträge werden übersprungen.
 

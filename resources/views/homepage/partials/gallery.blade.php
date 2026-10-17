@@ -1,9 +1,14 @@
-{{-- Bildergalerie eines Beitrags; Klick öffnet das Großbild. --}}
-@if($images->count() > 1)
+{{-- Bildergalerie eines Beitrags (ohne Titelbild); Klick öffnet die Vollbild-Ansicht. --}}
+@if($images->isNotEmpty())
     <div class="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
         @foreach($images as $image)
             <figure>
-                <a href="{{ $imageUrls->postImage($image, 'gross') }}" target="_blank" rel="noopener" class="block overflow-hidden rounded-lg">
+                <a
+                    href="{{ $imageUrls->postImage($image, 'gross') }}"
+                    data-lightbox="{{ $group }}"
+                    data-caption="{{ $image->caption }}"
+                    class="block cursor-zoom-in overflow-hidden rounded-lg"
+                >
                     <img
                         src="{{ $imageUrls->postImage($image) }}"
                         alt="{{ $image->caption ?? '' }}"

@@ -144,6 +144,37 @@ describe('posts', function () {
         expect($post->images()->count())->toBe(1);
     });
 
+    it('changes the cover image afterwards', function () {
+        $post = Post::factory()->create();
+
+        $component = Livewire::test(PostsEdit::class, ['post' => $post])
+            ->set('newImages', [UploadedFile::fake()->image('eins.jpg'), UploadedFile::fake()->image('zwei.jpg'), UploadedFile::fake()->image('drei.jpg')]);
+
+        [$first, $second, $third] = $post->images()->get()->all();
+
+        $component->call('makeCover', $third->postImageID)->assertHasNoErrors();
+
+        expect($post->images()->pluck('postImageID')->all())->toBe([$third->postImageID, $first->postImageID, $second->postImageID])
+            ->and($post->fresh()->coverImage->postImageID)->toBe($third->postImageID)
+            ->and(ActivityLog::where('action', 'homepage.post_cover_changed')->exists())->toBeTrue();
+
+        $component->set('newCover', UploadedFile::fake()->image('neu.jpg', 1200, 800))->assertHasNoErrors();
+
+        $images = $post->images()->get();
+
+        expect($images)->toHaveCount(4)
+            ->and($images->first()->postImageID)->not->toBeIn([$first->postImageID, $second->postImageID, $third->postImageID])
+            ->and($images->get(1)->postImageID)->toBe($third->postImageID);
+    });
+
+    it('cannot make a foreign image the cover', function () {
+        $foreignImage = PostImage::factory()->create();
+
+        Livewire::test(PostsEdit::class, ['post' => Post::factory()->create()])
+            ->call('makeCover', $foreignImage->postImageID)
+            ->assertNotFound();
+    });
+
     it('rejects files that are not images', function () {
         Livewire::test(PostsEdit::class, ['post' => Post::factory()->create()])
             ->set('newImages', [UploadedFile::fake()->create('virus.pdf', 10, 'application/pdf')])

@@ -100,6 +100,19 @@ it('sanitizes post html on output', function () {
         ->assertDontSee('alert("x")', false);
 });
 
+it('opens gallery images in the lightbox instead of a new window', function (HomepageTemplate $template) {
+    enableHomepage(['template' => $template]);
+    $post = Post::factory()->create();
+    PostImage::factory()->count(3)->for($post)->sequence(fn ($sequence) => ['sort' => $sequence->index])->create();
+
+    $response = $this->get(route('homepage.posts.show', $post->slug))->assertOk();
+    $html = $response->getContent();
+
+    expect(substr_count($html, 'data-lightbox="post-'.$post->postID.'"'))->toBe(3)
+        ->and($html)->not->toContain('target="_blank" rel="noopener" class="block cursor-zoom-in')
+        ->and($html)->toContain('homepage-');
+})->with(HomepageTemplate::cases());
+
 it('serves images of published posts only', function () {
     enableHomepage();
     Storage::disk('local')->put('homepage/posts/1/a.jpg', 'gross');

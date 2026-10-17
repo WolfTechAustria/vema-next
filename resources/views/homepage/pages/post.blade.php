@@ -14,11 +14,18 @@
 
         @if($post->images->isNotEmpty())
             <figure class="mb-8">
-                <img
-                    src="{{ $imageUrls->postImage($post->images->first(), 'gross') }}"
-                    alt="{{ $post->images->first()->caption ?? '' }}"
-                    class="w-full rounded-xl object-cover"
+                <a
+                    href="{{ $imageUrls->postImage($post->images->first(), 'gross') }}"
+                    data-lightbox="post-{{ $post->postID }}"
+                    data-caption="{{ $post->images->first()->caption }}"
+                    class="block cursor-zoom-in"
                 >
+                    <img
+                        src="{{ $imageUrls->postImage($post->images->first(), 'gross') }}"
+                        alt="{{ $post->images->first()->caption ?? '' }}"
+                        class="w-full rounded-xl object-cover"
+                    >
+                </a>
 
                 @if($post->images->first()->caption)
                     <figcaption class="mt-2 text-sm opacity-70">{{ $post->images->first()->caption }}</figcaption>
@@ -34,6 +41,6 @@
 
         @include('homepage.partials.downloads', ['attachments' => $post->attachments])
 
-        @include('homepage.partials.gallery', ['images' => $post->images])
+        @include('homepage.partials.gallery', ['images' => $post->images->slice(1), 'group' => 'post-'.$post->postID])
     </article>
 @endsection

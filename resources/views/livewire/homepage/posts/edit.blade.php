@@ -178,6 +178,33 @@
                     </p>
                 </div>
 
+                @if($post)
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <div class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Titelbild</div>
+
+                        @if($images->isNotEmpty())
+                            <img src="{{ $imageUrls->postImage($images->first(), 'gross') }}" alt="" class="aspect-[16/10] w-full rounded-lg object-cover">
+                        @else
+                            <div class="flex aspect-[16/10] w-full items-center justify-center rounded-lg bg-white text-sm text-slate-400">Noch kein Titelbild</div>
+                        @endif
+
+                        <label class="mt-2 inline-block cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                            {{ $images->isNotEmpty() ? 'Titelbild ersetzen' : 'Titelbild hochladen' }}
+                            <input type="file" wire:model="newCover" accept="image/jpeg,image/png,image/webp" class="hidden">
+                        </label>
+
+                        <span wire:loading wire:target="newCover" class="ml-2 text-xs text-slate-500">Wird hochgeladen …</span>
+
+                        @error('newCover')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+
+                        @if($images->count() > 1)
+                            <p class="mt-2 text-xs text-slate-500">Oder unten bei einem Bild der Galerie auf „Als Titelbild“ klicken. Das bisherige Titelbild bleibt in der Galerie.</p>
+                        @endif
+                    </div>
+                @endif
+
                 <label class="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500 hover:border-slate-400">
                     <span class="font-medium text-slate-700">Bilder auswählen</span>
                     <span class="text-xs">JPG, PNG oder WebP, je max. 10 MB</span>
@@ -237,9 +264,10 @@
 
                                     <div class="flex items-center gap-3 text-xs">
                                         @if($loop->first)
-                                            <span class="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-600">Titelbild</span>
+                                            <span class="rounded-full bg-slate-900 px-2 py-0.5 font-medium text-white">Titelbild</span>
                                         @else
-                                            <button type="button" wire:click="moveImage({{ $image->postImageID }}, 'up')" class="text-slate-500 hover:text-slate-800">↑ nach vorne</button>
+                                            <button type="button" wire:click="makeCover({{ $image->postImageID }})" class="rounded-full border border-slate-300 px-2 py-0.5 font-medium text-slate-700 hover:bg-slate-50">Als Titelbild</button>
+                                            <button type="button" wire:click="moveImage({{ $image->postImageID }}, 'up')" class="text-slate-500 hover:text-slate-800" title="Nach vorne">↑</button>
                                         @endif
 
                                         @unless($loop->last)

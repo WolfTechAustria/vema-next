@@ -50,6 +50,11 @@ class Edit extends Component
     public array $newImages = [];
 
     /**
+     * Neues Titelbild, das vorne in die Galerie eingereiht wird.
+     */
+    public ?UploadedFile $newCover = null;
+
+    /**
      * Neu ausgewählte PDFs; bei neuen Beiträgen bis zum Speichern vorgehalten.
      *
      * @var array<int, UploadedFile>
@@ -254,8 +259,65 @@ class Edit extends Component
         $ordered = $images->values()->all();
         [$ordered[$index], $ordered[$target]] = [$ordered[$target], $ordered[$index]];
 
-        foreach ($ordered as $position => $image) {
-            $image->update(['sort' => $position + 1]);
+        $this->reorder(collect($ordered));
+    }
+
+    /**
+     * Macht ein vorhandenes Bild zum Titelbild (erste Stelle der Galerie).
+     */
+    public function makeCover(int $postImageID): void
+    {
+        $images = $this->ownedImages();
+        $cover = $images->firstWhere('postImageID', $postImageID);
+
+        abort_if($cover === null, 404);
+
+        $this->reorder($images->reject(fn (PostImage $image) => $image->is($cover))->prepend($cover));
+
+        ActivityLogger::log(
+            'homepage.post_cover_changed',
+            'Titelbild von Homepage-Beitrag „'.$this->post->title.'“ wurde geändert.',
+            'Post',
+            $this->post->postID
+        );
+
+        session()->flash('success', 'Titelbild wurde geändert.');
+    }
+
+    /**
+     * Lädt ein neues Titelbild hoch; das bisherige bleibt in der Galerie.
+     */
+    public function updatedNewCover(HomepageImageService $images): void
+    {
+        abort_if($this->post === null, 404);
+
+        $this->validate([
+            'newCover' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:'.HomepageImageService::MAX_SIZE_KB],
+        ], [], ['newCover' => 'Titelbild']);
+
+        try {
+            $cover = $images->storePostImage($this->post, $this->newCover);
+        } catch (RuntimeException $exception) {
+            $this->addError('newCover', $exception->getMessage());
+
+            return;
+        } finally {
+            $this->newCover = null;
+        }
+
+        $this->captions[$cover->postImageID] = '';
+        $this->makeCover($cover->postImageID);
+    }
+
+    /**
+     * @param  Collection<int, PostImage>  $ordered
+     */
+    private function reorder(Collection $ordered): void
+    {
+        foreach ($ordered->values() as $position => $image) {
+            if ($image->sort !== $position + 1) {
+                $image->update(['sort' => $position + 1]);
+            }
         }
     }
 

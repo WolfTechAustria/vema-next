@@ -27,6 +27,6 @@
     <link rel="icon" href="{{ $logoUrl }}">
 @endif
 
-@vite('resources/css/homepage.css')
+@vite(['resources/css/homepage.css', 'resources/js/homepage.js'])
 
 <style>:root { --hp-brand: {{ $settings->primary_color }}; --hp-accent: {{ $settings->accent_color }}; }</style>

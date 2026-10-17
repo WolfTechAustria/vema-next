@@ -20,7 +20,7 @@
                 <h1 class="mb-6 mt-1.5 break-words hyphens-auto text-[clamp(1.8rem,5vw,2.6rem)] font-bold leading-[1.2] tracking-[-.01em] text-brand-deep">{{ $post->title }}</h1>
 
                 @if($coverImage)
-                    <a href="{{ $imageUrls->postImage($coverImage, 'gross') }}" target="_blank" rel="noopener">
+                    <a href="{{ $imageUrls->postImage($coverImage, 'gross') }}" data-lightbox="post-{{ $post->postID }}" data-caption="{{ $coverImage->caption }}" class="block cursor-zoom-in">
                         <img src="{{ $imageUrls->postImage($coverImage, 'gross') }}" alt="{{ $coverImage->caption ?? $post->title }}" class="mb-7 max-h-[560px] w-full rounded-xl object-cover">
                     </a>
                 @endif
@@ -45,7 +45,7 @@
 
                 <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
                     @foreach($galleryImages as $image)
-                        <a href="{{ $imageUrls->postImage($image, 'gross') }}" target="_blank" rel="noopener" title="{{ $image->caption ?? '' }}">
+                        <a href="{{ $imageUrls->postImage($image, 'gross') }}" data-lightbox="post-{{ $post->postID }}" data-caption="{{ $image->caption }}" title="{{ $image->caption ?? '' }}" class="block cursor-zoom-in">
                             <img src="{{ $imageUrls->postImage($image) }}" alt="{{ $image->caption ?? '' }}" loading="lazy" class="aspect-square w-full rounded-lg object-cover transition hover:opacity-85">
                         </a>
                     @endforeach
