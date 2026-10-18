@@ -1128,15 +1128,26 @@ Eigene Seiten und „Über uns“ lassen sich aus **Abschnitten** zusammensetzen
 | **Text** | Überschrift und formatierter Text |
 | **Text mit Bild** | Text neben einem Bild; das Bild steht wahlweise links oder rechts |
 | **Zahlen-Kacheln** | bis zu vier Kacheln mit großer Zahl, Titel und Text, z. B. „8 – Elektronische Stände“ |
-| **Text mit Info-Box** | Text mit hervorgehobener Box, z. B. Mitgliedsbeitrag „€ 40,– pro Saison“ mit Button zur Beitrittserklärung. Nummerierte Listen im Text erscheinen als Schritte mit Kreis-Nummern |
+| **Text mit Info-Box** | Text mit hervorgehobener Box, z. B. Mitgliedsbeitrag „€ 40,– pro Saison“ mit Button zur Beitrittserklärung. Nummerierte Listen im Text erscheinen als Schritte mit Kreis-Nummern; der Rahmen der Box lässt sich abschalten |
 | **Bilderpaar** | zwei Bilder nebeneinander mit Bildunterschrift |
 | **Aufruf mit Button** | kurzer Text mit Button, z. B. „Zum Mitgliederbereich“ |
 | **Vorstand** | Tabelle „Funktion – Namen“, automatisch aus den aktuellen Vorstandsfunktionen (Kapitel 5.5). Hat jemand mehrere Funktionen, stehen sie in einer Zeile (z. B. „1. Schützenmeister & Kassier“); mehrere Personen mit derselben Funktion werden zusammengefasst |
 | **Termine** | die nächsten öffentlichen Vereinstermine (Anzahl 1–10) mit Link zur Seite „Termine“ |
+| **Titel mit Aufzählung** | Überschrift, optional ein Einleitungstext und Punkte mit fettem Stichwort und Text – als nummerierte Schritte, Punkte oder Häkchen (z. B. „So einfach geht’s“) |
+| **Info-Box** | eigenständige Box mit Titel, großer Angabe, Text und Button; **Rahmen anzeigen** lässt sich abschalten, z. B. wenn nur ein Button erscheinen soll |
+| **Zwei Spalten** | Rahmen für weitere Abschnitte links und rechts – z. B. links Text und Aufzählung, rechts eine Info-Box |
 
 **Buttons** führen zu einem hochgeladenen **PDF**, zum **Mitgliederbereich** von VEMA oder zu einem **Link**. Links auf eigene Seiten der Homepage beginnen mit „/“, z. B. `/kontakt`.
 
 **Grauer Hintergrund:** Damit heben sich aufeinanderfolgende Abschnitte voneinander ab (am besten abwechselnd setzen).
+
+**Abschnitte in Spalten anordnen:**
+
+1. Den Abschnitt **Zwei Spalten** hinzufügen und **Breite der Spalten** (gleich breit, links oder rechts breiter) sowie die **Ausrichtung** wählen.
+2. In der Liste erscheinen darunter die Bereiche **Links** und **Rechts**. Dort mit **+ Abschnitt hinzufügen** die Inhalte anlegen.
+3. Mit **↑** und **↓** die Reihenfolge innerhalb einer Spalte ändern, mit **⇄** einen Abschnitt in die andere Spalte legen.
+
+Abstand und grauer Hintergrund gelten für den ganzen Spalten-Abschnitt. Auf dem Handy stehen die Spalten untereinander. Wird der Spalten-Abschnitt gelöscht, werden alle Abschnitte darin mitgelöscht.
 
 **Abstand:** Mit *Kein*, *Klein*, *Normal* oder *Groß* legen Sie fest, wie viel Platz über und unter einem Abschnitt bleibt – z. B. *Klein*, damit zwei Abschnitte enger zusammenrücken.
 

@@ -35,6 +35,26 @@ class Sections extends Component
         'large' => 'Groß',
     ];
 
+    /**
+     * Breitenverhältnis der Spalten.
+     *
+     * @var array<string, string>
+     */
+    public const RATIOS = [
+        '1-1' => 'Gleich breit',
+        '2-1' => 'Links breiter',
+        '1-2' => 'Rechts breiter',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    public const LIST_STYLES = [
+        'numbered' => 'Nummerierte Schritte',
+        'bullets' => 'Punkte',
+        'check' => 'Häkchen',
+    ];
+
     private const URL_PATTERN = '/^(https?:\/\/|mailto:|tel:|\/|#)\S*$/i';
 
     public ?int $pageID = null;
@@ -87,6 +107,24 @@ class Sections extends Component
      */
     public int $eventLimit = 5;
 
+    public string $columnsRatio = '1-1';
+
+    public string $columnsAlign = 'top';
+
+    /**
+     * Info-Box mit Rahmen (Hintergrund, Linie, Schatten) oder schlicht.
+     */
+    public bool $boxFramed = true;
+
+    /**
+     * Punkte des Abschnitts „Titel mit Aufzählung“.
+     *
+     * @var list<array{title: string, text: string}>
+     */
+    public array $listItems = [];
+
+    public string $listStyle = 'numbered';
+
     public ?UploadedFile $image = null;
 
     public ?UploadedFile $image2 = null;
@@ -98,15 +136,31 @@ class Sections extends Component
         $this->pageID = $page?->exists ? $page->pageID : null;
     }
 
-    public function addSection(string $type): void
+    /**
+     * Neuer Abschnitt – auf oberster Ebene oder in einer Spalte (links/rechts)
+     * eines Abschnitts „Zwei Spalten“.
+     */
+    public function addSection(string $type, ?int $parentID = null, ?string $column = null): void
     {
         $sectionType = HomepageSectionType::from($type);
+        $parent = null;
+
+        if ($parentID !== null) {
+            $parent = $this->findSection($parentID);
+
+            abort_unless(
+                $parent->type->isContainer() && ! $sectionType->isContainer() && in_array($column, ['left', 'right'], true),
+                422
+            );
+        }
 
         $section = HomepageSection::create([
             'pageID' => $this->pageID,
             'area' => $this->area(),
+            'parentID' => $parent?->sectionID,
+            'column' => $parent ? $column : null,
             'type' => $sectionType,
-            'sort' => (int) $this->sectionsQuery()->max('sort') + 1,
+            'sort' => (int) $this->siblingsQuery($parent?->sectionID, $parent ? $column : null)->max('sort') + 1,
             'data' => $this->defaultData($sectionType),
         ]);
 
@@ -137,6 +191,18 @@ class Sections extends Component
         $this->buttonUrl = (string) $section->value('button_url', '');
         $this->buttonToMemberArea = (bool) $section->value('button_member_area', false);
         $this->eventLimit = (int) $section->value('limit', 5);
+        $this->columnsRatio = (string) $section->value('ratio', '1-1');
+        $this->columnsAlign = (string) $section->value('align', 'top');
+        $this->boxFramed = ! $section->value('box_frameless', false);
+        $this->listStyle = (string) $section->value('list_style', 'numbered');
+        $this->listItems = collect($section->value('list_items', []))
+            ->map(fn ($item) => ['title' => (string) data_get($item, 'title', ''), 'text' => (string) data_get($item, 'text', '')])
+            ->values()
+            ->all();
+
+        if ($section->type === HomepageSectionType::ItemList && $this->listItems === []) {
+            $this->listItems = array_fill(0, 3, ['title' => '', 'text' => '']);
+        }
     }
 
     public function saveSection(HtmlSanitizer $sanitizer, HomepageImageService $images, HomepageFileService $files): void
@@ -161,6 +227,13 @@ class Sections extends Component
             'buttonUrl' => ['nullable', 'string', 'max:255', 'regex:'.self::URL_PATTERN],
             'buttonToMemberArea' => ['boolean'],
             'eventLimit' => ['integer', 'min:1', 'max:10'],
+            'columnsRatio' => [Rule::in(array_keys(self::RATIOS))],
+            'columnsAlign' => [Rule::in(['top', 'center'])],
+            'boxFramed' => ['boolean'],
+            'listItems' => ['array', 'max:12'],
+            'listItems.*.title' => ['nullable', 'string', 'max:150'],
+            'listItems.*.text' => ['nullable', 'string', 'max:600'],
+            'listStyle' => [Rule::in(array_keys(self::LIST_STYLES))],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.HomepageImageService::MAX_SIZE_KB],
             'image2' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.HomepageImageService::MAX_SIZE_KB],
             'file' => ['nullable', 'file', 'mimes:pdf', 'max:'.HomepageFileService::MAX_SIZE_KB],
@@ -194,6 +267,16 @@ class Sections extends Component
                 'button_url' => $validated['buttonUrl'],
                 'button_member_area' => $validated['buttonToMemberArea'],
                 'limit' => $section->type === HomepageSectionType::Events ? $validated['eventLimit'] : null,
+                'ratio' => $section->type === HomepageSectionType::Columns ? $validated['columnsRatio'] : null,
+                'align' => $section->type === HomepageSectionType::Columns ? $validated['columnsAlign'] : null,
+                'box_frameless' => in_array($section->type, [HomepageSectionType::TextBox, HomepageSectionType::InfoBox], true) && ! $validated['boxFramed'],
+                'list_style' => $section->type === HomepageSectionType::ItemList ? $validated['listStyle'] : null,
+                'list_items' => $section->type === HomepageSectionType::ItemList
+                    ? array_values(array_filter(
+                        array_map(fn (array $item) => ['title' => trim((string) ($item['title'] ?? '')), 'text' => trim((string) ($item['text'] ?? ''))], $validated['listItems']),
+                        fn (array $item) => $item['title'] !== '' || $item['text'] !== ''
+                    ))
+                    : null,
             ], fn ($value) => $value !== '' && $value !== null && $value !== [] && $value !== false),
         ];
 
@@ -251,7 +334,8 @@ class Sections extends Component
 
     public function moveSection(int $sectionID, string $direction): void
     {
-        $sections = $this->sectionsQuery()->get()->values();
+        $moved = $this->findSection($sectionID);
+        $sections = $this->siblingsQuery($moved->parentID, $moved->column)->get()->values();
         $index = $sections->search(fn (HomepageSection $section) => $section->sectionID === $sectionID);
 
         abort_if($index === false, 404);
@@ -268,6 +352,23 @@ class Sections extends Component
         foreach ($ordered as $position => $section) {
             $section->update(['sort' => $position + 1]);
         }
+    }
+
+    /**
+     * Abschnitt in die andere Spalte legen (ans Ende).
+     */
+    public function switchColumn(int $sectionID): void
+    {
+        $section = $this->findSection($sectionID);
+
+        abort_if($section->parentID === null, 404);
+
+        $target = $section->column === 'left' ? 'right' : 'left';
+
+        $section->update([
+            'column' => $target,
+            'sort' => (int) $this->siblingsQuery($section->parentID, $target)->max('sort') + 1,
+        ]);
     }
 
     public function deleteSection(int $sectionID): void
@@ -309,6 +410,21 @@ class Sections extends Component
             ->orderBy('sectionID');
     }
 
+    /**
+     * Abschnitte derselben Ebene: oberste Ebene oder eine Spalte eines Spalten-Abschnitts.
+     *
+     * @return Builder<HomepageSection>
+     */
+    private function siblingsQuery(?int $parentID, ?string $column): Builder
+    {
+        return $this->sectionsQuery()
+            ->when(
+                $parentID,
+                fn (Builder $query) => $query->where('parentID', $parentID)->where('column', $column),
+                fn (Builder $query) => $query->whereNull('parentID')
+            );
+    }
+
     private function area(): string
     {
         return $this->pageID ? HomepageSection::AREA_PAGE : HomepageSection::AREA_ABOUT;
@@ -333,6 +449,8 @@ class Sections extends Component
             HomepageSectionType::Features => ['items' => array_fill(0, 3, ['value' => '', 'title' => '', 'text' => ''])],
             HomepageSectionType::ImagePair => ['items' => array_fill(0, 2, ['title' => '', 'text' => ''])],
             HomepageSectionType::Events => ['limit' => 5],
+            HomepageSectionType::Columns => ['ratio' => '1-1', 'align' => 'top'],
+            HomepageSectionType::ItemList => ['list_style' => 'numbered'],
             default => [],
         };
     }
@@ -362,6 +480,19 @@ class Sections extends Component
         return $normalized;
     }
 
+    public function addListItem(): void
+    {
+        if (count($this->listItems) < 12) {
+            $this->listItems[] = ['title' => '', 'text' => ''];
+        }
+    }
+
+    public function removeListItem(int $index): void
+    {
+        unset($this->listItems[$index]);
+        $this->listItems = array_values($this->listItems);
+    }
+
     public function addItem(): void
     {
         if (count($this->items) < 4) {
@@ -380,6 +511,7 @@ class Sections extends Component
         $this->reset([
             'editingSectionID', 'type', 'heading', 'bodyHtml', 'altBackground', 'spacing', 'imagePosition', 'items',
             'boxTitle', 'boxValue', 'boxNote', 'boxText', 'buttonLabel', 'buttonUrl', 'buttonToMemberArea', 'eventLimit',
+            'columnsRatio', 'columnsAlign', 'boxFramed', 'listItems', 'listStyle',
             'image', 'image2', 'file',
         ]);
         $this->resetValidation();
@@ -403,12 +535,15 @@ class Sections extends Component
         $page = $this->pageID ? HomepagePage::find($this->pageID) : null;
 
         /** @var Collection<int, HomepageSection> $sections */
-        $sections = $this->sectionsQuery()->get();
+        $sections = $this->sectionsQuery()->whereNull('parentID')->with('children')->get();
+        $editingSection = $this->editingSectionID ? $this->sectionsQuery()->whereKey($this->editingSectionID)->first() : null;
 
         return view('livewire.homepage.sections', [
             'page' => $page,
             'sections' => $sections,
-            'editingSection' => $this->editingSectionID ? $sections->firstWhere('sectionID', $this->editingSectionID) : null,
+            'editingSection' => $editingSection,
+            'ratios' => self::RATIOS,
+            'listStyles' => self::LIST_STYLES,
             'sectionTypes' => HomepageSectionType::cases(),
             'spacings' => self::SPACINGS,
             'imageUrls' => $imageUrls,

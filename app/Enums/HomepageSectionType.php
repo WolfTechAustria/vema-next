@@ -15,12 +15,26 @@ enum HomepageSectionType: string
     case CallToAction = 'cta';
     case Board = 'board';
     case Events = 'events';
+    case Columns = 'columns';
+    case InfoBox = 'info_box';
+    case ItemList = 'list';
+
+    /**
+     * Nimmt andere Abschnitte auf (darf selbst nicht in Spalten liegen).
+     */
+    public function isContainer(): bool
+    {
+        return $this === self::Columns;
+    }
 
     public function label(): string
     {
         return match ($this) {
             self::Board => 'Vorstand',
             self::Events => 'Termine',
+            self::Columns => 'Zwei Spalten',
+            self::InfoBox => 'Info-Box',
+            self::ItemList => 'Titel mit Aufzählung',
             self::Text => 'Text',
             self::TextImage => 'Text mit Bild',
             self::Features => 'Zahlen-Kacheln',
@@ -35,6 +49,9 @@ enum HomepageSectionType: string
         return match ($this) {
             self::Board => 'Tabelle mit Funktion und Namen – automatisch aus den aktuellen Vorstandsfunktionen in VEMA.',
             self::Events => 'Die nächsten öffentlichen Vereinstermine – automatisch aus VEMA.',
+            self::Columns => 'Zwei Spalten nebeneinander, in die weitere Abschnitte gelegt werden – z. B. links Text, rechts eine Info-Box.',
+            self::InfoBox => 'Hervorgehobene Box mit Titel, großer Angabe, Text und Button – mit oder ohne Rahmen.',
+            self::ItemList => 'Überschrift mit nummerierten Schritten, Punkten oder Häkchen – z. B. „So einfach geht’s“.',
             self::Text => 'Überschrift und formatierter Text.',
             self::TextImage => 'Text neben einem Bild (Bild links oder rechts).',
             self::Features => 'Bis zu vier Kacheln mit großer Zahl, Titel und Text – z. B. Ausstattung.',

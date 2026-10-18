@@ -4,7 +4,7 @@
 
 @include('homepage.sections._heading', ['center' => true])
 
-<div class="mt-8 grid gap-6 {{ $features->count() >= 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3' }}">
+<div class="mt-8 grid gap-6 {{ ($inColumn ?? false) ? 'sm:grid-cols-2' : ($features->count() >= 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3') }}">
     @foreach($features as $feature)
         <div class="rounded-xl bg-white p-7 text-center shadow-[0_1px_2px_rgba(0,0,0,.05),0_4px_16px_rgba(0,0,0,.06)]">
             @if(filled($feature['value'] ?? null))

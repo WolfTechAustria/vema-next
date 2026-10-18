@@ -2,9 +2,11 @@
     use App\Enums\HomepageSectionType;
 
     $editingType = $editingSection?->type;
-    $hasText = in_array($editingType, [HomepageSectionType::Text, HomepageSectionType::TextImage, HomepageSectionType::TextBox, HomepageSectionType::CallToAction], true);
-    $hasHeading = $editingType !== HomepageSectionType::ImagePair;
-    $hasButton = in_array($editingType, [HomepageSectionType::TextBox, HomepageSectionType::CallToAction], true);
+    $hasText = in_array($editingType, [HomepageSectionType::Text, HomepageSectionType::TextImage, HomepageSectionType::TextBox, HomepageSectionType::CallToAction, HomepageSectionType::ItemList], true);
+    $hasHeading = ! in_array($editingType, [HomepageSectionType::ImagePair, HomepageSectionType::Columns, HomepageSectionType::InfoBox], true);
+    $hasButton = in_array($editingType, [HomepageSectionType::TextBox, HomepageSectionType::CallToAction, HomepageSectionType::InfoBox], true);
+    $hasBox = in_array($editingType, [HomepageSectionType::TextBox, HomepageSectionType::InfoBox], true);
+    $inColumnForm = $editingSection?->parentID !== null;
 @endphp
 
 <div class="space-y-6">
@@ -47,36 +49,56 @@
 
             <ol class="divide-y divide-slate-100">
                 @forelse($sections as $section)
-                    <li
-                        wire:key="section-{{ $section->sectionID }}"
-                        class="flex items-start justify-between gap-3 px-6 py-3 {{ $editingSectionID === $section->sectionID ? 'bg-slate-50' : '' }}"
-                    >
-                        <div class="min-w-0">
-                            <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                                {{ $loop->iteration }}. {{ $section->type->label() }}
-                                @if($section->alt_background) · grauer Hintergrund @endif
-                                @if($section->value('spacing')) · Abstand {{ $spacings[$section->value('spacing')] ?? '' }} @endif
-                            </div>
-                            <div class="truncate font-medium text-slate-900">
-                                {{ $section->heading ?: (\Illuminate\Support\Str::limit(strip_tags((string) $section->body_html), 50) ?: '–') }}
-                            </div>
-                        </div>
+                    <li wire:key="section-{{ $section->sectionID }}" class="px-6 py-3">
+                        @include('livewire.homepage.partials.section-row', [
+                            'label' => $loop->iteration.'. ',
+                            'isFirst' => $loop->first,
+                            'isLast' => $loop->last,
+                            'inColumn' => false,
+                        ])
 
-                        <div class="flex flex-none items-center gap-2 text-sm">
-                            @unless($loop->first)
-                                <button type="button" wire:click="moveSection({{ $section->sectionID }}, 'up')" class="text-slate-500 hover:text-slate-800" title="Nach oben">↑</button>
-                            @endunless
-                            @unless($loop->last)
-                                <button type="button" wire:click="moveSection({{ $section->sectionID }}, 'down')" class="text-slate-500 hover:text-slate-800" title="Nach unten">↓</button>
-                            @endunless
-                            <button type="button" wire:click="editSection({{ $section->sectionID }})" class="font-medium text-slate-600 hover:text-slate-900">Bearbeiten</button>
-                            <button
-                                type="button"
-                                wire:click="deleteSection({{ $section->sectionID }})"
-                                wire:confirm="Abschnitt wirklich löschen?"
-                                class="font-medium text-red-600 hover:text-red-800"
-                            >Löschen</button>
-                        </div>
+                        @if($section->type->isContainer())
+                            <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                                @foreach(['left' => 'Links', 'right' => 'Rechts'] as $columnKey => $columnLabel)
+                                    @php($columnChildren = $section->children->where('column', $columnKey)->values())
+
+                                    <div wire:key="section-{{ $section->sectionID }}-{{ $columnKey }}" class="rounded-lg border border-dashed border-slate-300 bg-slate-50/60 p-2">
+                                        <div class="mb-1 px-2 text-xs font-bold uppercase tracking-wide text-slate-500">{{ $columnLabel }}</div>
+
+                                        <div class="space-y-1">
+                                            @forelse($columnChildren as $child)
+                                                <div wire:key="section-{{ $child->sectionID }}">
+                                                    @include('livewire.homepage.partials.section-row', [
+                                                        'section' => $child,
+                                                        'label' => '',
+                                                        'isFirst' => $loop->first,
+                                                        'isLast' => $loop->last,
+                                                        'inColumn' => true,
+                                                    ])
+                                                </div>
+                                            @empty
+                                                <p class="px-2 py-1 text-xs text-slate-400">Noch leer.</p>
+                                            @endforelse
+                                        </div>
+
+                                        <details class="mt-2 px-2">
+                                            <summary class="cursor-pointer text-xs font-semibold text-slate-600 hover:text-slate-900">+ Abschnitt hinzufügen</summary>
+
+                                            <div class="mt-2 grid gap-1">
+                                                @foreach($sectionTypes as $childType)
+                                                    @continue($childType->isContainer())
+                                                    <button
+                                                        type="button"
+                                                        wire:click="addSection('{{ $childType->value }}', {{ $section->sectionID }}, '{{ $columnKey }}')"
+                                                        class="rounded px-2 py-1 text-left text-xs text-slate-700 hover:bg-white"
+                                                    >{{ $childType->label() }}</button>
+                                                @endforeach
+                                            </div>
+                                        </details>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     </li>
                 @empty
                     <li class="px-6 py-8 text-center text-sm text-slate-500">Noch keine Abschnitte.</li>
@@ -205,9 +227,60 @@
                         @endforeach
                     @endif
 
-                    @if($editingType === HomepageSectionType::TextBox)
+                    @if($editingType === HomepageSectionType::Columns)
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="mb-1 block text-sm font-medium">Breite der Spalten</label>
+                                <select wire:model="columnsRatio" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                    @foreach($ratios as $ratioValue => $ratioLabel)
+                                        <option value="{{ $ratioValue }}">{{ $ratioLabel }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-sm font-medium">Ausrichtung</label>
+                                <select wire:model="columnsAlign" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                    <option value="top">oben bündig</option>
+                                    <option value="center">vertikal zentriert</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-500">Die Inhalte der Spalten fügen Sie links in der Liste unter „Links“ bzw. „Rechts“ hinzu. Auf dem Handy stehen die Spalten untereinander.</p>
+                    @endif
+
+                    @if($editingType === HomepageSectionType::ItemList)
+                        <div class="space-y-3">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <label class="text-sm font-medium">Darstellung</label>
+                                <select wire:model="listStyle" class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
+                                    @foreach($listStyles as $styleValue => $styleLabel)
+                                        <option value="{{ $styleValue }}">{{ $styleLabel }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            @foreach($listItems as $index => $listItem)
+                                <div wire:key="list-item-{{ $index }}" class="grid gap-2 rounded-lg border border-slate-200 p-3 sm:grid-cols-[1fr_auto]">
+                                    <input type="text" wire:model="listItems.{{ $index }}.title" placeholder="Stichwort (fett), z. B. Vorbeischauen" class="rounded-md border border-slate-300 px-2 py-1 text-sm font-semibold">
+                                    <button type="button" wire:click="removeListItem({{ $index }})" class="text-sm text-red-600 hover:text-red-800">Entfernen</button>
+                                    <textarea wire:model="listItems.{{ $index }}.text" rows="2" placeholder="Text, z. B. Komm an einem Montag ab 18 Uhr zum Training." class="rounded-md border border-slate-300 px-2 py-1 text-sm sm:col-span-2"></textarea>
+                                </div>
+                            @endforeach
+
+                            @if(count($listItems) < 12)
+                                <button type="button" wire:click="addListItem" class="text-sm font-medium text-slate-600 hover:text-slate-900">+ Punkt</button>
+                            @endif
+                        </div>
+                    @endif
+
+                    @if($hasBox)
                         <fieldset class="space-y-3 rounded-lg border border-slate-200 p-4">
                             <legend class="px-1 text-sm font-semibold">Info-Box</legend>
+                            <label class="flex items-center gap-2 text-sm">
+                                <input type="checkbox" wire:model="boxFramed" class="rounded border-slate-300">
+                                Rahmen anzeigen (abschalten, wenn z. B. nur ein Button gezeigt werden soll)
+                            </label>
                             <input type="text" wire:model="boxTitle" placeholder="Titel, z. B. Mitgliedsbeitrag" class="w-full rounded-md border border-slate-300 px-2 py-1 text-sm">
                             <div class="grid gap-2 sm:grid-cols-2">
                                 <input type="text" wire:model="boxValue" placeholder="Große Angabe, z. B. € 40,–" class="rounded-md border border-slate-300 px-2 py-1 text-sm">
@@ -245,6 +318,7 @@
                         </fieldset>
                     @endif
 
+                    @if(! $inColumnForm)
                     <div class="flex flex-wrap items-center gap-3 text-sm">
                         <span class="font-medium">Abstand oben und unten</span>
                         <div class="inline-flex overflow-hidden rounded-lg border border-slate-300">
@@ -261,6 +335,7 @@
                         <input type="checkbox" wire:model="altBackground" class="rounded border-slate-300">
                         Grauer Hintergrund (zur Abgrenzung von Nachbar-Abschnitten)
                     </label>
+                    @endif
 
                     <button
                         type="button"

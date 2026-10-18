@@ -2,7 +2,7 @@
     $boardRows = app(\App\Services\HomepageBoard::class)->byFunction();
 @endphp
 
-<div class="mx-auto max-w-[780px]">
+<div class="{{ ($inColumn ?? false) ? '' : 'mx-auto max-w-[780px]' }}">
     @include('homepage.sections._heading')
 
     @if($boardRows->isEmpty())

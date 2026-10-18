@@ -52,7 +52,7 @@ class HomepagePage extends Model
      */
     public function sections(): HasMany
     {
-        return $this->hasMany(HomepageSection::class, 'pageID', 'pageID')->orderBy('sort')->orderBy('sectionID');
+        return $this->hasMany(HomepageSection::class, 'pageID', 'pageID')->whereNull('parentID')->orderBy('sort')->orderBy('sectionID');
     }
 
     public function deleteWithSections(): void

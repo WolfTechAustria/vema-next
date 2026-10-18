@@ -132,6 +132,16 @@
     .hp-verein .hp-content h2 { @apply mt-[1.8em] text-[clamp(1.4rem,3vw,1.9rem)]; }
     .hp-verein .hp-content h2:first-child { @apply mt-0; }
 
+    /* Abschnitt „Titel mit Aufzählung“ */
+    .hp-list { @apply list-none space-y-4 pl-0; counter-reset: hp-list; }
+    .hp-list > li { @apply relative pl-12 leading-relaxed; counter-increment: hp-list; }
+    .hp-list > li::before { @apply absolute left-0 grid place-items-center rounded-full font-bold; }
+    .hp-list--numbered > li::before { @apply -top-0.5 h-8 w-8 bg-brand text-white; content: counter(hp-list); }
+    .hp-list--bullets > li { @apply pl-7; }
+    .hp-list--bullets > li::before { @apply top-[.6em] h-2.5 w-2.5 bg-brand; content: ''; }
+    .hp-list--check > li { @apply pl-10; }
+    .hp-list--check > li::before { @apply -top-0.5 h-7 w-7 bg-brand-soft text-brand; content: '✓'; }
+
     /* Erster Absatz als Einleitung (Vorlage „Verein“, Über uns) */
     .hp-lead > p:first-child { @apply text-[1.25rem] font-semibold text-brand-deep; }
     .hp-content .ql-align-center { @apply text-center; }

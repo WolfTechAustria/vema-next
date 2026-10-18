@@ -121,7 +121,7 @@ class HomepageController extends Controller
     {
         $settings = HomepageSetting::current();
 
-        $sections = HomepageSection::query()->forAbout()->ordered()->get();
+        $sections = HomepageSection::query()->forAbout()->topLevel()->with('children')->ordered()->get();
 
         abort_if(blank($settings->about_html) && $sections->isEmpty(), 404);
 
@@ -163,7 +163,7 @@ class HomepageController extends Controller
         $page = HomepagePage::query()
             ->published()
             ->where('slug', $slug)
-            ->with('sections')
+            ->with('sections.children')
             ->firstOrFail();
 
         return $this->render('page', [

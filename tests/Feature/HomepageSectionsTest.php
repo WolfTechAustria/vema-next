@@ -278,7 +278,7 @@ describe('verein template', function () {
         $response = $this->get(route('homepage.page', 'training'))->assertOk()->assertSee('Jeden Montag ab 18 Uhr');
 
         foreach (HomepageSectionType::cases() as $type) {
-            if ($type !== HomepageSectionType::ImagePair) {
+            if (! in_array($type, [HomepageSectionType::ImagePair, HomepageSectionType::Columns, HomepageSectionType::InfoBox], true)) {
                 $response->assertSee('Abschnitt '.$type->label());
             }
         }
@@ -358,5 +358,136 @@ describe('board and spacing', function () {
         HomepageSetting::current()->update(['template' => HomepageTemplate::Klassisch]);
 
         $this->get(route('homepage.page', 'abstand'))->assertOk()->assertSee('class="mt-6', false);
+    });
+});
+
+describe('columns, info box and list', function () {
+    beforeEach(function () {
+        $editor = User::factory()->create();
+        $editor->assignRole(Role::findOrCreate('homepage', 'web'));
+        $this->actingAs($editor);
+        $this->page = HomepagePage::factory()->create(['title' => 'Mitglied werden', 'slug' => 'mitglied-werden']);
+    });
+
+    it('nests sections in two columns and keeps their order', function () {
+        $component = Livewire::test(Sections::class, ['page' => $this->page])
+            ->call('addSection', 'columns')
+            ->set('columnsRatio', '2-1')
+            ->set('columnsAlign', 'center')
+            ->call('saveSection')
+            ->assertHasNoErrors();
+
+        $columns = HomepageSection::sole();
+
+        $component
+            ->call('addSection', 'text', $columns->sectionID, 'left')->set('heading', 'Interesse?')->call('saveSection')
+            ->call('addSection', 'list', $columns->sectionID, 'left')->set('heading', 'So einfach geht es')->call('saveSection')
+            ->call('addSection', 'info_box', $columns->sectionID, 'right')->set('boxTitle', 'Mitgliedsbeitrag')->call('saveSection')
+            ->assertHasNoErrors();
+
+        [$text, $list, $box] = HomepageSection::query()->where('parentID', $columns->sectionID)->orderBy('sectionID')->get()->all();
+
+        expect([$text->column, $list->column, $box->column])->toBe(['left', 'left', 'right'])
+            ->and($columns->fresh()->value('ratio'))->toBe('2-1')
+            ->and($this->page->sections()->count())->toBe(1);
+
+        $component->call('moveSection', $list->sectionID, 'up');
+        expect($columns->children()->where('column', 'left')->pluck('sectionID')->all())->toBe([$list->sectionID, $text->sectionID]);
+
+        $component->call('switchColumn', $box->sectionID);
+        expect($box->fresh()->column)->toBe('left');
+    });
+
+    it('does not allow columns inside columns or unknown columns', function () {
+        $columns = HomepageSection::factory()->for($this->page, 'page')->create(['type' => HomepageSectionType::Columns]);
+        $text = HomepageSection::factory()->for($this->page, 'page')->create(['type' => HomepageSectionType::Text]);
+
+        Livewire::test(Sections::class, ['page' => $this->page])->call('addSection', 'columns', $columns->sectionID, 'left')->assertStatus(422);
+        Livewire::test(Sections::class, ['page' => $this->page])->call('addSection', 'text', $columns->sectionID, 'middle')->assertStatus(422);
+        Livewire::test(Sections::class, ['page' => $this->page])->call('addSection', 'text', $text->sectionID, 'left')->assertStatus(422);
+    });
+
+    it('deletes children with the columns section and refuses foreign children', function () {
+        Storage::disk('local')->put('homepage/sections/x/bild.jpg', 'jpeg');
+        $columns = HomepageSection::factory()->for($this->page, 'page')->create(['type' => HomepageSectionType::Columns]);
+        HomepageSection::factory()->for($this->page, 'page')->create(['type' => HomepageSectionType::TextImage, 'parentID' => $columns->sectionID, 'column' => 'left', 'image_path' => 'homepage/sections/x/bild.jpg']);
+
+        $foreignChild = HomepageSection::factory()->create(['parentID' => HomepageSection::factory()->create(['type' => HomepageSectionType::Columns])->sectionID, 'column' => 'left']);
+
+        Livewire::test(Sections::class, ['page' => $this->page])
+            ->call('editSection', $foreignChild->sectionID)
+            ->assertNotFound();
+
+        Livewire::test(Sections::class, ['page' => $this->page])->call('deleteSection', $columns->sectionID);
+
+        expect(HomepageSection::query()->where('pageID', $this->page->pageID)->count())->toBe(0);
+        Storage::disk('local')->assertMissing('homepage/sections/x/bild.jpg');
+    });
+
+    it('saves an info box without frame and a list with style', function () {
+        Livewire::test(Sections::class, ['page' => $this->page])
+            ->call('addSection', 'info_box')
+            ->set('buttonLabel', 'Beitrittserklärung (PDF)')
+            ->set('buttonUrl', '/kontakt')
+            ->set('boxFramed', false)
+            ->call('saveSection')
+            ->call('addSection', 'list')
+            ->set('listStyle', 'check')
+            ->set('listItems', [['title' => 'Vorbeischauen:', 'text' => 'Montag ab 18 Uhr'], ['title' => '', 'text' => ''], ['title' => 'Abgeben', 'text' => '']])
+            ->call('saveSection')
+            ->assertHasNoErrors();
+
+        [$box, $list] = HomepageSection::query()->ordered()->get()->all();
+
+        expect($box->value('box_frameless'))->toBeTrue()
+            ->and($list->value('list_style'))->toBe('check')
+            ->and($list->value('list_items'))->toBe([['title' => 'Vorbeischauen:', 'text' => 'Montag ab 18 Uhr'], ['title' => 'Abgeben', 'text' => '']]);
+    });
+
+    it('renders columns with children, plain boxes and lists in every template', function (HomepageTemplate $template) {
+        HomepageSetting::current()->update(['enabled' => true, 'template' => $template]);
+        $this->page->update(['published' => true]);
+
+        $columns = HomepageSection::factory()->for($this->page, 'page')->create(['type' => HomepageSectionType::Columns, 'heading' => null, 'data' => ['ratio' => '2-1']]);
+        HomepageSection::factory()->for($this->page, 'page')->create([
+            'type' => HomepageSectionType::ItemList, 'parentID' => $columns->sectionID, 'column' => 'left', 'sort' => 2,
+            'heading' => 'So einfach geht es', 'body_html' => null,
+            'data' => ['list_style' => 'numbered', 'list_items' => [['title' => 'Vorbeischauen', 'text' => 'Montag ab 18 Uhr']]],
+        ]);
+        HomepageSection::factory()->for($this->page, 'page')->create(['type' => HomepageSectionType::Text, 'parentID' => $columns->sectionID, 'column' => 'left', 'sort' => 1, 'heading' => 'Interesse an einer Mitgliedschaft?']);
+        HomepageSection::factory()->for($this->page, 'page')->create([
+            'type' => HomepageSectionType::InfoBox, 'parentID' => $columns->sectionID, 'column' => 'right', 'heading' => null, 'body_html' => null,
+            'data' => ['box_title' => 'Mitgliedsbeitrag', 'box_value' => '40 Euro'],
+        ]);
+        HomepageSection::factory()->for($this->page, 'page')->create([
+            'type' => HomepageSectionType::InfoBox, 'sort' => 5, 'heading' => null, 'body_html' => null,
+            'data' => ['button_label' => 'Zum Mitgliederbereich', 'button_url' => '/kontakt', 'box_frameless' => true],
+        ]);
+
+        $html = $this->get(route('homepage.page', 'mitglied-werden'))
+            ->assertOk()
+            ->assertSee('md:grid-cols-[2fr_1fr]', false)
+            ->assertSeeInOrder(['Interesse an einer Mitgliedschaft?', 'So einfach geht es', 'Vorbeischauen:', 'Mitgliedsbeitrag', '40 Euro', 'Zum Mitgliederbereich'])
+            ->assertSee('hp-list hp-list--numbered', false)
+            ->getContent();
+
+        expect(substr_count($html, 'hp-box--framed'))->toBe(1)
+            ->and(substr_count($html, 'hp-box--plain'))->toBe(1);
+    })->with(HomepageTemplate::cases());
+
+    it('serves images of column sections only for published pages', function () {
+        Storage::disk('local')->put('homepage/sections/x/bild.jpg', 'jpeg');
+        $draftPage = HomepagePage::factory()->draft()->create();
+        $columns = HomepageSection::factory()->for($draftPage, 'page')->create(['type' => HomepageSectionType::Columns]);
+        $child = HomepageSection::factory()->for($draftPage, 'page')->create(['type' => HomepageSectionType::TextImage, 'parentID' => $columns->sectionID, 'column' => 'left', 'image_path' => 'homepage/sections/x/bild.jpg']);
+
+        auth()->logout();
+        HomepageSetting::current()->update(['enabled' => true]);
+
+        $this->get(route('homepage.sections.media', ['section' => $child->sectionID, 'kind' => 'bild']))->assertNotFound();
+
+        $draftPage->update(['published' => true]);
+
+        $this->get(route('homepage.sections.media', ['section' => $child->sectionID, 'kind' => 'bild']))->assertOk();
     });
 });

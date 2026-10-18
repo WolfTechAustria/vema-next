@@ -4,7 +4,7 @@
 @endphp
 
 @if($homepageEvents->enabled())
-    <div class="mx-auto max-w-[780px] [&_h3]:text-brand-deep">
+    <div class="{{ ($inColumn ?? false) ? '' : 'mx-auto max-w-[780px]' }} [&_h3]:text-brand-deep">
         @include('homepage.sections._heading')
 
         @if($sectionEvents->isEmpty())

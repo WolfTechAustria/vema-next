@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -68,6 +69,33 @@ class HomepageSection extends Model
         return $query->orderBy('sort')->orderBy('sectionID');
     }
 
+    /**
+     * @return BelongsTo<HomepageSection, $this>
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parentID', 'sectionID');
+    }
+
+    /**
+     * Abschnitte in den Spalten eines Spalten-Abschnitts.
+     *
+     * @return HasMany<HomepageSection, $this>
+     */
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parentID', 'sectionID')->orderBy('sort')->orderBy('sectionID');
+    }
+
+    /**
+     * @param  Builder<HomepageSection>  $query
+     * @return Builder<HomepageSection>
+     */
+    public function scopeTopLevel(Builder $query): Builder
+    {
+        return $query->whereNull('parentID');
+    }
+
     public function value(string $key, mixed $default = null): mixed
     {
         return data_get($this->data, $key, $default);
@@ -78,6 +106,10 @@ class HomepageSection extends Model
      */
     public function isPublic(): bool
     {
+        if ($this->parentID !== null && $this->parent) {
+            return $this->parent->isPublic();
+        }
+
         if ($this->area === self::AREA_ABOUT) {
             return true;
         }
@@ -87,6 +119,10 @@ class HomepageSection extends Model
 
     public function deleteWithFiles(): void
     {
+        foreach ($this->children()->get() as $child) {
+            $child->deleteWithFiles();
+        }
+
         Storage::disk('local')->delete(array_filter([$this->image_path, $this->image2_path, $this->file_path]));
 
         $this->delete();
