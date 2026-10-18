@@ -77,6 +77,10 @@
                             @endif
 
                             <span>{{ $post->images_count }} Bild(er)</span>
+
+                            @if($post->wasSubmittedByMail())
+                                <span class="rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-700">per E-Mail von {{ $post->submitted_by_email }}</span>
+                            @endif
                         </div>
                     </div>
 

@@ -32,6 +32,11 @@ Schedule::command('tenants:run', ['events:sync-external'])
     ->hourly()
     ->withoutOverlapping();
 
+// alle 5 Minuten: Homepage-Beiträge aus dem Beitrags-Postfach übernehmen
+Schedule::command('tenants:run', ['homepage:fetch-mail-posts'])
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
+
 // Testmodus: Test-DB nachts auf Live-Stand (nur wenn in den Einstellungen gewählt)
 Schedule::command('tenants:run', ['demo:reset --if-nightly'])
     ->dailyAt(config('demo.reset_time'))

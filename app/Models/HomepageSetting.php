@@ -51,6 +51,10 @@ class HomepageSetting extends Model
 
     protected $guarded = [];
 
+    protected $hidden = [
+        'mail_posts_password',
+    ];
+
     /**
      * @return array<string, string>
      */
@@ -68,7 +72,32 @@ class HomepageSetting extends Model
             'tiles' => 'array',
             'stats' => 'array',
             'page_headings' => 'array',
+            'mail_posts_enabled' => 'boolean',
+            'mail_posts_port' => 'integer',
+            'mail_posts_validate_cert' => 'boolean',
+            'mail_posts_password' => 'encrypted',
+            'mail_posts_checked_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Zusätzlich erlaubte Absender für Beiträge per E-Mail (klein geschrieben).
+     *
+     * @return list<string>
+     */
+    public function allowedMailPostSenders(): array
+    {
+        return collect(preg_split('/[\s,;]+/', (string) $this->mail_posts_allowed_senders) ?: [])
+            ->map(fn (string $address) => strtolower(trim($address)))
+            ->filter(fn (string $address) => filter_var($address, FILTER_VALIDATE_EMAIL) !== false)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    public function hasMailPostAccount(): bool
+    {
+        return filled($this->mail_posts_host) && filled($this->mail_posts_username) && filled($this->mail_posts_password);
     }
 
     /**

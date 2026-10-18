@@ -855,7 +855,7 @@ Leere Felder verwenden die Einstellungen des Servers.
 - den **Status** zwischen *Aktiv* und *Gesperrt* umschalten (sich selbst kann man nicht sperren),
 - die Rolle **Admin** / *Mitarbeiter* vergeben (der letzte Admin kann seine Rechte nicht verlieren),
 - die Rolle **Kassier** vergeben oder entziehen,
-- die Rolle **Homepage** vergeben oder entziehen (Kapitel 16.7),
+- die Rolle **Homepage** vergeben oder entziehen (Kapitel 16.8),
 - mit **Link erneut senden** eine neue Einladung bzw. einen Passwort-Link verschicken.
 
 > **Vereine auf vemat.at:** Die Zahl der aktiven Vorstandszugänge hängt vom Paket ab. Ist sie erreicht, können keine weiteren Benutzer angelegt oder entsperrt werden – sperren Sie bei Bedarf einen nicht mehr benötigten Zugang.
@@ -964,6 +964,7 @@ VEMA erledigt einige Aufgaben selbstständig:
 | **Monatliche Geburtstagsliste** | am 1. jedes Monats, 6:30 Uhr | PDF-Liste aller Geburtstage des Monats an dieselbe Gruppe, ebenfalls im BCC. |
 | **Dienst-Erinnerung** | täglich 7:00 Uhr | Helfer mit Dienst in 2 Tagen erhalten eine E-Mail (sofern nicht abgeschaltet und E-Mail vorhanden). |
 | **Externe Kalender abgleichen** | stündlich | Termine aller aktiven externen Kalender werden übernommen (Kapitel 7.4). |
+| **Beiträge per E-Mail abrufen** | alle 5 Minuten | Berechtigte Mails im Beitrags-Postfach werden zu Homepage-Entwürfen (Kapitel 16.6). |
 | **Testdaten zurücksetzen** | nachts (Standard 3:00 Uhr) | nur wenn in den Einstellungen „Jede Nacht automatisch“ gewählt ist |
 | **Hinweise zu Testphase und Lizenz** | täglich (nur vemat.at) | E-Mail an die Kontaktadresse des Vereins vor Ende der Testphase bzw. vor Ablauf der Lizenz (Kapitel 15.3) |
 
@@ -1156,7 +1157,31 @@ Alle Änderungen mit **Inhalte speichern** übernehmen.
 
 > **Tipp:** Soll der Vorstand wie auf vielen Vereinsseiten unter „Über uns“ stehen, schalten Sie unter **Gestaltung** die eigene Vorstandsseite aus und fügen bei „Über uns“ den Abschnitt **Vorstand** hinzu.
 
-### 16.6 Eigene Domain
+### 16.6 Beiträge per E-Mail
+
+Beiträge lassen sich auch per E-Mail einreichen – praktisch für Trainer oder den Pressewart, die unterwegs Fotos vom Wettkampf schicken wollen. VEMA ruft dafür ein eigenes Postfach ab und legt jede berechtigte Mail als **Entwurf** an.
+
+**Einrichten (Admin)** unter **Homepage → Per E-Mail**:
+
+1. Bei Ihrem Mail-Anbieter ein **eigenes Postfach nur für Beiträge** anlegen, z. B. `homepage@mein-verein.at`. Jede Mail darin wird verarbeitet.
+2. **Adresse für Einreichungen**, **IMAP-Server**, **Port**, **Verschlüsselung**, **Benutzername** und **Passwort** eintragen (die Daten finden Sie bei Ihrem Anbieter unter „IMAP“).
+3. Optional einen Ordner angeben, in den verarbeitete Mails verschoben werden; sonst werden sie nur als gelesen markiert.
+4. Unter **Weitere erlaubte Absender** zusätzliche Adressen eintragen (eine je Zeile).
+5. **Beiträge per E-Mail aktiv** anhaken, **Speichern** und mit **Gespeicherte Verbindung testen** prüfen.
+
+**Wer darf einreichen?** Alle VEMA-Benutzer mit der Rolle **Homepage** oder **Admin** (mit der E-Mail-Adresse ihres Zugangs) sowie die weiteren erlaubten Absender. Mails anderer Absender werden ohne Antwort verworfen.
+
+**Beitrag schreiben:**
+
+- **Betreff** = Titel des Beitrags („AW:“, „WG:“ usw. werden entfernt).
+- **Text** = Inhalt. Eine Leerzeile beginnt einen neuen Absatz, Zeilen mit „- “ werden zur Aufzählung, Web-Adressen werden zu Links. Signatur und zitierte frühere Nachrichten werden weggelassen.
+- **Anhänge:** Fotos (JPG, PNG, WebP, je max. 10 MB) kommen in die Bildergalerie – das erste ist das Titelbild. PDFs (max. 20 MB) werden Downloads. Andere Dateien werden ignoriert.
+
+VEMA ruft das Postfach **alle 5 Minuten** ab; mit **Jetzt abrufen** geht es sofort. Der Absender erhält eine Bestätigung mit Link zum Beitrag. In der Beitragsliste ist der Entwurf mit „per E-Mail von …“ gekennzeichnet – prüfen, bei Bedarf Titelbild und Text anpassen und auf **Veröffentlicht** stellen.
+
+> **Hinweis:** Im Testmodus wird das Postfach nicht abgerufen. Fotos im HEIC-Format (iPhone) bitte als JPG senden – die meisten Handys tun das beim Mailen automatisch.
+
+### 16.7 Eigene Domain
 
 Die Homepage ist zunächst unter der Adresse von VEMA mit `/site` erreichbar, z. B. `https://vema.mein-verein.at/site`. Damit sie unter einer eigenen Domain wie `www.mein-verein.at` erscheint:
 
@@ -1165,7 +1190,7 @@ Die Homepage ist zunächst unter der Adresse von VEMA mit `/site` erreichbar, z.
 
 Unter der eigenen Domain ist **nur die Homepage** erreichbar – Anmeldung und Verwaltung laufen weiter über die bisherige VEMA-Adresse.
 
-### 16.7 Berechtigung „Homepage“
+### 16.8 Berechtigung „Homepage“
 
 Damit z. B. ein Pressewart Beiträge schreiben kann, ohne Admin zu sein, vergibt ein Admin in der **Benutzerverwaltung** die Rolle **Homepage** (Kapitel 12.3). Wer diese Rolle hat, darf Beiträge, Seiten, Inhalte und Gestaltung bearbeiten, aber keine anderen Admin-Bereiche öffnen.
 

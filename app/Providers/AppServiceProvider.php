@@ -8,6 +8,8 @@ use App\Http\Middleware\EnsureUserCanManageHomepage;
 use App\Services\ClubMailSender;
 use App\Services\DemoMode;
 use App\Services\HomepageHosts;
+use App\Services\MailPosts\ImapMailPostInbox;
+use App\Services\MailPosts\MailPostInbox;
 use App\Services\PlanEntitlements;
 use App\Services\TenantManager;
 use Carbon\CarbonImmutable;
@@ -32,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(ClubMailSender::class);
         $this->app->scoped(PlanEntitlements::class);
         $this->app->scoped(HomepageHosts::class);
+        $this->app->bind(MailPostInbox::class, ImapMailPostInbox::class);
     }
 
     /**

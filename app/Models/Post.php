@@ -96,6 +96,11 @@ class Post extends Model
             ->where('published_at', '<=', now());
     }
 
+    public function wasSubmittedByMail(): bool
+    {
+        return filled($this->submitted_by_email);
+    }
+
     public function isPublic(): bool
     {
         return $this->status === PostStatus::Published

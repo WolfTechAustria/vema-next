@@ -54,6 +54,7 @@ it('renders every staff page on an empty database', function (string $routeName)
     'homepage-admin.settings',
     'homepage-admin.content',
     'homepage-admin.about',
+    'homepage-admin.mail-posts',
 ]);
 
 it('renders the member login on an empty database', function () {

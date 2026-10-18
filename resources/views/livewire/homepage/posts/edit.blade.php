@@ -28,6 +28,13 @@
 
     @include('partials.flash-messages')
 
+    @if($post?->wasSubmittedByMail())
+        <div class="rounded-xl border border-sky-200 bg-sky-50 px-6 py-3 text-sm text-sky-800">
+            Per E-Mail eingegangen von <strong>{{ $post->submitted_by_email }}</strong> am {{ $post->created_at->format('d.m.Y, H:i') }} Uhr.
+            Bitte prüfen und zum Veröffentlichen den Status auf „Veröffentlicht“ stellen.
+        </div>
+    @endif
+
     <div class="grid gap-6 lg:grid-cols-3">
 
         <section class="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
