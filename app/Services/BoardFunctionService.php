@@ -6,15 +6,20 @@ use App\Models\BoardFunction;
 use App\Models\Member;
 use App\Models\MemberBoardFunctionAssignment;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
- * Verwaltet zeitraumbasierte Vorstandsfunktions-Zuweisungen und leitet
- * die "Schützenrat"-Zugehörigkeit für Schriftführer/Kassier(-Stv.) automatisch
- * ab, solange diese nicht gleichzeitig eine Spitzenfunktion (Oberschützenmeister,
- * 1./2. Schützenmeister) innehaben.
+ * Verwaltet zeitraumbasierte Vorstandsfunktions-Zuweisungen. Beendete
+ * Funktionen bleiben mit Von/Bis erhalten (Funktionsverlauf).
+ *
+ * Wer Schriftführer/Kassier(-Stv.) wird, erhält zusätzlich eine eigene
+ * "Schützenrat"-Zuweisung (außer bei gleichzeitiger Spitzenfunktion). Sie ist
+ * unabhängig und endet nicht automatisch mit der auslösenden Funktion.
  */
 class BoardFunctionService
 {
+    public const SCHUETZENRAT = 'Schützenrat';
+
     public function assign(Member $member, int $boardFunctionID, ?string $dateFrom, ?string $note = null): MemberBoardFunctionAssignment
     {
         $alreadyOpen = $member->boardFunctionAssignments()
@@ -24,12 +29,20 @@ class BoardFunctionService
 
         abort_if($alreadyOpen, 422, 'Diese Funktion ist bereits zugewiesen.');
 
-        return MemberBoardFunctionAssignment::create([
-            'memberID' => $member->memberID,
-            'boardFunctionID' => $boardFunctionID,
-            'date_from' => $dateFrom,
-            'date_to' => null,
-        ]);
+        return DB::transaction(function () use ($member, $boardFunctionID, $dateFrom): MemberBoardFunctionAssignment {
+            $assignment = MemberBoardFunctionAssignment::create([
+                'memberID' => $member->memberID,
+                'boardFunctionID' => $boardFunctionID,
+                'date_from' => $dateFrom,
+                'date_to' => null,
+            ]);
+
+            if ($assignment->boardFunction->implies_schuetzenrat) {
+                $this->assignSchuetzenratIfMissing($member, $dateFrom);
+            }
+
+            return $assignment;
+        });
     }
 
     public function end(MemberBoardFunctionAssignment $assignment, string $dateTo): MemberBoardFunctionAssignment
@@ -48,42 +61,60 @@ class BoardFunctionService
     }
 
     /**
-     * Aktuell effektive Funktionen eines Mitglieds, inkl. automatisch
-     * abgeleitetem "Schützenrat" für Schriftführer/Kassier(-Stv.), sofern
-     * keine Spitzenfunktion gleichzeitig vorliegt und "Schützenrat" nicht
-     * bereits explizit zugewiesen ist.
+     * Aktuell laufende Funktionen eines Mitglieds.
      *
-     * @return Collection<int, array{boardFunction: BoardFunction, assignment: ?MemberBoardFunctionAssignment, derived: bool}>
+     * @return Collection<int, MemberBoardFunctionAssignment>
      */
     public function currentFunctionsFor(Member $member): Collection
     {
-        $openAssignments = $member->boardFunctionAssignments()
+        return $member->boardFunctionAssignments()
+            ->open()
+            ->with('boardFunction')
+            ->get()
+            ->sortBy(fn (MemberBoardFunctionAssignment $assignment) => $assignment->boardFunction->sort_order)
+            ->values();
+    }
+
+    /**
+     * Beendete Funktionen eines Mitglieds, zuletzt beendete zuerst.
+     *
+     * @return Collection<int, MemberBoardFunctionAssignment>
+     */
+    public function formerFunctionsFor(Member $member): Collection
+    {
+        return $member->boardFunctionAssignments()
+            ->whereNotNull('date_to')
+            ->with('boardFunction')
+            ->orderByDesc('date_to')
+            ->orderByDesc('date_from')
+            ->get();
+    }
+
+    private function assignSchuetzenratIfMissing(Member $member, ?string $dateFrom): void
+    {
+        $schuetzenrat = BoardFunction::where('name', self::SCHUETZENRAT)->first();
+
+        if (! $schuetzenrat) {
+            return;
+        }
+
+        $openFunctions = $member->boardFunctionAssignments()
             ->open()
             ->with('boardFunction')
             ->get();
 
-        $entries = $openAssignments->map(fn (MemberBoardFunctionAssignment $assignment) => [
-            'boardFunction' => $assignment->boardFunction,
-            'assignment' => $assignment,
-            'derived' => false,
-        ]);
+        $hasTopVorstand = $openFunctions->contains(fn ($assignment) => $assignment->boardFunction->is_top_vorstand);
+        $hasSchuetzenrat = $openFunctions->contains('boardFunctionID', $schuetzenrat->boardFunctionID);
 
-        $hasTopVorstand = $openAssignments->contains(fn ($a) => $a->boardFunction->is_top_vorstand);
-        $hasSchuetzenratImplying = $openAssignments->contains(fn ($a) => $a->boardFunction->implies_schuetzenrat);
-        $hasExplicitSchuetzenrat = $openAssignments->contains(fn ($a) => $a->boardFunction->name === 'Schützenrat');
-
-        if ($hasSchuetzenratImplying && !$hasTopVorstand && !$hasExplicitSchuetzenrat) {
-            $schuetzenrat = BoardFunction::where('name', 'Schützenrat')->first();
-
-            if ($schuetzenrat) {
-                $entries->push([
-                    'boardFunction' => $schuetzenrat,
-                    'assignment' => null,
-                    'derived' => true,
-                ]);
-            }
+        if ($hasTopVorstand || $hasSchuetzenrat) {
+            return;
         }
 
-        return $entries->sortBy(fn ($entry) => $entry['boardFunction']->sort_order)->values();
+        MemberBoardFunctionAssignment::create([
+            'memberID' => $member->memberID,
+            'boardFunctionID' => $schuetzenrat->boardFunctionID,
+            'date_from' => $dateFrom,
+            'date_to' => null,
+        ]);
     }
 }

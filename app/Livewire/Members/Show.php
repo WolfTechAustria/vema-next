@@ -74,6 +74,7 @@ class Show extends Component
         return view('livewire.members.show', [
             'boardFunctions' => BoardFunction::active()->orderBy('sort_order')->get(),
             'currentFunctions' => app(BoardFunctionService::class)->currentFunctionsFor($this->member),
+            'formerFunctions' => app(BoardFunctionService::class)->formerFunctionsFor($this->member),
         ])
             ->layout('layouts.app', [
                 'title' => $this->member->full_name.' | VEMA',

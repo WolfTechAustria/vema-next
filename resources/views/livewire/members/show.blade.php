@@ -368,67 +368,57 @@
 
                 <div class="divide-y divide-slate-100">
 
-                    @forelse($currentFunctions as $entry)
+                    @forelse($currentFunctions as $assignment)
 
                         <div class="flex items-center justify-between px-6 py-3">
 
                             <div>
                                 <div class="text-sm font-medium text-slate-900">
-                                    {{ $entry['boardFunction']->name }}
-
-                                    @if($entry['derived'])
-                                        <span class="ml-1 text-xs font-normal text-slate-400">
-                                            (automatisch)
-                                        </span>
-                                    @endif
+                                    {{ $assignment->boardFunction->name }}
                                 </div>
 
-                                @if($entry['assignment']?->date_from)
+                                @if($assignment->date_from)
                                     <div class="text-xs text-slate-400">
-                                        seit {{ $entry['assignment']->date_from->format('d.m.Y') }}
+                                        seit {{ $assignment->date_from->format('d.m.Y') }}
                                     </div>
                                 @endif
                             </div>
 
-                            @if(!$entry['derived'])
+                            @if($endingAssignmentID === $assignment->assignmentID)
 
-                                @if($endingAssignmentID === $entry['assignment']->assignmentID)
-
-                                    <div class="flex items-center gap-2">
-                                        <input
-                                            type="date"
-                                            wire:model="endFunctionDate"
-                                            class="rounded-lg border border-slate-300 px-2 py-1 text-xs"
-                                        >
-
-                                        <button
-                                            type="button"
-                                            wire:click="endFunction"
-                                            class="text-xs font-semibold text-red-600 hover:text-red-800"
-                                        >
-                                            Bestätigen
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            wire:click="$set('endingAssignmentID', null)"
-                                            class="text-xs text-slate-400 hover:text-slate-700"
-                                        >
-                                            Abbrechen
-                                        </button>
-                                    </div>
-
-                                @else
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="date"
+                                        wire:model="endFunctionDate"
+                                        class="rounded-lg border border-slate-300 px-2 py-1 text-xs"
+                                    >
 
                                     <button
                                         type="button"
-                                        wire:click="openEndFunctionModal({{ $entry['assignment']->assignmentID }})"
-                                        class="text-xs font-semibold text-slate-500 hover:text-red-700"
+                                        wire:click="endFunction"
+                                        class="text-xs font-semibold text-red-600 hover:text-red-800"
                                     >
-                                        Beenden
+                                        Bestätigen
                                     </button>
 
-                                @endif
+                                    <button
+                                        type="button"
+                                        wire:click="$set('endingAssignmentID', null)"
+                                        class="text-xs text-slate-400 hover:text-slate-700"
+                                    >
+                                        Abbrechen
+                                    </button>
+                                </div>
+
+                            @else
+
+                                <button
+                                    type="button"
+                                    wire:click="openEndFunctionModal({{ $assignment->assignmentID }})"
+                                    class="text-xs font-semibold text-slate-500 hover:text-red-700"
+                                >
+                                    Beenden
+                                </button>
 
                             @endif
 
@@ -443,6 +433,36 @@
                     @endforelse
 
                 </div>
+
+                @if($formerFunctions->isNotEmpty())
+
+                    <div class="border-t border-slate-200 bg-slate-50 px-6 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Frühere Funktionen
+                    </div>
+
+                    <div class="divide-y divide-slate-100">
+
+                        @foreach($formerFunctions as $assignment)
+
+                            <div class="flex items-center justify-between gap-4 px-6 py-2.5 text-sm">
+
+                                <div class="text-slate-600">
+                                    {{ $assignment->boardFunction->name }}
+                                </div>
+
+                                <div class="shrink-0 text-xs text-slate-400">
+                                    {{ $assignment->date_from?->format('d.m.Y') ?? 'unbekannt' }}
+                                    –
+                                    {{ $assignment->date_to->format('d.m.Y') }}
+                                </div>
+
+                            </div>
+
+                        @endforeach
+
+                    </div>
+
+                @endif
 
             </section>
 
