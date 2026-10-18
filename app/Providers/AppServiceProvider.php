@@ -12,6 +12,7 @@ use App\Services\MailPosts\ImapMailPostInbox;
 use App\Services\MailPosts\MailPostInbox;
 use App\Services\PlanEntitlements;
 use App\Services\TenantManager;
+use App\Services\UploadLimits;
 use Carbon\CarbonImmutable;
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Support\Facades\Blade;
@@ -47,6 +48,16 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDemoMode();
         $this->configureClubMailSender();
         $this->configurePlanFeatures();
+        $this->configureUploads();
+    }
+
+    /**
+     * Temporäre Livewire-Uploads: standardmäßig nur 12 MB – PDFs dürfen bis
+     * 20 MB groß sein (die eigentliche Prüfung erfolgt je Feld).
+     */
+    protected function configureUploads(): void
+    {
+        config(['livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.UploadLimits::TEMPORARY_UPLOAD_MAX_KB]]);
     }
 
     /**

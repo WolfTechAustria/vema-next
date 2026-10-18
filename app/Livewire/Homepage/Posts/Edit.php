@@ -10,6 +10,7 @@ use App\Services\HomepageFileService;
 use App\Services\HomepageImageService;
 use App\Services\HomepageImageUrls;
 use App\Services\HtmlSanitizer;
+use App\Services\UploadLimits;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -472,6 +473,8 @@ class Edit extends Component
             'attachments' => $this->post?->attachments()->get() ?? collect(),
             'statuses' => PostStatus::cases(),
             'imageUrls' => app(HomepageImageUrls::class),
+            'imageMaxKb' => app(UploadLimits::class)->effectiveKb(HomepageImageService::MAX_SIZE_KB),
+            'pdfMaxKb' => app(UploadLimits::class)->effectiveKb(HomepageFileService::MAX_SIZE_KB),
         ])->layout('layouts.app', [
             'title' => ($this->post ? 'Beitrag bearbeiten' : 'Neuer Beitrag').' | VEMA',
             'heading' => 'Homepage',

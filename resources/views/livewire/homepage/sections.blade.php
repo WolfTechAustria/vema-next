@@ -330,8 +330,12 @@
                                     <a href="{{ $imageUrls->sectionMedia($editingSection, 'datei') }}" target="_blank" class="ml-2 text-slate-600 underline">PDF ansehen</a>
                                     <button type="button" wire:click="removeMedia('file')" class="ml-2 text-red-600">entfernen</button>
                                 @endif
-                                <input type="file" wire:model="file" accept="application/pdf" class="mt-1 block text-sm">
-                                @error('file') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                                @php($pdfMaxKb = app(\App\Services\UploadLimits::class)->effectiveKb(\App\Services\HomepageFileService::MAX_SIZE_KB))
+                                <span class="text-xs text-slate-400">(max. {{ \App\Services\UploadLimits::label($pdfMaxKb) }})</span>
+                                <x-upload-guard :max-kb="$pdfMaxKb">
+                                    <input type="file" wire:model="file" accept="application/pdf" class="mt-1 block text-sm">
+                                </x-upload-guard>
+                                <x-upload-error field="file" :max-kb="$pdfMaxKb" />
                             </div>
 
                             <p class="text-xs text-slate-500">Reihenfolge: hochgeladenes PDF, dann Mitgliederbereich, dann Link.</p>
