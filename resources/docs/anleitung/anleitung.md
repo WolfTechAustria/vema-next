@@ -401,6 +401,25 @@ Mit **Termin anlegen** speichern.
 
 ![Termin bearbeiten – nur für ausgewählte Mitglieder sichtbar](bilder/46-termin-bearbeiten.png)
 
+**Serientermine** (z. B. die wöchentliche Probe oder der Stammtisch jeden ersten Freitag): Unter **Wiederholung** wählen Sie
+
+| Auswahl | Beispiel |
+|---|---|
+| **Wöchentlich** | jeden Dienstag – mit **Alle … Wochen** auch alle 2 Wochen; über die Tasten **Mo – So** auch an mehreren Wochentagen |
+| **Monatlich am 15.** | jeden Monat am gleichen Tag (Monate ohne diesen Tag, z. B. ohne 31., werden übersprungen) |
+| **Monatlich am 1. Freitag** | jeden Monat am gleichen Wochentag – bei Daten in der letzten Monatswoche auch „am letzten Freitag“ |
+
+Die Beschriftungen richten sich nach dem gewählten **Datum** des ersten Termins. Unter **Endet** geben Sie entweder ein Datum (**am …**) oder die Anzahl (**nach … Terminen**) an. Darunter steht zur Kontrolle, wie viele Termine entstehen und von wann bis wann. Eine Serie umfasst höchstens 150 Termine. Mit **Serie anlegen** speichern.
+
+VEMA legt jeden Termin der Serie einzeln an: Mitglieder sagen für jeden Termin getrennt zu oder ab, und jeder Termin erscheint einzeln im Kalender-Abo und auf der Homepage. In der Terminliste tragen Serientermine das Etikett **↻ Serie** (mit der Maus darauf zeigen, um die Regel zu sehen).
+
+**Serientermin bearbeiten:** Nach **Bearbeiten** fragt das Formular oben:
+
+- **Nur diesen Termin ändern** – z. B. eine Probe, die ausnahmsweise später beginnt. Die anderen Termine bleiben unverändert.
+- **Diesen und alle folgenden** – Änderungen (auch an Uhrzeit, Wiederholung und Ende) gelten ab diesem Termin. Frühere Termine bleiben, wie sie sind. Zu- und Absagen bleiben bei allen Terminen erhalten, deren Datum gleich bleibt. Wird z. B. der Wochentag geändert, entstehen neue Termine ohne Rückmeldungen.
+
+**Serientermin löschen:** **Löschen** bietet **Nur diesen Termin** (z. B. die Probe in den Ferien – er kommt auch bei späteren Änderungen der Serie nicht wieder) oder **Diesen und alle folgenden** an.
+
 ### 7.2 Terminliste
 
 Rechts sehen Sie die **Anstehenden Termine** – zunächst die nächsten fünf, mit **Mehr anzeigen** jeweils fünf weitere. Über **Vergangene anzeigen** wechseln Sie zu den vergangenen Terminen.

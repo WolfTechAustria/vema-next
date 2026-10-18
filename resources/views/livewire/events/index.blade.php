@@ -36,6 +36,35 @@
 
             <form wire:submit="saveEvent" class="mt-4 space-y-4">
 
+                @if($editingSeriesID)
+                    <div class="rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm">
+                        <div class="font-medium text-violet-900">
+                            Termin einer Serie
+                            @if($editingSeriesDescription)
+                                <span class="font-normal">({{ $editingSeriesDescription }})</span>
+                            @endif
+                        </div>
+
+                        <div class="mt-2 flex flex-col gap-1 sm:flex-row sm:gap-5">
+                            <label class="flex items-center gap-2">
+                                <input type="radio" wire:model.live="editScope" value="single" class="h-4 w-4 border-slate-300">
+                                Nur diesen Termin ändern
+                            </label>
+
+                            <label class="flex items-center gap-2">
+                                <input type="radio" wire:model.live="editScope" value="following" class="h-4 w-4 border-slate-300">
+                                Diesen und alle folgenden
+                            </label>
+                        </div>
+
+                        @if($editScope === 'following')
+                            <p class="mt-2 text-xs text-violet-800">
+                                Zu- und Absagen bleiben bei allen Terminen erhalten, deren Datum gleich bleibt.
+                            </p>
+                        @endif
+                    </div>
+                @endif
+
                 <div>
                     <label class="mb-1 block text-sm font-medium">
                         Titel
@@ -70,7 +99,7 @@
 
                         <input
                             type="date"
-                            wire:model="startDate"
+                            wire:model.live="startDate"
                             class="w-full rounded-lg border border-slate-300 px-3 py-2"
                         >
 
@@ -132,6 +161,143 @@
                     @endunless
 
                 </div>
+
+                @if(! $editingEventID || ($editingSeriesID && $editScope === 'following'))
+                    <div class="space-y-3 rounded-lg border border-slate-200 p-4">
+
+                        <div>
+                            <label class="mb-1 block text-sm font-medium">
+                                Wiederholung
+                            </label>
+
+                            <select
+                                wire:model.live="repeat"
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                            >
+                                @foreach($repeatOptions as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+
+                            @error('repeat')
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        @if($repeat !== 'none')
+
+                            <div class="flex items-center gap-2 text-sm">
+                                <span>Alle</span>
+
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="12"
+                                    wire:model.live.debounce.400ms="repeatInterval"
+                                    class="w-20 rounded-lg border border-slate-300 px-3 py-1.5"
+                                >
+
+                                <span>{{ $repeat === 'weekly' ? 'Wochen' : 'Monate' }}</span>
+                            </div>
+
+                            @error('repeatInterval')
+                            <p class="text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+
+                            @if($repeat === 'weekly')
+                                <div>
+                                    <div class="mb-1 text-sm font-medium">
+                                        An
+                                    </div>
+
+                                    <div class="flex flex-wrap gap-1.5">
+                                        @foreach(\App\Models\ClubEventSeries::WEEKDAY_SHORT as $weekday => $label)
+                                            <label
+                                                wire:key="repeat-weekday-{{ $weekday }}"
+                                                class="cursor-pointer rounded-lg border px-2.5 py-1 text-sm has-checked:border-slate-900 has-checked:bg-slate-900 has-checked:text-white border-slate-300 text-slate-700"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    wire:model.live="repeatWeekdays"
+                                                    value="{{ $weekday }}"
+                                                    class="sr-only"
+                                                >
+                                                {{ $label }}
+                                            </label>
+                                        @endforeach
+                                    </div>
+
+                                    @error('repeatWeekdays')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            @endif
+
+                            <div class="space-y-2 text-sm">
+                                <div class="font-medium">
+                                    Endet
+                                </div>
+
+                                <label class="flex flex-wrap items-center gap-2">
+                                    <input type="radio" wire:model.live="repeatEnd" value="until" class="h-4 w-4 border-slate-300">
+                                    <span>am</span>
+
+                                    <input
+                                        type="date"
+                                        wire:model.live="repeatUntil"
+                                        @disabled($repeatEnd !== 'until')
+                                        class="rounded-lg border border-slate-300 px-3 py-1.5 disabled:opacity-50"
+                                    >
+                                </label>
+
+                                @error('repeatUntil')
+                                <p class="text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+
+                                <label class="flex flex-wrap items-center gap-2">
+                                    <input type="radio" wire:model.live="repeatEnd" value="count" class="h-4 w-4 border-slate-300">
+                                    <span>nach</span>
+
+                                    <input
+                                        type="number"
+                                        min="2"
+                                        max="{{ \App\Services\ClubEventSeriesService::MAX_OCCURRENCES }}"
+                                        wire:model.live.debounce.400ms="repeatCount"
+                                        @disabled($repeatEnd !== 'count')
+                                        class="w-20 rounded-lg border border-slate-300 px-3 py-1.5 disabled:opacity-50"
+                                    >
+
+                                    <span>Terminen</span>
+                                </label>
+
+                                @error('repeatCount')
+                                <p class="text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            @if($seriesPreview)
+                                <p @class([
+                                    'rounded-lg px-3 py-2 text-xs',
+                                    'bg-red-50 text-red-700' => $seriesPreview['tooMany'],
+                                    'bg-slate-50 text-slate-600' => ! $seriesPreview['tooMany'],
+                                ])>
+                                    @if($seriesPreview['tooMany'])
+                                        Mehr als {{ \App\Services\ClubEventSeriesService::MAX_OCCURRENCES }} Termine – bitte früheres Ende wählen.
+                                    @else
+                                        {{ ucfirst($seriesPreview['description']) }}:
+                                        <strong>{{ $seriesPreview['count'] }} {{ $seriesPreview['count'] === 1 ? 'Termin' : 'Termine' }}</strong>,
+                                        {{ $seriesPreview['first']->translatedFormat('D, d.m.Y') }}
+                                        @if($seriesPreview['count'] > 1)
+                                            bis {{ $seriesPreview['last']->translatedFormat('D, d.m.Y') }}
+                                        @endif
+                                    @endif
+                                </p>
+                            @endif
+
+                        @endif
+
+                    </div>
+                @endif
 
                 <div>
                     <label class="mb-1 block text-sm font-medium">
@@ -250,7 +416,11 @@
                     class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 >
                     <span wire:loading.remove wire:target="saveEvent">
-                        {{ $editingEventID ? 'Änderungen speichern' : 'Termin anlegen' }}
+                        @if($editingEventID)
+                            {{ $editingSeriesID && $editScope === 'following' ? 'Serie ab diesem Termin speichern' : 'Änderungen speichern' }}
+                        @else
+                            {{ $repeat !== 'none' ? 'Serie anlegen' : 'Termin anlegen' }}
+                        @endif
                     </span>
 
                     <span wire:loading wire:target="saveEvent">
@@ -293,6 +463,15 @@
                                     @if($event->source)
                                         <span class="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
                                             {{ $event->source->name }}
+                                        </span>
+                                    @endif
+
+                                    @if($event->series)
+                                        <span
+                                            class="whitespace-nowrap rounded-full bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700"
+                                            title="{{ ucfirst($event->series->describe()) }}"
+                                        >
+                                            ↻ Serie
                                         </span>
                                     @endif
                                 </div>
@@ -360,14 +539,51 @@
                                         Bearbeiten
                                     </button>
 
-                                    <button
-                                        type="button"
-                                        wire:click="deleteEvent({{ $event->eventID }})"
-                                        wire:confirm="Termin samt allen Rückmeldungen wirklich löschen?"
-                                        class="text-sm font-medium text-red-600 hover:text-red-800"
-                                    >
-                                        Löschen
-                                    </button>
+                                    @if($event->isPartOfSeries())
+                                        <div x-data="{ open: false }" class="relative">
+                                            <button
+                                                type="button"
+                                                x-on:click="open = ! open"
+                                                class="text-sm font-medium text-red-600 hover:text-red-800"
+                                            >
+                                                Löschen
+                                            </button>
+
+                                            <div
+                                                x-show="open"
+                                                x-cloak
+                                                x-on:click.outside="open = false"
+                                                class="absolute right-0 z-10 mt-2 w-56 rounded-lg border border-slate-200 bg-white p-1 shadow-lg"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    wire:click="deleteEvent({{ $event->eventID }})"
+                                                    wire:confirm="Diesen Termin samt allen Rückmeldungen wirklich löschen?"
+                                                    class="block w-full rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                                                >
+                                                    Nur diesen Termin
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    wire:click="deleteFollowingEvents({{ $event->eventID }})"
+                                                    wire:confirm="Diesen und alle folgenden Termine der Serie samt Rückmeldungen wirklich löschen?"
+                                                    class="block w-full rounded-md px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                                >
+                                                    Diesen und alle folgenden
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <button
+                                            type="button"
+                                            wire:click="deleteEvent({{ $event->eventID }})"
+                                            wire:confirm="Termin samt allen Rückmeldungen wirklich löschen?"
+                                            class="text-sm font-medium text-red-600 hover:text-red-800"
+                                        >
+                                            Löschen
+                                        </button>
+                                    @endif
                                 @endunless
 
                             </div>

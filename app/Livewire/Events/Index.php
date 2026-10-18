@@ -4,9 +4,11 @@ namespace App\Livewire\Events;
 
 use App\Enums\EventResponseStatus;
 use App\Models\ClubEvent;
+use App\Models\ClubEventSeries;
 use App\Models\ClubEventSource;
 use App\Models\Member;
 use App\Services\ActivityLogger;
+use App\Services\ClubEventSeriesService;
 use App\Services\ExternalCalendarException;
 use App\Services\ExternalCalendarSyncService;
 use Carbon\Carbon;
@@ -45,6 +47,38 @@ class Index extends Component
 
     public ?int $editingEventID = null;
 
+    /**
+     * Wiederholung: none, weekly, monthly_day, monthly_weekday oder
+     * monthly_last_weekday.
+     */
+    public string $repeat = 'none';
+
+    public string $repeatInterval = '1';
+
+    /**
+     * ISO-Wochentage (1 = Montag) bei wöchentlicher Wiederholung.
+     *
+     * @var array<int, string>
+     */
+    public array $repeatWeekdays = [];
+
+    /**
+     * Serienende: until (bis Datum) oder count (Anzahl Termine).
+     */
+    public string $repeatEnd = 'until';
+
+    public string $repeatUntil = '';
+
+    public string $repeatCount = '10';
+
+    /**
+     * Beim Bearbeiten eines Serientermins: single (nur dieser) oder
+     * following (dieser und alle folgenden).
+     */
+    public string $editScope = 'single';
+
+    public ?int $editingSeriesID = null;
+
     public ?int $viewingResponsesEventID = null;
 
     public bool $showPast = false;
@@ -68,9 +102,12 @@ class Index extends Component
 
     public ?int $editingSourceID = null;
 
-    public function saveEvent(): void
+    public function saveEvent(ClubEventSeriesService $seriesService): void
     {
+        $savesSeries = $this->savesSeries();
+
         $validated = $this->validate([
+            ...$this->seriesRules($savesSeries),
             'title' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
             'location' => ['nullable', 'string', 'max:150'],
@@ -89,6 +126,11 @@ class Index extends Component
             'startTime' => 'Beginn',
             'endDate' => 'Enddatum',
             'endTime' => 'Ende',
+            'repeat' => 'Wiederholung',
+            'repeatInterval' => 'Intervall',
+            'repeatWeekdays' => 'Wochentage',
+            'repeatUntil' => 'Enddatum der Serie',
+            'repeatCount' => 'Anzahl der Termine',
         ]);
 
         $startsAt = $this->allDay
@@ -113,6 +155,12 @@ class Index extends Component
             'rsvp_enabled' => $this->rsvpEnabled,
             'show_on_homepage' => $this->showOnHomepage,
         ];
+
+        if ($savesSeries) {
+            $this->saveSeries($seriesService, $attributes);
+
+            return;
+        }
 
         if ($this->editingEventID) {
             $event = ClubEvent::query()->whereNull('sourceID')->findOrFail($this->editingEventID);
@@ -157,7 +205,257 @@ class Index extends Component
             : '';
         $this->endTime = $event->ends_at && ! $event->all_day ? $event->ends_at->format('H:i') : '';
 
+        $this->fillSeriesFields($event);
+
         $this->resetValidation();
+    }
+
+    /**
+     * Regel der Serie für „diesen und alle folgenden“ vorbelegen; das Ende
+     * wird immer als Datum des letzten Termins angeboten.
+     */
+    private function fillSeriesFields(ClubEvent $event): void
+    {
+        $this->editScope = 'single';
+        $this->editingSeriesID = $event->seriesID;
+
+        $series = $event->series;
+
+        if (! $series) {
+            $this->repeat = 'none';
+
+            return;
+        }
+
+        $this->repeat = match (true) {
+            $series->frequency === ClubEventSeries::FREQUENCY_WEEKLY => 'weekly',
+            $series->frequency === ClubEventSeries::FREQUENCY_MONTHLY_DAY => 'monthly_day',
+            $series->month_week === -1 => 'monthly_last_weekday',
+            default => 'monthly_weekday',
+        };
+        $this->repeatInterval = (string) $series->interval;
+        $this->repeatWeekdays = array_map('strval', $series->weekdays ?? []);
+        $this->repeatEnd = 'until';
+        $this->repeatUntil = Carbon::parse($series->events()->max('starts_at'))->format('Y-m-d');
+    }
+
+    public function updatedRepeat(): void
+    {
+        $this->defaultWeekdayFromStartDate();
+    }
+
+    public function updatedStartDate(): void
+    {
+        $this->defaultWeekdayFromStartDate();
+
+        // Passt die gewählte Regel nicht mehr zum Datum (z. B. „letzter Dienstag“), die nächstliegende wählen.
+        if (! array_key_exists($this->repeat, $this->repeatOptions())) {
+            $this->repeat = array_key_exists('monthly_weekday', $this->repeatOptions()) ? 'monthly_weekday' : 'monthly_last_weekday';
+        }
+    }
+
+    /**
+     * Bei wöchentlicher Wiederholung ohne Auswahl den Wochentag des Datums
+     * vorbelegen.
+     */
+    private function defaultWeekdayFromStartDate(): void
+    {
+        if ($this->repeat !== 'weekly' || $this->repeatWeekdays !== [] || ! $this->validStartDate()) {
+            return;
+        }
+
+        $this->repeatWeekdays = [(string) $this->validStartDate()->dayOfWeekIso];
+    }
+
+    private function validStartDate(): ?Carbon
+    {
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->startDate)) {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m-d', $this->startDate)->startOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Neuer Serientermin oder Änderung „diesen und alle folgenden“.
+     */
+    private function savesSeries(): bool
+    {
+        if ($this->editingEventID) {
+            return $this->editingSeriesID !== null && $this->editScope === 'following';
+        }
+
+        return $this->repeat !== 'none';
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    private function seriesRules(bool $savesSeries): array
+    {
+        if (! $savesSeries) {
+            return [];
+        }
+
+        return [
+            'repeat' => ['required', Rule::in(['weekly', 'monthly_day', 'monthly_weekday', 'monthly_last_weekday'])],
+            'repeatInterval' => ['required', 'integer', 'min:1', 'max:12'],
+            'repeatWeekdays' => [$this->repeat === 'weekly' ? 'required' : 'nullable', 'array'],
+            'repeatWeekdays.*' => ['integer', 'between:1,7'],
+            'repeatEnd' => ['required', Rule::in(['until', 'count'])],
+            'repeatUntil' => [$this->repeatEnd === 'until' ? 'required' : 'nullable', 'date_format:Y-m-d', 'after_or_equal:startDate'],
+            'repeatCount' => [$this->repeatEnd === 'count' ? 'required' : 'nullable', 'integer', 'min:2', 'max:'.ClubEventSeriesService::MAX_OCCURRENCES],
+        ];
+    }
+
+    /**
+     * @return array{frequency: string, interval: int, weekdays: array<int, int>|null, month_week: int|null, until: string|null, count: int|null, excluded_dates: array<int, string>}
+     */
+    private function repeatRule(Carbon $start): array
+    {
+        $monthWeek = intdiv($start->day - 1, 7) + 1;
+
+        return [
+            'frequency' => match ($this->repeat) {
+                'weekly' => ClubEventSeries::FREQUENCY_WEEKLY,
+                'monthly_day' => ClubEventSeries::FREQUENCY_MONTHLY_DAY,
+                default => ClubEventSeries::FREQUENCY_MONTHLY_WEEKDAY,
+            },
+            'interval' => max(1, (int) $this->repeatInterval),
+            'weekdays' => $this->repeat === 'weekly'
+                ? collect($this->repeatWeekdays)->map(fn ($weekday) => (int) $weekday)->unique()->sort()->values()->all()
+                : null,
+            'month_week' => match ($this->repeat) {
+                'monthly_last_weekday' => -1,
+                'monthly_weekday' => $monthWeek > 4 ? -1 : $monthWeek,
+                default => null,
+            },
+            'until' => $this->repeatEnd === 'until' ? ($this->repeatUntil ?: null) : null,
+            'count' => $this->repeatEnd === 'count' ? (int) $this->repeatCount : null,
+            'excluded_dates' => [],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function saveSeries(ClubEventSeriesService $seriesService, array $attributes): void
+    {
+        /** @var Carbon $startsAt */
+        $startsAt = $attributes['starts_at'];
+        $rule = $this->repeatRule($startsAt);
+        $dateCount = count($seriesService->occurrenceDates($startsAt, $rule));
+
+        if ($dateCount === 0) {
+            $this->addError('repeat', 'Nach dieser Regel gibt es keinen Termin – bitte Datum und Wochentage prüfen.');
+
+            return;
+        }
+
+        if ($dateCount > ClubEventSeriesService::MAX_OCCURRENCES) {
+            $this->addError(
+                $this->repeatEnd === 'count' ? 'repeatCount' : 'repeatUntil',
+                'Eine Serie darf höchstens '.ClubEventSeriesService::MAX_OCCURRENCES.' Termine umfassen.'
+            );
+
+            return;
+        }
+
+        $memberIDs = array_map('intval', $this->selectedMembers);
+
+        if (! $this->editingEventID) {
+            $result = $seriesService->create($attributes, $rule, $memberIDs);
+            $first = $result['series']->events()->orderBy('starts_at')->first();
+
+            ActivityLogger::log(
+                'event.series_created',
+                'Serientermin '.$first->activityName().' wurde mit '.$result['created'].' Terminen angelegt.',
+                'ClubEvent',
+                $first->eventID,
+                ActivityLogger::created($this->seriesSnapshot($first), ClubEvent::ACTIVITY_LABELS)
+            );
+
+            session()->flash('success', 'Serie mit '.$result['created'].' Terminen wurde angelegt.');
+            $this->resetForm();
+
+            return;
+        }
+
+        $event = ClubEvent::query()
+            ->whereNull('sourceID')
+            ->whereNotNull('seriesID')
+            ->with('series')
+            ->findOrFail($this->editingEventID);
+
+        $previousStart = $event->series->events()
+            ->where('starts_at', '<', $event->starts_at->copy()->startOfDay())
+            ->max('starts_at');
+
+        if ($previousStart && $startsAt->copy()->startOfDay()->lte(Carbon::parse($previousStart)->startOfDay())) {
+            $this->addError('startDate', 'Das Datum muss nach dem vorherigen Termin der Serie ('.Carbon::parse($previousStart)->format('d.m.Y').') liegen.');
+
+            return;
+        }
+
+        $before = $this->seriesSnapshot($event);
+        $result = $seriesService->updateFollowing($event, $attributes, $rule, $memberIDs);
+        $first = $result['series']->events()->orderBy('starts_at')->first();
+
+        $details = ActivityLogger::changes($before, $this->seriesSnapshot($first), ClubEvent::ACTIVITY_LABELS);
+
+        ActivityLogger::log(
+            'event.series_updated',
+            'Serientermin '.$first->activityName().' und alle folgenden wurden geändert ('
+                .$result['updated'].' geändert, '.$result['created'].' neu, '.$result['deleted'].' entfernt).',
+            'ClubEvent',
+            $first->eventID,
+            $details
+        );
+
+        session()->flash('success', 'Serie wurde ab diesem Termin aktualisiert.');
+        $this->resetForm();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function seriesSnapshot(ClubEvent $event): array
+    {
+        $series = $event->series()->first();
+
+        return $event->activitySnapshot() + [
+            'series' => $series ? ClubEventSeries::describeRule($series->rule(), $event->starts_at) : null,
+        ];
+    }
+
+    public function deleteFollowingEvents(int $eventID, ClubEventSeriesService $seriesService): void
+    {
+        $event = ClubEvent::query()
+            ->whereNull('sourceID')
+            ->whereNotNull('seriesID')
+            ->findOrFail($eventID);
+
+        $seriesID = $event->seriesID;
+        $deleted = $seriesService->deleteFollowing($event);
+
+        ActivityLogger::log(
+            'event.series_deleted',
+            'Serientermin '.$event->activityName().' und alle folgenden wurden gelöscht ('.$deleted.' Termine).',
+            'ClubEvent',
+            $event->eventID
+        );
+
+        if ($this->editingSeriesID === $seriesID) {
+            $this->resetForm();
+        }
+
+        $this->viewingResponsesEventID = null;
+
+        session()->flash('success', $deleted.' Termine der Serie wurden gelöscht.');
     }
 
     public function cancelEdit(): void
@@ -166,10 +464,15 @@ class Index extends Component
         $this->resetValidation();
     }
 
-    public function deleteEvent(int $eventID): void
+    public function deleteEvent(int $eventID, ClubEventSeriesService $seriesService): void
     {
         $event = ClubEvent::query()->whereNull('sourceID')->findOrFail($eventID);
-        $event->delete();
+
+        if ($event->isPartOfSeries()) {
+            $seriesService->deleteOccurrence($event);
+        } else {
+            $event->delete();
+        }
 
         ActivityLogger::log(
             'event.deleted',
@@ -419,6 +722,14 @@ class Index extends Component
             'showOnHomepage',
             'selectedMembers',
             'editingEventID',
+            'repeat',
+            'repeatInterval',
+            'repeatWeekdays',
+            'repeatEnd',
+            'repeatUntil',
+            'repeatCount',
+            'editScope',
+            'editingSeriesID',
         ]);
     }
 
@@ -434,6 +745,80 @@ class Index extends Component
         ]);
     }
 
+    /**
+     * Auswahl „Wiederholung“ mit Beschriftungen passend zum gewählten Datum,
+     * z. B. „Monatlich am 2. Dienstag“.
+     *
+     * @return array<string, string>
+     */
+    private function repeatOptions(): array
+    {
+        $start = $this->validStartDate();
+        $options = $this->editingEventID ? [] : ['none' => 'Keine'];
+        $options['weekly'] = 'Wöchentlich';
+
+        if (! $start) {
+            return $options + [
+                'monthly_day' => 'Monatlich am gleichen Tag',
+                'monthly_weekday' => 'Monatlich am gleichen Wochentag (z. B. 2. Dienstag)',
+            ];
+        }
+
+        $weekday = ClubEventSeries::WEEKDAY_NAMES[$start->dayOfWeekIso];
+        $monthWeek = intdiv($start->day - 1, 7) + 1;
+
+        $options['monthly_day'] = 'Monatlich am '.$start->day.'.';
+
+        if ($monthWeek <= 4) {
+            $options['monthly_weekday'] = 'Monatlich am '.$monthWeek.'. '.$weekday;
+        }
+
+        if ($start->day + 7 > $start->daysInMonth) {
+            $options['monthly_last_weekday'] = 'Monatlich am letzten '.$weekday;
+        }
+
+        return $options;
+    }
+
+    /**
+     * Vorschau der Serie (Anzahl, erster und letzter Termin), solange die
+     * Eingaben vollständig sind.
+     *
+     * @return array{count: int, first: Carbon, last: Carbon, description: string, tooMany: bool}|null
+     */
+    private function seriesPreview(): ?array
+    {
+        $start = $this->validStartDate();
+        $showsRule = $this->editingEventID ? $this->savesSeries() : $this->repeat !== 'none';
+
+        if (! $showsRule || ! $start || ! array_key_exists($this->repeat, $this->repeatOptions())) {
+            return null;
+        }
+
+        if ($this->repeatEnd === 'until' && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->repeatUntil)) {
+            return null;
+        }
+
+        if ($this->repeatEnd === 'count' && ! ctype_digit($this->repeatCount)) {
+            return null;
+        }
+
+        $rule = $this->repeatRule($start);
+        $dates = app(ClubEventSeriesService::class)->occurrenceDates($start, $rule);
+
+        if ($dates === []) {
+            return null;
+        }
+
+        return [
+            'count' => count($dates),
+            'first' => Carbon::instance(reset($dates)),
+            'last' => Carbon::instance(end($dates)),
+            'description' => ClubEventSeries::describeRule($rule, $start),
+            'tooMany' => count($dates) > ClubEventSeriesService::MAX_OCCURRENCES,
+        ];
+    }
+
     public function render(): View
     {
         $eventsQuery = ClubEvent::query()
@@ -447,7 +832,12 @@ class Index extends Component
 
         $events = $eventsQuery
             ->when(! $this->showPast, fn ($query) => $query->limit($this->visibleUpcomingCount))
-            ->with(['source', 'responses.member', 'members'])
+            ->with([
+                'source',
+                'responses.member',
+                'members',
+                'series' => fn ($query) => $query->withMin('events', 'starts_at'),
+            ])
             ->get();
 
         $responseOverview = null;
@@ -478,6 +868,11 @@ class Index extends Component
             'hiddenEventsCount' => $totalEvents - $events->count(),
             'responseOverview' => $responseOverview,
             'sources' => ClubEventSource::query()->withCount('events')->orderBy('name')->get(),
+            'repeatOptions' => $this->repeatOptions(),
+            'seriesPreview' => $this->seriesPreview(),
+            'editingSeriesDescription' => $this->editingSeriesID
+                ? ClubEventSeries::query()->withMin('events', 'starts_at')->find($this->editingSeriesID)?->describe()
+                : null,
         ])->layout('layouts.app', [
             'title' => 'Termine | VEMA',
             'heading' => 'Termine',

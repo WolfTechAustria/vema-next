@@ -49,6 +49,7 @@ class ClubEvent extends Model
         'rsvp_enabled' => 'Zu-/Absage möglich',
         'show_on_homepage' => 'Auf der Homepage',
         'members' => 'Sichtbar für',
+        'series' => 'Wiederholung',
     ];
 
     /**
@@ -92,6 +93,16 @@ class ClubEvent extends Model
     public function source(): BelongsTo
     {
         return $this->belongsTo(ClubEventSource::class, 'sourceID', 'sourceID');
+    }
+
+    public function series(): BelongsTo
+    {
+        return $this->belongsTo(ClubEventSeries::class, 'seriesID', 'seriesID');
+    }
+
+    public function isPartOfSeries(): bool
+    {
+        return $this->seriesID !== null;
     }
 
     /**
