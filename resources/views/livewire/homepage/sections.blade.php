@@ -227,6 +227,26 @@
                         @endforeach
                     @endif
 
+                    @if($editingType === HomepageSectionType::Image)
+                        @include('livewire.homepage.partials.section-image', ['field' => 'image', 'label' => 'Bild', 'url' => $imageUrls->sectionMedia($editingSection, 'bild')])
+
+                        <div>
+                            <label class="mb-1 block text-sm font-medium">Bildunterschrift <span class="font-normal text-slate-400">(optional)</span></label>
+                            <input type="text" wire:model="imageCaption" maxlength="300" placeholder="z. B. Unser Schießstand nach der Modernisierung 2009" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                        </div>
+
+                        @unless($inColumnForm)
+                            <div class="flex flex-wrap items-center gap-3 text-sm">
+                                <span class="font-medium">Breite</span>
+                                <select wire:model="imageWidth" class="rounded-lg border border-slate-300 px-3 py-1.5">
+                                    @foreach($imageWidths as $widthValue => $widthLabel)
+                                        <option value="{{ $widthValue }}">{{ $widthLabel }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endunless
+                    @endif
+
                     @if($editingType === HomepageSectionType::Columns)
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>

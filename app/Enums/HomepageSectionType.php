@@ -18,6 +18,7 @@ enum HomepageSectionType: string
     case Columns = 'columns';
     case InfoBox = 'info_box';
     case ItemList = 'list';
+    case Image = 'image';
 
     /**
      * Nimmt andere Abschnitte auf (darf selbst nicht in Spalten liegen).
@@ -35,6 +36,7 @@ enum HomepageSectionType: string
             self::Columns => 'Zwei Spalten',
             self::InfoBox => 'Info-Box',
             self::ItemList => 'Titel mit Aufzählung',
+            self::Image => 'Bild',
             self::Text => 'Text',
             self::TextImage => 'Text mit Bild',
             self::Features => 'Zahlen-Kacheln',
@@ -52,6 +54,7 @@ enum HomepageSectionType: string
             self::Columns => 'Zwei Spalten nebeneinander, in die weitere Abschnitte gelegt werden – z. B. links Text, rechts eine Info-Box.',
             self::InfoBox => 'Hervorgehobene Box mit Titel, großer Angabe, Text und Button – mit oder ohne Rahmen.',
             self::ItemList => 'Überschrift mit nummerierten Schritten, Punkten oder Häkchen – z. B. „So einfach geht’s“.',
+            self::Image => 'Ein einzelnes Bild mit Bildunterschrift – schmal, normal oder in voller Breite.',
             self::Text => 'Überschrift und formatierter Text.',
             self::TextImage => 'Text neben einem Bild (Bild links oder rechts).',
             self::Features => 'Bis zu vier Kacheln mit großer Zahl, Titel und Text – z. B. Ausstattung.',

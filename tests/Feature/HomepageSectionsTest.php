@@ -278,7 +278,7 @@ describe('verein template', function () {
         $response = $this->get(route('homepage.page', 'training'))->assertOk()->assertSee('Jeden Montag ab 18 Uhr');
 
         foreach (HomepageSectionType::cases() as $type) {
-            if (! in_array($type, [HomepageSectionType::ImagePair, HomepageSectionType::Columns, HomepageSectionType::InfoBox], true)) {
+            if (! in_array($type, [HomepageSectionType::ImagePair, HomepageSectionType::Columns, HomepageSectionType::InfoBox, HomepageSectionType::Image], true)) {
                 $response->assertSee('Abschnitt '.$type->label());
             }
         }
@@ -489,5 +489,77 @@ describe('columns, info box and list', function () {
         $draftPage->update(['published' => true]);
 
         $this->get(route('homepage.sections.media', ['section' => $child->sectionID, 'kind' => 'bild']))->assertOk();
+    });
+});
+
+describe('image section and column centering', function () {
+    beforeEach(function () {
+        $editor = User::factory()->create();
+        $editor->assignRole(Role::findOrCreate('homepage', 'web'));
+        $this->actingAs($editor);
+        $this->page = HomepagePage::factory()->create(['slug' => 'bilder-seite']);
+    });
+
+    it('stores an image section with caption and width', function () {
+        Livewire::test(Sections::class, ['page' => $this->page])
+            ->call('addSection', 'image')
+            ->set('image', UploadedFile::fake()->image('stand.jpg', 2400, 1200))
+            ->set('imageCaption', 'Unser Schießstand')
+            ->set('imageWidth', 'wide')
+            ->call('saveSection')
+            ->assertHasNoErrors();
+
+        $section = HomepageSection::sole();
+
+        expect($section->type)->toBe(HomepageSectionType::Image)
+            ->and($section->value('caption'))->toBe('Unser Schießstand')
+            ->and($section->value('width'))->toBe('wide');
+
+        Storage::disk('local')->assertExists($section->image_path);
+    });
+
+    it('renders the image with caption and lightbox link', function () {
+        HomepageSetting::current()->update(['enabled' => true]);
+        Storage::disk('local')->put('homepage/sections/x/bild.jpg', 'jpeg');
+
+        $section = HomepageSection::factory()->for($this->page, 'page')->create([
+            'type' => HomepageSectionType::Image, 'heading' => null, 'body_html' => null,
+            'image_path' => 'homepage/sections/x/bild.jpg', 'data' => ['caption' => 'Unser Schießstand', 'width' => 'narrow'],
+        ]);
+
+        $this->get(route('homepage.page', 'bilder-seite'))
+            ->assertOk()
+            ->assertSee('data-lightbox="section-'.$section->sectionID.'"', false)
+            ->assertSee('Unser Schießstand')
+            ->assertSee('mx-auto max-w-[520px]', false);
+    });
+
+    it('centers a single section next to a column with several sections', function () {
+        HomepageSetting::current()->update(['enabled' => true]);
+        $columns = HomepageSection::factory()->for($this->page, 'page')->create(['type' => HomepageSectionType::Columns, 'heading' => null]);
+
+        foreach (['Erster Text', 'Zweiter Text'] as $sort => $heading) {
+            HomepageSection::factory()->for($this->page, 'page')->create(['type' => HomepageSectionType::Text, 'parentID' => $columns->sectionID, 'column' => 'left', 'sort' => $sort, 'heading' => $heading]);
+        }
+
+        HomepageSection::factory()->for($this->page, 'page')->create([
+            'type' => HomepageSectionType::InfoBox, 'parentID' => $columns->sectionID, 'column' => 'right', 'heading' => null,
+            'data' => ['box_title' => 'Mitgliedsbeitrag'],
+        ]);
+
+        $html = $this->get(route('homepage.page', 'bilder-seite'))->assertOk()->getContent();
+
+        expect(substr_count($html, 'md:self-center'))->toBe(1)
+            ->and(strpos($html, 'md:self-center'))->toBeGreaterThan(strpos($html, 'Zweiter Text'))
+            ->and(strpos($html, 'md:self-center'))->toBeLessThan(strpos($html, 'Mitgliedsbeitrag'));
+    });
+
+    it('does not center when both columns have one section', function () {
+        HomepageSetting::current()->update(['enabled' => true]);
+        $columns = HomepageSection::factory()->for($this->page, 'page')->create(['type' => HomepageSectionType::Columns, 'heading' => null]);
+        HomepageSection::factory()->for($this->page, 'page')->create(['type' => HomepageSectionType::Text, 'parentID' => $columns->sectionID, 'column' => 'left']);
+        HomepageSection::factory()->for($this->page, 'page')->create(['type' => HomepageSectionType::Text, 'parentID' => $columns->sectionID, 'column' => 'right']);
+
+        $this->get(route('homepage.page', 'bilder-seite'))->assertOk()->assertDontSee('md:self-center', false);
     });
 });

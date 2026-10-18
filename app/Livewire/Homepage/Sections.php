@@ -55,6 +55,17 @@ class Sections extends Component
         'check' => 'Häkchen',
     ];
 
+    /**
+     * Breite des Abschnitts „Bild“.
+     *
+     * @var array<string, string>
+     */
+    public const IMAGE_WIDTHS = [
+        'narrow' => 'Schmal',
+        'normal' => 'Normal',
+        'wide' => 'Volle Breite',
+    ];
+
     private const URL_PATTERN = '/^(https?:\/\/|mailto:|tel:|\/|#)\S*$/i';
 
     public ?int $pageID = null;
@@ -124,6 +135,10 @@ class Sections extends Component
     public array $listItems = [];
 
     public string $listStyle = 'numbered';
+
+    public string $imageCaption = '';
+
+    public string $imageWidth = 'normal';
 
     public ?UploadedFile $image = null;
 
@@ -195,6 +210,8 @@ class Sections extends Component
         $this->columnsAlign = (string) $section->value('align', 'top');
         $this->boxFramed = ! $section->value('box_frameless', false);
         $this->listStyle = (string) $section->value('list_style', 'numbered');
+        $this->imageCaption = (string) $section->value('caption', '');
+        $this->imageWidth = (string) $section->value('width', 'normal');
         $this->listItems = collect($section->value('list_items', []))
             ->map(fn ($item) => ['title' => (string) data_get($item, 'title', ''), 'text' => (string) data_get($item, 'text', '')])
             ->values()
@@ -234,6 +251,8 @@ class Sections extends Component
             'listItems.*.title' => ['nullable', 'string', 'max:150'],
             'listItems.*.text' => ['nullable', 'string', 'max:600'],
             'listStyle' => [Rule::in(array_keys(self::LIST_STYLES))],
+            'imageCaption' => ['nullable', 'string', 'max:300'],
+            'imageWidth' => [Rule::in(array_keys(self::IMAGE_WIDTHS))],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.HomepageImageService::MAX_SIZE_KB],
             'image2' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.HomepageImageService::MAX_SIZE_KB],
             'file' => ['nullable', 'file', 'mimes:pdf', 'max:'.HomepageFileService::MAX_SIZE_KB],
@@ -271,6 +290,8 @@ class Sections extends Component
                 'align' => $section->type === HomepageSectionType::Columns ? $validated['columnsAlign'] : null,
                 'box_frameless' => in_array($section->type, [HomepageSectionType::TextBox, HomepageSectionType::InfoBox], true) && ! $validated['boxFramed'],
                 'list_style' => $section->type === HomepageSectionType::ItemList ? $validated['listStyle'] : null,
+                'caption' => $section->type === HomepageSectionType::Image ? trim((string) $validated['imageCaption']) : null,
+                'width' => $section->type === HomepageSectionType::Image && $validated['imageWidth'] !== 'normal' ? $validated['imageWidth'] : null,
                 'list_items' => $section->type === HomepageSectionType::ItemList
                     ? array_values(array_filter(
                         array_map(fn (array $item) => ['title' => trim((string) ($item['title'] ?? '')), 'text' => trim((string) ($item['text'] ?? ''))], $validated['listItems']),
@@ -511,7 +532,7 @@ class Sections extends Component
         $this->reset([
             'editingSectionID', 'type', 'heading', 'bodyHtml', 'altBackground', 'spacing', 'imagePosition', 'items',
             'boxTitle', 'boxValue', 'boxNote', 'boxText', 'buttonLabel', 'buttonUrl', 'buttonToMemberArea', 'eventLimit',
-            'columnsRatio', 'columnsAlign', 'boxFramed', 'listItems', 'listStyle',
+            'columnsRatio', 'columnsAlign', 'boxFramed', 'listItems', 'listStyle', 'imageCaption', 'imageWidth',
             'image', 'image2', 'file',
         ]);
         $this->resetValidation();
@@ -544,6 +565,7 @@ class Sections extends Component
             'editingSection' => $editingSection,
             'ratios' => self::RATIOS,
             'listStyles' => self::LIST_STYLES,
+            'imageWidths' => self::IMAGE_WIDTHS,
             'sectionTypes' => HomepageSectionType::cases(),
             'spacings' => self::SPACINGS,
             'imageUrls' => $imageUrls,

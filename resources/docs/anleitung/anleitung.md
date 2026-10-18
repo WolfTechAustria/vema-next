@@ -1129,6 +1129,7 @@ Eigene Seiten und „Über uns“ lassen sich aus **Abschnitten** zusammensetzen
 | **Text mit Bild** | Text neben einem Bild; das Bild steht wahlweise links oder rechts |
 | **Zahlen-Kacheln** | bis zu vier Kacheln mit großer Zahl, Titel und Text, z. B. „8 – Elektronische Stände“ |
 | **Text mit Info-Box** | Text mit hervorgehobener Box, z. B. Mitgliedsbeitrag „€ 40,– pro Saison“ mit Button zur Beitrittserklärung. Nummerierte Listen im Text erscheinen als Schritte mit Kreis-Nummern; der Rahmen der Box lässt sich abschalten |
+| **Bild** | ein einzelnes Bild mit optionaler Überschrift und Bildunterschrift, Breite *Schmal*, *Normal* oder *Volle Breite*; ein Klick öffnet die Vollbild-Ansicht |
 | **Bilderpaar** | zwei Bilder nebeneinander mit Bildunterschrift |
 | **Aufruf mit Button** | kurzer Text mit Button, z. B. „Zum Mitgliederbereich“ |
 | **Vorstand** | Tabelle „Funktion – Namen“, automatisch aus den aktuellen Vorstandsfunktionen (Kapitel 5.5). Hat jemand mehrere Funktionen, stehen sie in einer Zeile (z. B. „1. Schützenmeister & Kassier“); mehrere Personen mit derselben Funktion werden zusammengefasst |
@@ -1147,7 +1148,7 @@ Eigene Seiten und „Über uns“ lassen sich aus **Abschnitten** zusammensetzen
 2. In der Liste erscheinen darunter die Bereiche **Links** und **Rechts**. Dort mit **+ Abschnitt hinzufügen** die Inhalte anlegen.
 3. Mit **↑** und **↓** die Reihenfolge innerhalb einer Spalte ändern, mit **⇄** einen Abschnitt in die andere Spalte legen.
 
-Abstand und grauer Hintergrund gelten für den ganzen Spalten-Abschnitt. Auf dem Handy stehen die Spalten untereinander. Wird der Spalten-Abschnitt gelöscht, werden alle Abschnitte darin mitgelöscht.
+Steht in einer Spalte nur ein Abschnitt und in der anderen mehrere, wird der einzelne automatisch vertikal mittig daneben ausgerichtet – z. B. eine Info-Box neben Text und Aufzählung. Abstand und grauer Hintergrund gelten für den ganzen Spalten-Abschnitt. Auf dem Handy stehen die Spalten untereinander. Wird der Spalten-Abschnitt gelöscht, werden alle Abschnitte darin mitgelöscht.
 
 **Abstand:** Mit *Kein*, *Klein*, *Normal* oder *Groß* legen Sie fest, wie viel Platz über und unter einem Abschnitt bleibt – z. B. *Klein*, damit zwei Abschnitte enger zusammenrücken.
 
