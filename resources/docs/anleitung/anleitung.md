@@ -392,6 +392,7 @@ Links auf der Seite steht das Formular **Neuer Termin**:
 | **Ort** | z. B. „Gasthof Post“ |
 | **Beschreibung** | weitere Informationen für die Mitglieder |
 | **Mitglieder können im Mitgliederportal zu- oder absagen** | standardmäßig an; abschalten für reine Informationstermine |
+| **Auf der Homepage zeigen (öffentlich)** | Termin erscheint auf der Vereinshomepage unter „Termine“ (Kapitel 16). Gilt nicht, solange der Termin nur für ausgewählte Mitglieder sichtbar ist |
 | **Sichtbar für** | Wer den Termin sieht – siehe unten |
 
 Mit **Termin anlegen** speichern.
@@ -429,6 +430,7 @@ Im Abschnitt **Externe Kalender** unten auf der Seite binden Sie Kalender ein, d
 2. Den **iCal-Link** einfügen (beginnt mit `https://` oder `webcal://`).
 3. Optional **Mitglieder können zu- oder absagen** anhaken.
 4. **Aktiv (synchronisieren und im Portal anzeigen)** ist vorbelegt.
+   Optional **Termine dieses Kalenders auf der Homepage zeigen (öffentlich)** anhaken – dann erscheinen alle Termine dieses Kalenders auf der Vereinshomepage.
 5. **Kalender hinzufügen** – VEMA liest den Kalender sofort ein.
 
 > **Wo finde ich den iCal-Link?** In Google Kalender in den Einstellungen des jeweiligen Kalenders unter „Kalender integrieren“ („Öffentliche Adresse im iCal-Format“ oder „Geheime Adresse im iCal-Format“). In Outlook über „Kalender freigeben/veröffentlichen“ → ICS-Link. Viele Verbände veröffentlichen den Link direkt auf ihrer Website.
@@ -1012,6 +1014,7 @@ Die Homepage besteht aus diesen Seiten:
 |---|---|
 | **Start** | Überschrift, Begrüßungstext und Titelbild, darunter die neuesten Beiträge (Vorlage „Verein“ zusätzlich Ankündigung, Kacheln und Kennzahlen, Kapitel 16.5) |
 | **News** | alle veröffentlichten Beiträge, neueste zuerst, mit Filter nach Jahr |
+| **Termine** | kommende öffentliche Vereinstermine nach Monat, darunter einklappbar die vergangenen der letzten zwölf Monate; auf der Startseite zusätzlich „Nächste Termine“ (drei Stück) |
 | **Über uns** | freier Text und Abschnitte (nur sichtbar, wenn etwas eingetragen ist, Kapitel 16.4) |
 | **Vorstand** | automatisch aus den aktuellen Vorstandsfunktionen der Mitglieder (Kapitel 5.5) |
 | **Kontakt** | Anschrift, E-Mail, Telefon und WhatsApp-Community aus den Vereinseinstellungen |
@@ -1028,7 +1031,7 @@ Unter **Homepage → Gestaltung**:
    - **Verein** – frisch und übersichtlich: Titelbild mit Farbverlauf, Ankündigung, Info-Kacheln, News-Karten, Kennzahlen, farbige Seitenköpfe und eine ausführliche Fußzeile. Die zusätzlichen Inhalte pflegen Sie unter **Homepage → Inhalte** (Kapitel 16.5).
 2. **Hauptfarbe** und **Akzentfarbe** festlegen, z. B. die Vereinsfarben. Die Akzentfarbe hebt Datum, aktiven Menüpunkt und Seitenköpfe hervor (Vorlage „Verein“). Die Vorschaubilder der Vorlagen zeigen beide sofort.
 3. Unter **Startseite** **Überschrift**, **Begrüßungstext** und **Titelbild** eintragen. Das Titelbild wird beim Hochladen gespeichert.
-4. Unter **Seiten & Daten** festlegen, ob **Kontaktseite** und **Vorstand** erscheinen und ob die Vorstandsseite **Profilbilder** zeigt.
+4. Unter **Seiten & Daten** festlegen, ob **Kontaktseite**, **Vorstand** und **Termine** erscheinen und ob die Vorstandsseite **Profilbilder** zeigt.
 5. Den Text für **Über uns** schreiben.
 6. **Einstellungen speichern**.
 
@@ -1109,6 +1112,7 @@ Eigene Seiten und „Über uns“ lassen sich aus **Abschnitten** zusammensetzen
 | **Bilderpaar** | zwei Bilder nebeneinander mit Bildunterschrift |
 | **Aufruf mit Button** | kurzer Text mit Button, z. B. „Zum Mitgliederbereich“ |
 | **Vorstand** | Tabelle „Funktion – Namen“, automatisch aus den aktuellen Vorstandsfunktionen (Kapitel 5.5) |
+| **Termine** | die nächsten öffentlichen Vereinstermine (Anzahl 1–10) mit Link zur Seite „Termine“ |
 
 **Buttons** führen zu einem hochgeladenen **PDF**, zum **Mitgliederbereich** von VEMA oder zu einem **Link**. Links auf eigene Seiten der Homepage beginnen mit „/“, z. B. `/kontakt`.
 
@@ -1126,7 +1130,7 @@ Unter **Homepage → Inhalte** pflegen Sie die zusätzlichen Elemente der Vorlag
 - **Ankündigung:** großes Banner unter dem Titelbereich mit Kennzeichnung (z. B. „Einladung“), Titel, Text, Bild und Button. Ist ein PDF hochgeladen, öffnet der Button das PDF, sonst den eingetragenen Link. Bild und PDF werden sofort gespeichert.
 - **Kacheln:** bis zu drei Kacheln mit kleiner Zeile, Titel, Text und Link. Sind alle leer, erscheinen automatisch Kacheln zu den Seiten im Menü.
 - **Kennzahlen:** dunkle Leiste am Ende der Startseite mit bis zu vier Zahlen, z. B. „1991 – gegründet“.
-- **Überschriften der Seitenköpfe** für News, Über uns, Vorstand und Kontakt sowie die **Bezeichnung der News im Menü** (z. B. „Aktuelles“).
+- **Überschriften der Seitenköpfe** für News, Termine, Über uns, Vorstand und Kontakt sowie die **Bezeichnung der News im Menü** (z. B. „Aktuelles“).
 - **Kontakt & Fußzeile:** ein Text auf der Kontaktseite, eine **Info-Spalte** (z. B. „Training – Jeden Montag ab 18:00 Uhr“; erscheint in der Fußzeile und als Karte auf der Kontaktseite) und der Link **Mitgliederbereich** in der Fußzeile.
 
 Alle Änderungen mit **Inhalte speichern** übernehmen.

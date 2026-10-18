@@ -31,6 +31,7 @@ class Content extends Component
      */
     public const HEADING_PAGES = [
         'news' => 'News',
+        'events' => 'Termine',
         'about' => 'Über uns',
         'board' => 'Vorstand',
         'contact' => 'Kontakt',

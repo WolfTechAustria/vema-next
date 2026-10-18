@@ -107,6 +107,20 @@
         </section>
     @endif
 
+    {{-- Nächste Termine --}}
+    @if($upcomingEvents->isNotEmpty())
+        <section class="pt-[clamp(48px,8vw,80px)]">
+            <div class="mx-auto max-w-[1160px] px-4 [&_h3]:text-brand-deep">
+                <div class="mb-7 flex items-baseline justify-between gap-4">
+                    <h2 class="text-[clamp(1.4rem,3vw,1.9rem)] font-bold leading-[1.2] text-brand-deep">Nächste Termine</h2>
+                    <a href="{{ route('homepage.events') }}" class="font-bold text-brand">Alle Termine →</a>
+                </div>
+
+                @include('homepage.partials.event-list', ['events' => $upcomingEvents, 'compact' => true])
+            </div>
+        </section>
+    @endif
+
     {{-- Aktuelles --}}
     <section class="py-[clamp(48px,8vw,80px)]">
         <div class="mx-auto max-w-[1160px] px-4">

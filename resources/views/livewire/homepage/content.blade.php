@@ -169,7 +169,7 @@
                 <div wire:key="heading-{{ $pageKey }}">
                     <label class="mb-1 block text-sm font-medium">{{ $pageLabel }}</label>
                     <input type="text" wire:model="pageHeadings.{{ $pageKey }}" class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                        placeholder="{{ ['news' => 'z. B. Neuigkeiten & Wettkampfberichte', 'about' => 'z. B. Klein, aber fein – seit 1991', 'board' => 'z. B. Unser Vorstand', 'contact' => 'z. B. Schreib oder ruf uns an'][$pageKey] }}">
+                        placeholder="{{ ['news' => 'z. B. Neuigkeiten & Wettkampfberichte', 'events' => 'z. B. Veranstaltungen & Wettkämpfe', 'about' => 'z. B. Klein, aber fein – seit 1991', 'board' => 'z. B. Unser Vorstand', 'contact' => 'z. B. Schreib oder ruf uns an'][$pageKey] }}">
                 </div>
             @endforeach
 

@@ -152,6 +152,16 @@
                 </label>
             @endif
 
+            @feature('events')
+                <label class="flex items-start gap-3">
+                    <input type="checkbox" wire:model="showEvents" class="mt-1 rounded border-slate-300">
+                    <span class="text-sm">
+                        <span class="block font-medium text-slate-900">Termine anzeigen</span>
+                        <span class="block text-slate-500">Seite „Termine“ und „Nächste Termine“ auf der Startseite – nur Vereinstermine mit dem Häkchen „Auf der Homepage zeigen“.</span>
+                    </span>
+                </label>
+            @endfeature
+
             <div>
                 <label class="mb-1 block text-sm font-medium">Beschreibung für Suchmaschinen</label>
                 <textarea wire:model="metaDescription" rows="2" maxlength="300" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>

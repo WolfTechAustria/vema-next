@@ -31,6 +31,13 @@ class ClubEventSourceFactory extends Factory
         ]);
     }
 
+    public function onHomepage(): static
+    {
+        return $this->state(fn () => [
+            'show_on_homepage' => true,
+        ]);
+    }
+
     public function inactive(): static
     {
         return $this->state(fn () => [

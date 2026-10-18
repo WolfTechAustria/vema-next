@@ -174,6 +174,22 @@
                     Mitglieder können im Mitgliederportal zu- oder absagen
                 </label>
 
+                @feature('homepage')
+                    <label class="flex items-start gap-2 text-sm">
+                        <input
+                            type="checkbox"
+                            wire:model.live="showOnHomepage"
+                            class="mt-0.5 h-4 w-4 rounded border-slate-300"
+                        >
+                        <span>
+                            Auf der Homepage zeigen (öffentlich)
+                            @if($showOnHomepage && count($selectedMembers) > 0)
+                                <span class="block text-xs text-amber-700">Erscheint nicht auf der Homepage, solange er nur für ausgewählte Mitglieder sichtbar ist.</span>
+                            @endif
+                        </span>
+                    </label>
+                @endfeature
+
                 <div x-data="{ search: '' }">
                     <div class="mb-1 flex items-center justify-between gap-2">
                         <label class="block text-sm font-medium">
@@ -291,6 +307,12 @@
                                 @if($event->description)
                                     <div class="mt-1 whitespace-pre-line text-sm text-slate-500">{{ $event->description }}</div>
                                 @endif
+
+                                @feature('homepage')
+                                    @if(($event->isExternal() ? $event->source?->show_on_homepage : $event->show_on_homepage) && $event->members->isEmpty())
+                                        <span class="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">auf der Homepage</span>
+                                    @endif
+                                @endfeature
 
                                 @if($event->rsvp_enabled)
                                     <div class="mt-2 flex flex-wrap gap-3 text-xs">
@@ -493,6 +515,17 @@
                     Aktiv (synchronisieren und im Portal anzeigen)
                 </label>
 
+                @feature('homepage')
+                    <label class="flex items-center gap-2 text-sm">
+                        <input
+                            type="checkbox"
+                            wire:model="sourceShowOnHomepage"
+                            class="h-4 w-4 rounded border-slate-300"
+                        >
+                        Termine dieses Kalenders auf der Homepage zeigen (öffentlich)
+                    </label>
+                @endfeature
+
                 <button
                     type="submit"
                     wire:loading.attr="disabled"
@@ -530,6 +563,7 @@
                                 <div class="mt-1 text-xs text-slate-500">
                                     {{ $source->events_count }} Termine
                                     · {{ $source->rsvp_enabled ? 'mit Zu-/Absage' : 'nur Anzeige' }}
+                                    @if($source->show_on_homepage) · auf der Homepage @endif
                                     · {{ $source->last_synced_at ? 'zuletzt synchronisiert '.$source->last_synced_at->diffForHumans() : 'noch nie synchronisiert' }}
                                 </div>
 

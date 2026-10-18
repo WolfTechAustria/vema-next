@@ -167,6 +167,16 @@
                         </div>
                     @endif
 
+                    @if($editingType === HomepageSectionType::Events)
+                        <div class="flex items-center gap-3">
+                            <label class="text-sm font-medium" for="event-limit">Anzahl Termine</label>
+                            <input id="event-limit" type="number" min="1" max="10" wire:model="eventLimit" class="w-20 rounded-lg border border-slate-300 px-2 py-1">
+                            @error('eventLimit') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <p class="text-xs text-slate-500">Zeigt die nächsten Vereinstermine mit dem Häkchen „Auf der Homepage zeigen“ (Termine → Termin bearbeiten).</p>
+                    @endif
+
                     @if($editingType === HomepageSectionType::Features)
                         <div class="space-y-3">
                             @foreach($items as $index => $item)

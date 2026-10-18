@@ -31,6 +31,7 @@ class ClubEvent extends Model
         'ends_at' => 'datetime',
         'all_day' => 'boolean',
         'rsvp_enabled' => 'boolean',
+        'show_on_homepage' => 'boolean',
     ];
 
     /**
@@ -46,6 +47,7 @@ class ClubEvent extends Model
         'location' => 'Ort',
         'description' => 'Beschreibung',
         'rsvp_enabled' => 'Zu-/Absage möglich',
+        'show_on_homepage' => 'Auf der Homepage',
         'members' => 'Sichtbar für',
     ];
 
@@ -67,6 +69,7 @@ class ClubEvent extends Model
             'location' => $this->location,
             'description' => $this->description,
             'rsvp_enabled' => (bool) $this->rsvp_enabled,
+            'show_on_homepage' => (bool) $this->show_on_homepage,
             'members' => $this->members->isEmpty()
                 ? 'alle Mitglieder'
                 : $this->members->map(fn (Member $member) => $member->full_name)->all(),
@@ -143,6 +146,22 @@ class ClubEvent extends Model
                 $query->whereNull('sourceID')
                     ->orWhereIn('sourceID', $member->subscribedEventSources()->select('tb_event_sources.sourceID'));
             });
+    }
+
+    /**
+     * Öffentlich auf der Vereinshomepage: eigene, freigegebene Termine ohne
+     * Einschränkung auf bestimmte Mitglieder sowie alle Termine aktiver
+     * externer Kalender, die für die Homepage freigegeben sind.
+     */
+    public function scopeOnHomepage(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query) {
+            $query->where(function (Builder $query) {
+                $query->whereNull('sourceID')
+                    ->where('show_on_homepage', true)
+                    ->whereDoesntHave('members');
+            })->orWhereHas('source', fn (Builder $query) => $query->where('active', true)->where('show_on_homepage', true));
+        });
     }
 
     /**

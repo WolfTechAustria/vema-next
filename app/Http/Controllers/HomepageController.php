@@ -8,6 +8,7 @@ use App\Models\HomepageSetting;
 use App\Models\Post;
 use App\Models\Setting;
 use App\Services\HomepageBoard;
+use App\Services\HomepageEvents;
 use App\Services\HomepageHosts;
 use App\Services\HomepageImageUrls;
 use App\Services\HtmlSanitizer;
@@ -27,6 +28,7 @@ class HomepageController extends Controller
         private HtmlSanitizer $sanitizer,
         private HomepageImageUrls $imageUrls,
         private HomepageHosts $hosts,
+        private HomepageEvents $events,
     ) {}
 
     public function home(): View
@@ -40,6 +42,7 @@ class HomepageController extends Controller
 
         return $this->render('home', [
             'posts' => $posts,
+            'upcomingEvents' => $this->events->upcoming(3),
         ]);
     }
 
@@ -97,6 +100,20 @@ class HomepageController extends Controller
             'metaDescription' => $post->teaser(160),
             'ogImage' => $post->images->first() ? $this->imageUrls->postImage($post->images->first(), 'gross') : null,
             'isPreview' => $isPreview,
+        ]);
+    }
+
+    public function events(): View
+    {
+        abort_unless($this->events->enabled(), 404);
+
+        $upcoming = $this->events->upcoming();
+
+        return $this->render('events', [
+            'upcomingByMonth' => $upcoming->groupBy(fn ($event) => $event->starts_at->locale('de')->translatedFormat('F Y')),
+            'pastEvents' => $this->events->past(),
+            'pageTitle' => 'Termine',
+            'pageHeading' => HomepageSetting::current()->pageHeading('events'),
         ]);
     }
 
@@ -203,6 +220,10 @@ class HomepageController extends Controller
             ['label' => 'Start', 'url' => route('homepage.home'), 'active' => request()->routeIs('homepage.home')],
             ['label' => $settings->newsLabel(), 'url' => route('homepage.posts.index'), 'active' => request()->routeIs('homepage.posts.*', 'homepage-admin.posts.preview')],
         ];
+
+        if ($this->events->enabled()) {
+            $items[] = ['label' => 'Termine', 'url' => route('homepage.events'), 'active' => request()->routeIs('homepage.events')];
+        }
 
         if (filled($settings->about_html) || $hasAboutSections) {
             $items[] = ['label' => 'Über uns', 'url' => route('homepage.about'), 'active' => request()->routeIs('homepage.about')];

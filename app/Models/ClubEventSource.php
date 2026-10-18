@@ -32,6 +32,7 @@ class ClubEventSource extends Model
         'url' => 'encrypted',
         'rsvp_enabled' => 'boolean',
         'active' => 'boolean',
+        'show_on_homepage' => 'boolean',
         'last_synced_at' => 'datetime',
     ];
 
@@ -45,6 +46,7 @@ class ClubEventSource extends Model
         'url' => 'iCal-Link',
         'rsvp_enabled' => 'Zu-/Absage möglich',
         'active' => 'Aktiv',
+        'show_on_homepage' => 'Auf der Homepage',
     ];
 
     /**
@@ -64,6 +66,7 @@ class ClubEventSource extends Model
             'url' => $this->url,
             'rsvp_enabled' => (bool) $this->rsvp_enabled,
             'active' => (bool) $this->active,
+            'show_on_homepage' => (bool) $this->show_on_homepage,
         ];
     }
 

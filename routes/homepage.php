@@ -23,6 +23,9 @@ Route::prefix(HomepageHosts::PATH_PREFIX)
         Route::get('/news/{slug}', [HomepageController::class, 'post'])
             ->name('posts.show');
 
+        Route::get('/termine', [HomepageController::class, 'events'])
+            ->name('events');
+
         Route::get('/ueber-uns', [HomepageController::class, 'about'])
             ->name('about');
 

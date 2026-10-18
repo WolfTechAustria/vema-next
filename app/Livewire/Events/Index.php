@@ -34,6 +34,8 @@ class Index extends Component
 
     public bool $rsvpEnabled = true;
 
+    public bool $showOnHomepage = false;
+
     /**
      * Mitglieder, die den Termin sehen; leer = alle.
      *
@@ -62,6 +64,8 @@ class Index extends Component
 
     public bool $sourceActive = true;
 
+    public bool $sourceShowOnHomepage = false;
+
     public ?int $editingSourceID = null;
 
     public function saveEvent(): void
@@ -76,6 +80,7 @@ class Index extends Component
             'endTime' => ['nullable', 'date_format:H:i'],
             'allDay' => ['boolean'],
             'rsvpEnabled' => ['boolean'],
+            'showOnHomepage' => ['boolean'],
             'selectedMembers' => ['array'],
             'selectedMembers.*' => ['integer', Rule::exists('tb_members', 'memberID')],
         ], [], [
@@ -106,6 +111,7 @@ class Index extends Component
             'ends_at' => $endsAt,
             'all_day' => $this->allDay,
             'rsvp_enabled' => $this->rsvpEnabled,
+            'show_on_homepage' => $this->showOnHomepage,
         ];
 
         if ($this->editingEventID) {
@@ -139,6 +145,7 @@ class Index extends Component
         $this->location = $event->location ?? '';
         $this->allDay = $event->all_day;
         $this->rsvpEnabled = $event->rsvp_enabled;
+        $this->showOnHomepage = $event->show_on_homepage;
         $this->selectedMembers = $event->members()
             ->pluck('tb_members.memberID')
             ->map(fn ($memberID) => (string) $memberID)
@@ -189,6 +196,7 @@ class Index extends Component
             'sourceUrl' => ['required', 'string', 'max:2000'],
             'sourceRsvpEnabled' => ['boolean'],
             'sourceActive' => ['boolean'],
+            'sourceShowOnHomepage' => ['boolean'],
         ], [], [
             'sourceName' => 'Beschriftung',
             'sourceUrl' => 'iCal-Link',
@@ -207,6 +215,7 @@ class Index extends Component
             'url' => trim($validated['sourceUrl']),
             'rsvp_enabled' => $this->sourceRsvpEnabled,
             'active' => $this->sourceActive,
+            'show_on_homepage' => $this->sourceShowOnHomepage,
         ];
 
         if ($this->editingSourceID) {
@@ -271,6 +280,7 @@ class Index extends Component
         $this->sourceUrl = $source->url;
         $this->sourceRsvpEnabled = $source->rsvp_enabled;
         $this->sourceActive = $source->active;
+        $this->sourceShowOnHomepage = $source->show_on_homepage;
 
         $this->resetValidation();
     }
@@ -406,6 +416,7 @@ class Index extends Component
             'endTime',
             'allDay',
             'rsvpEnabled',
+            'showOnHomepage',
             'selectedMembers',
             'editingEventID',
         ]);
@@ -418,6 +429,7 @@ class Index extends Component
             'sourceUrl',
             'sourceRsvpEnabled',
             'sourceActive',
+            'sourceShowOnHomepage',
             'editingSourceID',
         ]);
     }

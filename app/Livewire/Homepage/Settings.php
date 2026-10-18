@@ -43,6 +43,8 @@ class Settings extends Component
 
     public bool $showBoardPhotos = false;
 
+    public bool $showEvents = true;
+
     public bool $contactVisible = true;
 
     public string $domain = '';
@@ -64,6 +66,7 @@ class Settings extends Component
         $this->aboutHtml = $settings->about_html ?? '';
         $this->showBoard = $settings->show_board;
         $this->showBoardPhotos = $settings->show_board_photos;
+        $this->showEvents = $settings->show_events;
         $this->contactVisible = $settings->contact_visible;
         $this->domain = $settings->domain ?? '';
         $this->metaDescription = $settings->meta_description ?? '';
@@ -83,6 +86,7 @@ class Settings extends Component
             'aboutHtml' => ['nullable', 'string'],
             'showBoard' => ['boolean'],
             'showBoardPhotos' => ['boolean'],
+            'showEvents' => ['boolean'],
             'contactVisible' => ['boolean'],
             'domain' => [
                 'nullable',
@@ -122,6 +126,7 @@ class Settings extends Component
             'about_html' => $sanitizer->sanitize($validated['aboutHtml']) ?: null,
             'show_board' => $validated['showBoard'],
             'show_board_photos' => $validated['showBoardPhotos'],
+            'show_events' => $validated['showEvents'],
             'contact_visible' => $validated['contactVisible'],
             // Im Modus "multi" verwaltet die Plattform die Domains.
             'domain' => $tenantManager->isMultiTenant() ? $settings->domain : ($validated['domain'] ?: null),

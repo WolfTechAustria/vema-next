@@ -5,6 +5,18 @@
 @endsection
 
 @section('content')
+    @if($upcomingEvents->isNotEmpty())
+        <section class="mb-16">
+            @include($templatePath.'.section-heading', ['heading' => 'Nächste Termine'])
+
+            <div class="mx-auto max-w-3xl">
+                @include('homepage.partials.event-list', ['events' => $upcomingEvents, 'compact' => true])
+
+                <p class="mt-6 text-center"><a href="{{ route('homepage.events') }}" class="font-semibold text-brand hover:underline">Alle Termine →</a></p>
+            </div>
+        </section>
+    @endif
+
     <section>
         @include($templatePath.'.section-heading', ['heading' => 'Aktuelles'])
 

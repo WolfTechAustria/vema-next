@@ -49,6 +49,13 @@ class ClubEventFactory extends Factory
         ]);
     }
 
+    public function onHomepage(): static
+    {
+        return $this->state(fn () => [
+            'show_on_homepage' => true,
+        ]);
+    }
+
     public function withoutRsvp(): static
     {
         return $this->state(fn () => [

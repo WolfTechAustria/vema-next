@@ -14,11 +14,13 @@ enum HomepageSectionType: string
     case ImagePair = 'image_pair';
     case CallToAction = 'cta';
     case Board = 'board';
+    case Events = 'events';
 
     public function label(): string
     {
         return match ($this) {
             self::Board => 'Vorstand',
+            self::Events => 'Termine',
             self::Text => 'Text',
             self::TextImage => 'Text mit Bild',
             self::Features => 'Zahlen-Kacheln',
@@ -32,6 +34,7 @@ enum HomepageSectionType: string
     {
         return match ($this) {
             self::Board => 'Tabelle mit Funktion und Namen – automatisch aus den aktuellen Vorstandsfunktionen in VEMA.',
+            self::Events => 'Die nächsten öffentlichen Vereinstermine – automatisch aus VEMA.',
             self::Text => 'Überschrift und formatierter Text.',
             self::TextImage => 'Text neben einem Bild (Bild links oder rechts).',
             self::Features => 'Bis zu vier Kacheln mit großer Zahl, Titel und Text – z. B. Ausstattung.',

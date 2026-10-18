@@ -67,6 +67,11 @@ class Sections extends Component
 
     public bool $buttonToMemberArea = false;
 
+    /**
+     * Anzahl der Termine im Abschnitt „Termine“.
+     */
+    public int $eventLimit = 5;
+
     public ?UploadedFile $image = null;
 
     public ?UploadedFile $image2 = null;
@@ -115,6 +120,7 @@ class Sections extends Component
         $this->buttonLabel = (string) $section->value('button_label', '');
         $this->buttonUrl = (string) $section->value('button_url', '');
         $this->buttonToMemberArea = (bool) $section->value('button_member_area', false);
+        $this->eventLimit = (int) $section->value('limit', 5);
     }
 
     public function saveSection(HtmlSanitizer $sanitizer, HomepageImageService $images, HomepageFileService $files): void
@@ -137,6 +143,7 @@ class Sections extends Component
             'buttonLabel' => ['nullable', 'string', 'max:80'],
             'buttonUrl' => ['nullable', 'string', 'max:255', 'regex:'.self::URL_PATTERN],
             'buttonToMemberArea' => ['boolean'],
+            'eventLimit' => ['integer', 'min:1', 'max:10'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.HomepageImageService::MAX_SIZE_KB],
             'image2' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.HomepageImageService::MAX_SIZE_KB],
             'file' => ['nullable', 'file', 'mimes:pdf', 'max:'.HomepageFileService::MAX_SIZE_KB],
@@ -168,6 +175,7 @@ class Sections extends Component
                 'button_label' => $validated['buttonLabel'],
                 'button_url' => $validated['buttonUrl'],
                 'button_member_area' => $validated['buttonToMemberArea'],
+                'limit' => $section->type === HomepageSectionType::Events ? $validated['eventLimit'] : null,
             ], fn ($value) => $value !== '' && $value !== null && $value !== [] && $value !== false),
         ];
 
@@ -306,6 +314,7 @@ class Sections extends Component
         return match ($type) {
             HomepageSectionType::Features => ['items' => array_fill(0, 3, ['value' => '', 'title' => '', 'text' => ''])],
             HomepageSectionType::ImagePair => ['items' => array_fill(0, 2, ['title' => '', 'text' => ''])],
+            HomepageSectionType::Events => ['limit' => 5],
             default => [],
         };
     }
@@ -352,7 +361,7 @@ class Sections extends Component
     {
         $this->reset([
             'editingSectionID', 'type', 'heading', 'bodyHtml', 'altBackground', 'imagePosition', 'items',
-            'boxTitle', 'boxValue', 'boxNote', 'boxText', 'buttonLabel', 'buttonUrl', 'buttonToMemberArea',
+            'boxTitle', 'boxValue', 'boxNote', 'boxText', 'buttonLabel', 'buttonUrl', 'buttonToMemberArea', 'eventLimit',
             'image', 'image2', 'file',
         ]);
         $this->resetValidation();
