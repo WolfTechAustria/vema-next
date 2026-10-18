@@ -19,7 +19,7 @@
 
                     <span>
                         <span class="block text-lg font-semibold">{{ $boardMember['name'] }}</span>
-                        <span class="block text-sm opacity-70">{{ implode(', ', $boardMember['functions']) }}</span>
+                        <span class="block text-sm opacity-70">{{ $boardMember['label'] }}</span>
                     </span>
                 </li>
             @endforeach

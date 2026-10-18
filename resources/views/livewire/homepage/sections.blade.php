@@ -55,6 +55,7 @@
                             <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">
                                 {{ $loop->iteration }}. {{ $section->type->label() }}
                                 @if($section->alt_background) · grauer Hintergrund @endif
+                                @if($section->value('spacing')) · Abstand {{ $spacings[$section->value('spacing')] ?? '' }} @endif
                             </div>
                             <div class="truncate font-medium text-slate-900">
                                 {{ $section->heading ?: (\Illuminate\Support\Str::limit(strip_tags((string) $section->body_html), 50) ?: '–') }}
@@ -243,6 +244,18 @@
                             <p class="text-xs text-slate-500">Reihenfolge: hochgeladenes PDF, dann Mitgliederbereich, dann Link.</p>
                         </fieldset>
                     @endif
+
+                    <div class="flex flex-wrap items-center gap-3 text-sm">
+                        <span class="font-medium">Abstand oben und unten</span>
+                        <div class="inline-flex overflow-hidden rounded-lg border border-slate-300">
+                            @foreach($spacings as $spacingValue => $spacingLabel)
+                                <label class="cursor-pointer border-l border-slate-300 px-3 py-1.5 first:border-l-0 {{ $spacing === $spacingValue ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 hover:bg-slate-50' }}">
+                                    <input type="radio" wire:model.live="spacing" value="{{ $spacingValue }}" class="sr-only">
+                                    {{ $spacingLabel }}
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
 
                     <label class="flex items-center gap-2 text-sm">
                         <input type="checkbox" wire:model="altBackground" class="rounded border-slate-300">

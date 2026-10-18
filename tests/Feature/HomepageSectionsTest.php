@@ -16,6 +16,7 @@ use App\Models\MemberBoardFunctionAssignment;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\User;
+use App\Services\HomepageBoard;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -301,5 +302,61 @@ describe('verein template', function () {
 
         $this->get(route('homepage.sections.media', ['section' => $public->sectionID, 'kind' => 'bild']))->assertOk();
         $this->get(route('homepage.sections.media', ['section' => $hidden->sectionID, 'kind' => 'bild']))->assertNotFound();
+    });
+});
+
+function assignBoardFunction(Member $member, string $function, int $sortOrder): void
+{
+    MemberBoardFunctionAssignment::create([
+        'memberID' => $member->memberID,
+        'boardFunctionID' => BoardFunction::firstOrCreate(['name' => $function], ['sort_order' => $sortOrder])->boardFunctionID,
+        'date_from' => now()->subYear(),
+    ]);
+}
+
+describe('board and spacing', function () {
+    it('combines several functions of one person and groups shared functions', function () {
+        $osm = Member::create(['gender' => 'm', 'name' => 'Wolfgang', 'surname' => 'Oberhauser', 'active' => 1]);
+        $sonja = Member::create(['gender' => 'w', 'name' => 'Sonja', 'surname' => 'Strillinger', 'active' => 1]);
+        $hannes = Member::create(['gender' => 'm', 'name' => 'Hannes', 'surname' => 'Egger', 'active' => 1]);
+        $heidi = Member::create(['gender' => 'w', 'name' => 'Heidi', 'surname' => 'Oberhauser', 'active' => 1]);
+
+        assignBoardFunction($osm, 'Oberschützenmeister', 1);
+        assignBoardFunction($sonja, '1. Schützenmeister', 2);
+        assignBoardFunction($sonja, 'Kassier', 5);
+        assignBoardFunction($heidi, 'Schützenrat', 9);
+        assignBoardFunction($hannes, 'Schützenrat', 9);
+
+        expect(app(HomepageBoard::class)->byFunction()->all())->toBe([
+            ['function' => 'Oberschützenmeister', 'names' => ['Wolfgang Oberhauser']],
+            ['function' => '1. Schützenmeister & Kassier', 'names' => ['Sonja Strillinger']],
+            ['function' => 'Schützenrat', 'names' => ['Hannes Egger', 'Heidi Oberhauser']],
+        ])
+            ->and(HomepageBoard::joinFunctions(['A', 'B', 'C']))->toBe('A, B & C')
+            ->and(app(HomepageBoard::class)->entries(false)->firstWhere('name', 'Sonja Strillinger')['label'])->toBe('1. Schützenmeister & Kassier');
+    });
+
+    it('stores and renders the spacing of a section', function () {
+        $editor = User::factory()->create();
+        $editor->assignRole(Role::findOrCreate('homepage', 'web'));
+        $page = HomepagePage::factory()->create(['slug' => 'abstand']);
+
+        Livewire::actingAs($editor)
+            ->test(Sections::class, ['page' => $page])
+            ->call('addSection', 'text')
+            ->set('heading', 'Kompakt')
+            ->set('spacing', 'small')
+            ->call('saveSection')
+            ->assertHasNoErrors();
+
+        expect(HomepageSection::sole()->value('spacing'))->toBe('small');
+
+        HomepageSetting::current()->update(['enabled' => true, 'template' => HomepageTemplate::Verein]);
+
+        $this->get(route('homepage.page', 'abstand'))->assertOk()->assertSee('py-6 sm:py-8', false);
+
+        HomepageSetting::current()->update(['template' => HomepageTemplate::Klassisch]);
+
+        $this->get(route('homepage.page', 'abstand'))->assertOk()->assertSee('class="mt-6', false);
     });
 });

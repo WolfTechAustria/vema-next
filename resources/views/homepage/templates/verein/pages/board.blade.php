@@ -16,7 +16,7 @@
 
                         <span>
                             <strong class="block text-lg text-brand-deep">{{ $boardMember['name'] }}</strong>
-                            <span class="block text-[15px] text-[#5b665e]">{{ implode(', ', $boardMember['functions']) }}</span>
+                            <span class="block text-[15px] text-[#5b665e]">{{ $boardMember['label'] }}</span>
                         </span>
                     </div>
                 @empty

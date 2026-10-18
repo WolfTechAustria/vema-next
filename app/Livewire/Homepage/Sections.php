@@ -25,6 +25,16 @@ class Sections extends Component
 {
     use WithFileUploads;
 
+    /**
+     * @var array<string, string>
+     */
+    public const SPACINGS = [
+        'none' => 'Kein',
+        'small' => 'Klein',
+        'normal' => 'Normal',
+        'large' => 'Groß',
+    ];
+
     private const URL_PATTERN = '/^(https?:\/\/|mailto:|tel:|\/|#)\S*$/i';
 
     public ?int $pageID = null;
@@ -43,6 +53,11 @@ class Sections extends Component
     public string $bodyHtml = '';
 
     public bool $altBackground = false;
+
+    /**
+     * Abstand über und unter dem Abschnitt: none, small, normal, large.
+     */
+    public string $spacing = 'normal';
 
     public string $imagePosition = 'right';
 
@@ -111,6 +126,7 @@ class Sections extends Component
         $this->heading = $section->heading ?? '';
         $this->bodyHtml = $section->body_html ?? '';
         $this->altBackground = $section->alt_background;
+        $this->spacing = (string) $section->value('spacing', 'normal');
         $this->imagePosition = $section->value('image_position', 'right');
         $this->items = $this->normalizeItems($section->type, $section->value('items', []));
         $this->boxTitle = (string) $section->value('box_title', '');
@@ -131,6 +147,7 @@ class Sections extends Component
             'heading' => ['nullable', 'string', 'max:200'],
             'bodyHtml' => ['nullable', 'string'],
             'altBackground' => ['boolean'],
+            'spacing' => [Rule::in(array_keys(self::SPACINGS))],
             'imagePosition' => [Rule::in(['left', 'right'])],
             'items' => ['array', 'max:4'],
             'items.*.value' => ['nullable', 'string', 'max:20'],
@@ -164,6 +181,7 @@ class Sections extends Component
             'alt_background' => $validated['altBackground'],
             'data' => array_filter([
                 'image_position' => $validated['imagePosition'],
+                'spacing' => $validated['spacing'] === 'normal' ? null : $validated['spacing'],
                 'items' => array_values(array_map(
                     fn (array $item) => array_map(fn ($value) => trim((string) $value), $item),
                     $validated['items']
@@ -360,7 +378,7 @@ class Sections extends Component
     private function resetForm(): void
     {
         $this->reset([
-            'editingSectionID', 'type', 'heading', 'bodyHtml', 'altBackground', 'imagePosition', 'items',
+            'editingSectionID', 'type', 'heading', 'bodyHtml', 'altBackground', 'spacing', 'imagePosition', 'items',
             'boxTitle', 'boxValue', 'boxNote', 'boxText', 'buttonLabel', 'buttonUrl', 'buttonToMemberArea', 'eventLimit',
             'image', 'image2', 'file',
         ]);
@@ -392,6 +410,7 @@ class Sections extends Component
             'sections' => $sections,
             'editingSection' => $this->editingSectionID ? $sections->firstWhere('sectionID', $this->editingSectionID) : null,
             'sectionTypes' => HomepageSectionType::cases(),
+            'spacings' => self::SPACINGS,
             'imageUrls' => $imageUrls,
         ])->layout('layouts.app', [
             'title' => 'Seitenabschnitte | VEMA',

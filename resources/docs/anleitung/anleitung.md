@@ -1131,12 +1131,14 @@ Eigene Seiten und „Über uns“ lassen sich aus **Abschnitten** zusammensetzen
 | **Text mit Info-Box** | Text mit hervorgehobener Box, z. B. Mitgliedsbeitrag „€ 40,– pro Saison“ mit Button zur Beitrittserklärung. Nummerierte Listen im Text erscheinen als Schritte mit Kreis-Nummern |
 | **Bilderpaar** | zwei Bilder nebeneinander mit Bildunterschrift |
 | **Aufruf mit Button** | kurzer Text mit Button, z. B. „Zum Mitgliederbereich“ |
-| **Vorstand** | Tabelle „Funktion – Namen“, automatisch aus den aktuellen Vorstandsfunktionen (Kapitel 5.5) |
+| **Vorstand** | Tabelle „Funktion – Namen“, automatisch aus den aktuellen Vorstandsfunktionen (Kapitel 5.5). Hat jemand mehrere Funktionen, stehen sie in einer Zeile (z. B. „1. Schützenmeister & Kassier“); mehrere Personen mit derselben Funktion werden zusammengefasst |
 | **Termine** | die nächsten öffentlichen Vereinstermine (Anzahl 1–10) mit Link zur Seite „Termine“ |
 
 **Buttons** führen zu einem hochgeladenen **PDF**, zum **Mitgliederbereich** von VEMA oder zu einem **Link**. Links auf eigene Seiten der Homepage beginnen mit „/“, z. B. `/kontakt`.
 
 **Grauer Hintergrund:** Damit heben sich aufeinanderfolgende Abschnitte voneinander ab (am besten abwechselnd setzen).
+
+**Abstand:** Mit *Kein*, *Klein*, *Normal* oder *Groß* legen Sie fest, wie viel Platz über und unter einem Abschnitt bleibt – z. B. *Klein*, damit zwei Abschnitte enger zusammenrücken.
 
 Der Inhalt einer Seite (bzw. der Text „Über uns“ unter **Gestaltung**) steht über den Abschnitten. Er kann auch leer bleiben.
 
