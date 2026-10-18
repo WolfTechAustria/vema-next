@@ -21,7 +21,7 @@ class HomepagePage extends Model
      *
      * @var list<string>
      */
-    public const RESERVED_SLUGS = ['news', 'ueber-uns', 'vorstand', 'kontakt', 'bilder', 'titelbild', 'vorstandsfoto', 'logo', 'ankuendigung', 'downloads', 'abschnitt', 'termine'];
+    public const RESERVED_SLUGS = ['news', 'ueber-uns', 'vorstand', 'kontakt', 'bilder', 'titelbild', 'vorstandsfoto', 'logo', 'ankuendigung', 'downloads', 'abschnitt', 'termine', 'hinweis'];
 
     /**
      * @var array<string, string>

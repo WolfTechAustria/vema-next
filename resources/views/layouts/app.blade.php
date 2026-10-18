@@ -455,6 +455,18 @@
                                 </a>
 
                                 <a
+                                    href="{{ route('homepage-admin.notices') }}"
+                                    wire:navigate
+                                    class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+                                    {{ request()->routeIs('homepage-admin.notices')
+                                        ? 'bg-slate-100 text-slate-900'
+                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
+                                >
+                                    <span>!</span>
+                                    Hinweise
+                                </a>
+
+                                <a
                                     href="{{ route('homepage-admin.settings') }}"
                                     wire:navigate
                                     class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition

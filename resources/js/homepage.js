@@ -193,3 +193,98 @@ document.addEventListener('click', (event) => {
     event.preventDefault();
     open(link);
 });
+
+/**
+ * Hinweise: Popup auf der Startseite und Cookie-Hinweis. Was der Besucher
+ * geschlossen hat, merkt sich der Browser (Local/Session Storage, kein Cookie).
+ */
+function storage(kind) {
+    try {
+        const store = kind === 'session' ? window.sessionStorage : window.localStorage;
+        const probe = '__hp_probe__';
+        store.setItem(probe, '1');
+        store.removeItem(probe);
+
+        return store;
+    } catch {
+        return null;
+    }
+}
+
+function initPopup() {
+    const popup = document.querySelector('[data-hp-popup]');
+
+    if (!popup) {
+        return;
+    }
+
+    const frequency = popup.dataset.frequency;
+    const key = `hp-popup-${popup.dataset.hpPopup}`;
+    const store = frequency === 'always' ? null : storage(frequency === 'session' ? 'session' : 'local');
+
+    if (store?.getItem(key)) {
+        return;
+    }
+
+    let previousFocus = null;
+
+    const onKeydown = (event) => {
+        if (event.key === 'Escape') {
+            close();
+        }
+    };
+
+    function close() {
+        popup.hidden = true;
+        document.documentElement.classList.remove('hp-popup-open');
+        document.removeEventListener('keydown', onKeydown);
+        store?.setItem(key, '1');
+        previousFocus?.focus?.({ preventScroll: true });
+    }
+
+    popup.querySelectorAll('[data-hp-popup-close]').forEach((element) => element.addEventListener('click', close));
+    popup.addEventListener('click', (event) => {
+        if (event.target === popup) {
+            close();
+        }
+    });
+
+    window.setTimeout(() => {
+        previousFocus = document.activeElement;
+        popup.hidden = false;
+        document.documentElement.classList.add('hp-popup-open');
+        document.addEventListener('keydown', onKeydown);
+        popup.querySelector('.hp-popup__close')?.focus({ preventScroll: true });
+    }, 400);
+}
+
+function initCookieNotice() {
+    const notice = document.querySelector('[data-hp-cookie]');
+
+    if (!notice) {
+        return;
+    }
+
+    const store = storage('local');
+    const key = 'hp-cookie-notice';
+
+    if (store?.getItem(key)) {
+        return;
+    }
+
+    notice.hidden = false;
+    notice.querySelector('[data-hp-cookie-accept]')?.addEventListener('click', () => {
+        notice.hidden = true;
+        store?.setItem(key, new Date().toISOString());
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initPopup();
+        initCookieNotice();
+    });
+} else {
+    initPopup();
+    initCookieNotice();
+}

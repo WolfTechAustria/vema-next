@@ -77,7 +77,39 @@ class HomepageSetting extends Model
             'mail_posts_validate_cert' => 'boolean',
             'mail_posts_password' => 'encrypted',
             'mail_posts_checked_at' => 'datetime',
+            'cookie_banner_enabled' => 'boolean',
+            'cookie_banner_page_id' => 'integer',
+            'popup_enabled' => 'boolean',
+            'popup_starts_at' => 'datetime',
+            'popup_ends_at' => 'datetime',
+            'popup_version' => 'integer',
         ];
+    }
+
+    /**
+     * Standardtext des Cookie-Banners (die Homepage setzt nur technisch notwendige Cookies).
+     */
+    public const DEFAULT_COOKIE_BANNER_TEXT = 'Diese Website verwendet nur technisch notwendige Cookies, damit sie sicher funktioniert. Es werden keine Daten zu Werbe- oder Analysezwecken erhoben.';
+
+    public function cookieBannerText(): string
+    {
+        return filled($this->cookie_banner_text) ? $this->cookie_banner_text : self::DEFAULT_COOKIE_BANNER_TEXT;
+    }
+
+    /**
+     * Das Popup ist eingeschaltet, hat Inhalt und liegt im eingestellten Zeitraum.
+     */
+    public function popupIsActive(): bool
+    {
+        if (! $this->popup_enabled || (blank($this->popup_title) && blank($this->popup_html))) {
+            return false;
+        }
+
+        if ($this->popup_starts_at && $this->popup_starts_at->isFuture()) {
+            return false;
+        }
+
+        return ! ($this->popup_ends_at && $this->popup_ends_at->isPast());
     }
 
     /**

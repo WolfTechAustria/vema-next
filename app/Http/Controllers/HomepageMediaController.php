@@ -41,6 +41,16 @@ class HomepageMediaController extends Controller
         return $this->file($path);
     }
 
+    public function popupImage(): StreamedResponse
+    {
+        $settings = HomepageSetting::current();
+
+        abort_unless($settings->popupIsActive() || $this->canPreview(), 404);
+        abort_if(blank($settings->popup_image_path), 404);
+
+        return $this->file($settings->popup_image_path);
+    }
+
     public function logo(ClubBranding $branding): BinaryFileResponse
     {
         $path = $branding->logoPath();

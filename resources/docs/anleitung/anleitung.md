@@ -855,7 +855,7 @@ Leere Felder verwenden die Einstellungen des Servers.
 - den **Status** zwischen *Aktiv* und *Gesperrt* umschalten (sich selbst kann man nicht sperren),
 - die Rolle **Admin** / *Mitarbeiter* vergeben (der letzte Admin kann seine Rechte nicht verlieren),
 - die Rolle **Kassier** vergeben oder entziehen,
-- die Rolle **Homepage** vergeben oder entziehen (Kapitel 16.8),
+- die Rolle **Homepage** vergeben oder entziehen (Kapitel 16.9),
 - mit **Link erneut senden** eine neue Einladung bzw. einen Passwort-Link verschicken.
 
 > **Vereine auf vemat.at:** Die Zahl der aktiven Vorstandszugänge hängt vom Paket ab. Ist sie erreicht, können keine weiteren Benutzer angelegt oder entsperrt werden – sperren Sie bei Bedarf einen nicht mehr benötigten Zugang.
@@ -1181,7 +1181,25 @@ VEMA ruft das Postfach **alle 5 Minuten** ab; mit **Jetzt abrufen** geht es sofo
 
 > **Hinweis:** Im Testmodus wird das Postfach nicht abgerufen. Fotos im HEIC-Format (iPhone) bitte als JPG senden – die meisten Handys tun das beim Mailen automatisch.
 
-### 16.7 Eigene Domain
+### 16.7 Hinweise: Popup und Cookie-Hinweis
+
+Unter **Homepage → Hinweise**:
+
+**Popup auf der Startseite** – für wichtige Informationen, z. B. eine Terminabsage oder geänderte Trainingszeiten:
+
+1. **Popup anzeigen** anhaken und einen **Titel** eintragen.
+2. Optional **Text**, ein **Bild** und einen **Button** (Text und Link, z. B. `/termine`) ergänzen.
+3. Optional einen Zeitraum **Anzeigen ab** / **Anzeigen bis** festlegen – das Popup erscheint dann nur in dieser Zeit (leer = sofort bzw. unbegrenzt).
+4. **Wie oft** wählen: einmal pro Besucher, einmal pro Besuch oder bei jedem Aufruf der Startseite.
+5. **Hinweise speichern**.
+
+Oben steht, ob das Popup gerade angezeigt wird. Besucher schließen es mit **×**, **Schließen**, **Esc** oder einem Klick daneben. Nach einer Änderung von Titel, Text, Bild oder Button sehen alle Besucher das Popup erneut.
+
+**Cookie-Hinweis** – eine Leiste am unteren Rand, bis der Besucher **Verstanden** klickt. Text (leer = Standardtext) und die verlinkte **Datenschutzseite** sind einstellbar; legen Sie die Datenschutzerklärung dazu als eigene Seite an (Kapitel 16.3).
+
+> **Datenschutz:** Die Homepage setzt nur technisch notwendige Cookies (Sitzung und Schutz von Formularen) und lädt keine Inhalte von fremden Servern. Ein Hinweis genügt daher – eine Auswahl wie „Statistik erlauben“ ist nicht nötig. Ob ein Besucher Popup oder Hinweis geschlossen hat, merkt sich nur sein Browser.
+
+### 16.8 Eigene Domain
 
 Die Homepage ist zunächst unter der Adresse von VEMA mit `/site` erreichbar, z. B. `https://vema.mein-verein.at/site`. Damit sie unter einer eigenen Domain wie `www.mein-verein.at` erscheint:
 
@@ -1190,7 +1208,7 @@ Die Homepage ist zunächst unter der Adresse von VEMA mit `/site` erreichbar, z.
 
 Unter der eigenen Domain ist **nur die Homepage** erreichbar – Anmeldung und Verwaltung laufen weiter über die bisherige VEMA-Adresse.
 
-### 16.8 Berechtigung „Homepage“
+### 16.9 Berechtigung „Homepage“
 
 Damit z. B. ein Pressewart Beiträge schreiben kann, ohne Admin zu sein, vergibt ein Admin in der **Benutzerverwaltung** die Rolle **Homepage** (Kapitel 12.3). Wer diese Rolle hat, darf Beiträge, Seiten, Inhalte und Gestaltung bearbeiten, aber keine anderen Admin-Bereiche öffnen.
 

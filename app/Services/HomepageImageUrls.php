@@ -80,6 +80,13 @@ class HomepageImageUrls
         return HomepageHosts::link($settings->announcement_link_url);
     }
 
+    public function popupImage(HomepageSetting $settings): ?string
+    {
+        return blank($settings->popup_image_path)
+            ? null
+            : route('homepage.popup-image', ['v' => $this->version($settings->popup_image_path)]);
+    }
+
     /**
      * Bild ('bild', 'bild2') oder Datei ('datei') eines Abschnitts.
      */

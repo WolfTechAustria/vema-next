@@ -57,5 +57,7 @@
     </div>
 </footer>
 
+@include('homepage.partials.notices')
+
 </body>
 </html>

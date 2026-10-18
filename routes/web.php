@@ -28,6 +28,7 @@ use App\Livewire\Events\Index as EventsIndex;
 use App\Livewire\ExternalContacts\Index;
 use App\Livewire\Homepage\Content as HomepageContent;
 use App\Livewire\Homepage\MailPosts as HomepageMailPosts;
+use App\Livewire\Homepage\Notices as HomepageNotices;
 use App\Livewire\Homepage\Pages\Index as HomepagePagesIndex;
 use App\Livewire\Homepage\Posts\Edit as HomepagePostsEdit;
 use App\Livewire\Homepage\Posts\Index as HomepagePostsIndex;
@@ -245,6 +246,9 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
 
             Route::livewire('/mail', HomepageMailPosts::class)
                 ->name('mail-posts');
+
+            Route::livewire('/notices', HomepageNotices::class)
+                ->name('notices');
         });
 
     Route::livewire('/users', App\Livewire\Admin\Users\Index::class)

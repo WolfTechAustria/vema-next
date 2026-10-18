@@ -43,6 +43,9 @@ Route::prefix(HomepageHosts::PATH_PREFIX)
         Route::get('/titelbild', [HomepageMediaController::class, 'hero'])
             ->name('hero');
 
+        Route::get('/hinweis/bild', [HomepageMediaController::class, 'popupImage'])
+            ->name('popup-image');
+
         Route::get('/logo', [HomepageMediaController::class, 'logo'])
             ->name('logo');
 
