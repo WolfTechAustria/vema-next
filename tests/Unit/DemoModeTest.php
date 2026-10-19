@@ -7,10 +7,12 @@ use App\Models\Setting;
 use App\Services\DemoDatabaseResetter;
 use App\Services\DemoMode;
 use App\Services\ImapSentMailService;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -30,6 +32,7 @@ beforeEach(function () {
     setUpCashBookSchema();
     DB::setDefaultConnection('sqlite');
     setUpCashBookSchema();
+    markAllDemoMigrationsAsRun();
 
     $this->user = createStaffUser(['admin']);
 
@@ -50,6 +53,26 @@ beforeEach(function () {
 function enableDemoMode(DemoResetMode $mode = DemoResetMode::Nightly): void
 {
     Setting::current()->update(['demo_enabled' => true, 'demo_reset_mode' => $mode]);
+}
+
+const BOARD_COUNCIL_MIGRATION = '2026_10_19_194756_add_is_council_to_board_functions_table';
+
+/**
+ * Eine zurückgesetzte Test-DB übernimmt die vollständige migrations-Tabelle
+ * der Live-DB; das reduzierte Test-Schema trägt nur einen Teil davon ein.
+ */
+function markAllDemoMigrationsAsRun(): void
+{
+    $ran = DB::connection('demo')->table('migrations')->pluck('migration')->all();
+
+    DB::connection('demo')->table('migrations')->insert(
+        collect(app('migrator')->getMigrationFiles([database_path('migrations')]))
+            ->keys()
+            ->reject(fn (string $migration) => in_array($migration, $ran, true))
+            ->map(fn (string $migration) => ['migration' => $migration, 'batch' => 1])
+            ->values()
+            ->all()
+    );
 }
 
 describe('entering and leaving', function () {
@@ -129,6 +152,38 @@ describe('request handling', function () {
             ->withSession([DemoMode::SESSION_KEY => true])
             ->get('/_demo-probe')
             ->assertRedirect(route('dashboard'))
+            ->assertSessionMissing(DemoMode::SESSION_KEY);
+    });
+
+    it('adds migrations missing in the demo database before the request runs', function () {
+        enableDemoMode();
+        DB::connection('demo')->table('migrations')->where('migration', BOARD_COUNCIL_MIGRATION)->delete();
+        Schema::connection('demo')->create('tb_board_functions', function (Blueprint $table) {
+            $table->id('boardFunctionID');
+            $table->string('name');
+            $table->boolean('implies_schuetzenrat')->default(false);
+        });
+        DB::connection('demo')->table('tb_board_functions')->insert(['name' => 'Schützenrat']);
+
+        $this->actingAs($this->user)
+            ->withSession([DemoMode::SESSION_KEY => true])
+            ->get('/_demo-probe')
+            ->assertJson(['connection' => 'demo']);
+
+        expect(DB::connection('demo')->table('tb_board_functions')->value('is_council'))->toEqual(1)
+            ->and(DB::connection('demo')->table('migrations')->where('migration', BOARD_COUNCIL_MIGRATION)->exists())->toBeTrue();
+    });
+
+    it('leaves the demo mode when the demo database cannot be updated', function () {
+        enableDemoMode();
+        // Ohne tb_board_functions scheitert die nachzuholende Migration.
+        DB::connection('demo')->table('migrations')->where('migration', BOARD_COUNCIL_MIGRATION)->delete();
+
+        $this->actingAs($this->user)
+            ->withSession([DemoMode::SESSION_KEY => true])
+            ->get('/_demo-probe')
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionHas('error', 'Die Test-Datenbank konnte nicht auf den aktuellen Stand gebracht werden. Bitte die Testdaten in den Einstellungen auf den Live-Stand zurücksetzen.')
             ->assertSessionMissing(DemoMode::SESSION_KEY);
     });
 

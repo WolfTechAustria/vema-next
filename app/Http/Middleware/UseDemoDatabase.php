@@ -3,10 +3,12 @@
 namespace App\Http\Middleware;
 
 use App\Services\DemoMode;
+use App\Services\DemoSchemaUpdater;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 /**
  * Schaltet Sitzungen im Testmodus auf die Test-Datenbank um. Läuft direkt
@@ -15,7 +17,10 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class UseDemoDatabase
 {
-    public function __construct(private DemoMode $demoMode) {}
+    public function __construct(
+        private DemoMode $demoMode,
+        private DemoSchemaUpdater $schemaUpdater,
+    ) {}
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -29,6 +34,18 @@ class UseDemoDatabase
             return redirect()
                 ->route('dashboard')
                 ->with('error', 'Der Testmodus wurde deaktiviert. Du arbeitest wieder mit den Live-Daten.');
+        }
+
+        try {
+            $this->schemaUpdater->migratePending();
+        } catch (Throwable $exception) {
+            report($exception);
+
+            $this->demoMode->leave();
+
+            return redirect()
+                ->route('dashboard')
+                ->with('error', 'Die Test-Datenbank konnte nicht auf den aktuellen Stand gebracht werden. Bitte die Testdaten in den Einstellungen auf den Live-Stand zurücksetzen.');
         }
 
         $this->demoMode->apply();
