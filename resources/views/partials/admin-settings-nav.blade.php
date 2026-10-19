@@ -25,6 +25,17 @@
     @endfeature
 
     <a
+        href="{{ route('admin.settings.board-functions') }}"
+        wire:navigate
+        class="whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition
+        {{ request()->routeIs('admin.settings.board-functions')
+            ? 'border-slate-900 text-slate-900'
+            : 'border-transparent text-slate-500 hover:text-slate-800' }}"
+    >
+        Vorstandsfunktionen
+    </a>
+
+    <a
         href="{{ route('admin.users.index') }}"
         wire:navigate
         class="whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition

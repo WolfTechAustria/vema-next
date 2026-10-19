@@ -62,6 +62,24 @@ it('does not add a second Schützenrat or one for top board members', function (
         ->and(openFunctionNames($chairman))->toBe(['Oberschützenmeister', 'Schriftführer']);
 });
 
+it('adds the council function under its new name after a rename', function () {
+    BoardFunction::where('name', 'Schützenrat')->update(['name' => 'Ausschuss']);
+    $member = functionMember();
+
+    app(BoardFunctionService::class)->assign($member, functionID('Kassier'), '2024-01-01');
+
+    expect(openFunctionNames($member))->toBe(['Kassier', 'Ausschuss']);
+});
+
+it('does not add a deactivated council function', function () {
+    BoardFunction::where('name', 'Schützenrat')->update(['active' => false]);
+    $member = functionMember();
+
+    app(BoardFunctionService::class)->assign($member, functionID('Kassier'), '2024-01-01');
+
+    expect(openFunctionNames($member))->toBe(['Kassier']);
+});
+
 it('shows former functions with their period on the member page', function () {
     $member = functionMember();
     MemberBoardFunctionAssignment::create([

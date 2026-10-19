@@ -225,7 +225,9 @@ Oben rechts: **Zurück**, **Austritt erfassen** (bzw. **Wiedereintritt erfassen*
 
 Zum Beenden einer Funktion auf **Beenden** klicken, das Enddatum eintragen und **Bestätigen**.
 
-> **Automatik Schützenrat:** Schriftführer und Kassier (inkl. Stellvertreter) gehören automatisch dem **Schützenrat** an – außer sie haben zusätzlich eine Spitzenfunktion (Oberschützenmeister, 1./2. Schützenmeister). Diese Einträge sind mit „(automatisch)“ gekennzeichnet und können nicht separat beendet werden.
+> **Automatik Schützenrat:** Wer Schriftführer oder Kassier (inkl. Stellvertreter) wird, erhält zusätzlich automatisch die Funktion **Schützenrat** mit demselben Beginn – außer er hat bereits eine Spitzenfunktion (Oberschützenmeister, 1./2. Schützenmeister). Der Schützenrat ist danach ein eigener Eintrag und endet nicht automatisch mit der auslösenden Funktion.
+
+Welche Funktionen es gibt, wie sie heißen (z. B. **Obmann** statt Oberschützenmeister) und welche davon die Automatik auslösen, legt der Admin unter **Einstellungen → Vorstandsfunktionen** fest (Kapitel 12.6).
 
 ### 5.6 Mitglied bearbeiten
 
@@ -770,7 +772,7 @@ Entwürfe haben stattdessen die Knöpfe **Bearbeiten** und **Rechnung erstellen*
 
 ## 12. Administration
 
-*Nur für Admins.* Über **Einstellungen** unten in der Seitenleiste erreichen Sie die Reiter **Vereinseinstellungen | Briefpapier & E-Mail | Benutzerverwaltung | Aktivitätsprotokoll**.
+*Nur für Admins.* Über **Einstellungen** unten in der Seitenleiste erreichen Sie die Reiter **Vereinseinstellungen | Briefpapier & E-Mail | Vorstandsfunktionen | Benutzerverwaltung | Aktivitätsprotokoll**.
 
 ### 12.1 Vereinseinstellungen
 
@@ -876,6 +878,22 @@ Im Testmodus können Funktionäre VEMA gefahrlos ausprobieren, z. B. zum Einschu
 - Mit **Testmodus verlassen** kehren Sie zu den echten Daten zurück.
 
 > **Tipp:** Offene Browser-Tabs aus dem jeweils anderen Modus zeigen nach dem Wechsel „Seite abgelaufen“ – das ist Absicht und verhindert, dass versehentlich in die falschen Daten geschrieben wird. Einfach die Seite neu laden.
+
+### 12.6 Vorstandsfunktionen
+
+Hier pflegen Sie die Liste der Funktionen, die Mitgliedern zugewiesen werden können (Kapitel 5.5). Vorbelegt sind die Bezeichnungen einer Schützengilde – andere Vereine passen sie an, z. B. **Obmann** statt Oberschützenmeister.
+
+- **+ Neue Funktion** legt eine weitere Funktion an (z. B. Jugendwart, Beirat); sie erscheint am Ende der Liste.
+- **Bearbeiten** ändert die Bezeichnung. Die neue Bezeichnung gilt auch für bisherige Zuweisungen und den Funktionsverlauf.
+- **↑ / ↓** bestimmen die Reihenfolge auf der Mitgliederseite und auf der Vereinshomepage.
+- **Deaktivieren** blendet eine Funktion bei der Auswahl und auf der Homepage aus, ohne den Verlauf zu verlieren.
+- **Löschen** ist nur möglich, solange die Funktion noch nie zugewiesen wurde – sonst bitte deaktivieren.
+
+Beim Bearbeiten legen Sie außerdem fest:
+
+- **Spitzenfunktion** – z. B. Obmann und Stellvertreter. Wer eine Spitzenfunktion hat, erhält keine automatische Rats-Funktion.
+- **Erhält automatisch …** – wer diese Funktion übernimmt, wird zusätzlich der Rats-Funktion zugewiesen (z. B. Schriftführer, Kassier).
+- **Ist die Rats-Funktion** – z. B. Schützenrat, Ausschuss oder Beirat. Es kann nur eine geben; wird sie einer anderen Funktion gegeben, verliert die bisherige das Kennzeichen.
 
 ---
 

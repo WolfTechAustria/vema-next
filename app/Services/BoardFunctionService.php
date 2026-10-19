@@ -12,14 +12,13 @@ use Illuminate\Support\Facades\DB;
  * Verwaltet zeitraumbasierte Vorstandsfunktions-Zuweisungen. Beendete
  * Funktionen bleiben mit Von/Bis erhalten (Funktionsverlauf).
  *
- * Wer Schriftführer/Kassier(-Stv.) wird, erhält zusätzlich eine eigene
- * "Schützenrat"-Zuweisung (außer bei gleichzeitiger Spitzenfunktion). Sie ist
- * unabhängig und endet nicht automatisch mit der auslösenden Funktion.
+ * Wer eine Funktion mit implies_schuetzenrat übernimmt (z. B. Schriftführer,
+ * Kassier), erhält zusätzlich eine eigene Zuweisung der Rats-Funktion
+ * (is_council, z. B. "Schützenrat"), außer bei gleichzeitiger Spitzenfunktion.
+ * Sie ist unabhängig und endet nicht automatisch mit der auslösenden Funktion.
  */
 class BoardFunctionService
 {
-    public const SCHUETZENRAT = 'Schützenrat';
-
     public function assign(Member $member, int $boardFunctionID, ?string $dateFrom, ?string $note = null): MemberBoardFunctionAssignment
     {
         $alreadyOpen = $member->boardFunctionAssignments()
@@ -92,7 +91,7 @@ class BoardFunctionService
 
     private function assignSchuetzenratIfMissing(Member $member, ?string $dateFrom): void
     {
-        $schuetzenrat = BoardFunction::where('name', self::SCHUETZENRAT)->first();
+        $schuetzenrat = BoardFunction::active()->where('is_council', true)->first();
 
         if (! $schuetzenrat) {
             return;

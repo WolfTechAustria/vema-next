@@ -17,6 +17,7 @@ use App\Http\Controllers\MemberPhotoController;
 use App\Http\Controllers\MemberPortalDocumentController;
 use App\Http\Controllers\MembershipFeePrescriptionController;
 use App\Http\Controllers\UserManualController;
+use App\Livewire\Admin\Settings\BoardFunctions;
 use App\Livewire\Admin\Settings\Documents;
 use App\Livewire\CashBook\Index as CashBookIndex;
 use App\Livewire\CashBook\Years as CashBookYears;
@@ -263,6 +264,10 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
         ->middleware('admin')
         ->middleware('feature:templates')
         ->name('admin.settings.documents');
+
+    Route::livewire('/settings/board-functions', BoardFunctions::class)
+        ->middleware('admin')
+        ->name('admin.settings.board-functions');
 
     Route::livewire('/activity-log', App\Livewire\Admin\ActivityLog\Index::class)
         ->middleware('admin')
