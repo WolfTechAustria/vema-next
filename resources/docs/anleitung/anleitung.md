@@ -197,7 +197,7 @@ Die Detailseite zeigt alle Informationen zu einem Mitglied.
 
 - **Stammdaten, Adresse, Kontakt** – E-Mail und Telefon sind direkt anklickbar.
 - **Vereinszugehörigkeit** – alle Mitgliedschaftsperioden (z. B. „01.04.2010 – laufend“).
-- **Vorstandsfunktionen** – aktuelle Funktionen mit Beginn (siehe 5.5).
+- **Vorstandsfunktionen** – aktuelle Funktionen mit Beginn, darunter **Frühere Funktionen** mit Zeitraum (siehe 5.5).
 - **Dienste** – eingeteilte Dienste mit Kennzeichnung *Bevorstehend* / *Vergangen*.
 - **Beitragsvorschreibungen** – alle versendeten Vorschreibungen und Erinnerungen mit Datum, Versandart und **PDF öffnen**.
 - **Dateien** – Dokumente des Mitglieds sowie alle Beitragsschreiben und Rundschreiben wie in einem Dateiexplorer (siehe 5.8).
@@ -223,7 +223,7 @@ Oben rechts: **Zurück**, **Austritt erfassen** (bzw. **Wiedereintritt erfassen*
 2. **Funktion** (z. B. Kassier) und **Beginn** wählen.
 3. **Zuweisen** klicken.
 
-Zum Beenden einer Funktion auf **Beenden** klicken, das Enddatum eintragen und **Bestätigen**.
+Zum Beenden einer Funktion auf **Beenden** klicken, das Enddatum eintragen und **Bestätigen**. Die Funktion verschwindet nicht, sondern steht danach unter **Frühere Funktionen** mit Beginn und Ende – so bleibt nachvollziehbar, wer wann welche Funktion innehatte (z. B. für Ehrungen). Hat jemand mehrere Funktionen gleichzeitig, werden sie auf der Vereinshomepage in einer Zeile zusammengefasst (Kapitel 16).
 
 > **Automatik Schützenrat:** Wer Schriftführer oder Kassier (inkl. Stellvertreter) wird, erhält zusätzlich automatisch die Funktion **Schützenrat** mit demselben Beginn – außer er hat bereits eine Spitzenfunktion (Oberschützenmeister, 1./2. Schützenmeister). Der Schützenrat ist danach ein eigener Eintrag und endet nicht automatisch mit der auslösenden Funktion.
 
@@ -876,6 +876,7 @@ Im Testmodus können Funktionäre VEMA gefahrlos ausprobieren, z. B. zum Einschu
 - Funktionäre starten ihn über **Testmodus starten** in der Seitenleiste. Oben erscheint dann ein Banner „TESTMODUS – Änderungen betreffen nicht die Live-Daten“.
 - Im Testmodus wird mit einer **Kopie** der Daten gearbeitet. **Alle E-Mails gehen ausschließlich an den Tester selbst** – Mitglieder bekommen nichts.
 - Mit **Testmodus verlassen** kehren Sie zu den echten Daten zurück.
+- Nach einem VEMA-Update bringt sich die Testumgebung beim ersten Aufruf selbst auf den neuen Stand (neue Bereiche wie die Homepage stehen dann auch im Testmodus zur Verfügung); vorhandene Testdaten bleiben dabei erhalten. Klappt das ausnahmsweise nicht, verlässt VEMA den Testmodus mit einem Hinweis – dann die Testdaten einmal **auf den Live-Stand zurücksetzen**.
 
 > **Tipp:** Offene Browser-Tabs aus dem jeweils anderen Modus zeigen nach dem Wechsel „Seite abgelaufen“ – das ist Absicht und verhindert, dass versehentlich in die falschen Daten geschrieben wird. Einfach die Seite neu laden.
 
