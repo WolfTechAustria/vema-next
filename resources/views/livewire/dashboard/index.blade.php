@@ -1,249 +1,117 @@
-<div>
+<div class="space-y-6">
 
     @include('partials.flash-messages')
 
-    <div class="mb-8">
-        <h2 class="text-2xl font-bold tracking-tight">
-            Willkommen bei VEMA
-        </h2>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
-        <p class="mt-1 text-sm text-slate-500">
-            Übersicht über den aktuellen Vereinsstatus.
-        </p>
-    </div>
+        <div>
+            <h2 class="text-2xl font-bold tracking-tight">
+                Willkommen bei VEMA
+            </h2>
 
-    <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="text-sm font-medium text-slate-500">
-                Aktive Mitglieder
-            </div>
-
-            <div class="mt-2 text-3xl font-bold">
-                {{ $activeMembers }}
-            </div>
+            <p class="mt-1 text-sm text-slate-500">
+                @if($editing)
+                    Module an <span class="font-medium">⠿</span> ziehen, um sie anzuordnen.
+                @else
+                    Übersicht über den aktuellen Vereinsstatus.
+                @endif
+            </p>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="text-sm font-medium text-slate-500">
-                Neue Mitglieder seit {{ now()->year }}
-            </div>
+        <div class="flex shrink-0 flex-wrap gap-2">
+            @if($editing)
+                <button type="button" wire:click="resetToDefault" wire:confirm="Eigene Anordnung verwerfen und den Standard verwenden?" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    Auf Standard zurücksetzen
+                </button>
 
-            <div class="mt-2 text-3xl font-bold">
-                {{ $newMembersThisYear }}
-            </div>
-        </div>
+                @if($isAdmin)
+                    <button type="button" wire:click="saveAsClubDefault" wire:confirm="Diese Anordnung als Standard für alle Benutzer ohne eigene Anordnung speichern?" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                        Als Vereinsstandard speichern
+                    </button>
+                @endif
 
-
-
-
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="text-sm font-medium text-slate-500">
-                Nächster Dienst
-            </div>
-
-            <div class="mt-2 text-3xl font-bold text-slate-300">
-                –
-            </div>
-
-            <div class="mt-1 text-xs text-slate-400">
-                folgt mit Dienstplan
-            </div>
+                <button type="button" wire:click="stopEditing" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+                    Fertig
+                </button>
+            @else
+                <button type="button" wire:click="startEditing" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    Dashboard anpassen
+                </button>
+            @endif
         </div>
 
     </div>
 
+    {{-- Eigener Key je Modus: so wird die Sortierung nur im Bearbeiten-Modus initialisiert. --}}
+    <div
+        wire:key="dashboard-modules-{{ $editing ? 'edit' : 'view' }}"
+        @if($editing) wire:sort="sortModule" @endif
+        class="grid gap-6 lg:grid-cols-2"
+    >
+        @forelse($modules as $module)
 
-    <!-- Beitragsübersicht -->
-    <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-1">
-        @php
-            $membershipFeeStats = $this->membershipFeeStats();
-        @endphp
+            <section
+                wire:key="module-{{ $module->value }}"
+                wire:sort:item="{{ $module->value }}"
+                class="flex flex-col rounded-xl border bg-white shadow-sm {{ $module->isWide() ? 'lg:col-span-2' : '' }} {{ $editing ? 'border-dashed border-slate-400' : 'border-slate-200' }}"
+            >
+                <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-3">
+                    <div class="flex min-w-0 items-center gap-2">
+                        @if($editing)
+                            <span wire:sort:handle class="cursor-grab select-none text-lg leading-none text-slate-400 hover:text-slate-700" title="Ziehen zum Verschieben">⠿</span>
+                        @endif
 
-        @if($membershipFeeStats['year'])
-
-            <div class="mt-8">
-
-                <div class="mb-4 flex items-center justify-between">
-                    <div>
-                        <h2 class="text-lg font-semibold text-slate-900">
-                            Mitgliedsbeiträge {{ $membershipFeeStats['year'] }}
-                        </h2>
-
-                        <p class="text-sm text-slate-500">
-                            Aktueller Stand der Beitragsvorschreibungen
-                        </p>
+                        <h3 class="truncate font-semibold text-slate-900">
+                            {{ $module->label() }}
+                        </h3>
                     </div>
 
-                    <a
-                        href="{{ route('membership-fees.index') }}"
-                        class="text-sm font-medium text-slate-700 hover:text-slate-900"
-                    >
-                        Zu den Mitgliedsbeiträgen
-                    </a>
+                    @if($editing)
+                        <button type="button" wire:click="hideModule('{{ $module->value }}')" class="shrink-0 text-sm font-medium text-slate-500 hover:text-red-700">
+                            Ausblenden
+                        </button>
+                    @endif
                 </div>
 
-                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-
-                    <a
-                        href="{{ route('membership-fees.index', ['statusFilter' => 'open']) }}"
-                        class="block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md"
-                    >
-                        <div class="text-sm text-slate-500">
-                            Offen
-                        </div>
-
-                        <div class="mt-2 text-3xl font-semibold text-slate-900">
-                            {{ $membershipFeeStats['open'] }}
-                        </div>
-                    </a>
-
-                    <a
-                        href="{{ route('membership-fees.index', ['statusFilter' => 'paid']) }}"
-                        class="block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md"
-                    >
-                        <div class="text-sm text-slate-500">
-                            Bezahlt
-                        </div>
-
-                        <div class="mt-2 text-3xl font-semibold text-emerald-700">
-                            {{ $membershipFeeStats['paid'] }}
-                        </div>
-                    </a>
-
-                    <a
-                        href="{{ route('membership-fees.index', ['statusFilter' => 'exempt']) }}"
-                        class="block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md"
-                    >
-                        <div class="text-sm text-slate-500">
-                            Befreit
-                        </div>
-
-                        <div class="mt-2 text-3xl font-semibold text-slate-700">
-                            {{ $membershipFeeStats['exempt'] }}
-                        </div>
-                    </a>
-
-                    <a
-                        href="{{ route('membership-fees.index', ['reminderFilter' => 'due']) }}"
-                        class="block rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm transition hover:border-amber-300 hover:shadow-md"
-                    >
-                        <div class="text-sm text-amber-700">
-                            Erinnerung fällig
-                        </div>
-
-                        <div class="mt-2 text-3xl font-semibold text-amber-800">
-                            {{ $membershipFeeStats['reminder_due'] }}
-                        </div>
-                    </a>
-
-                    <a
-                        href="{{ route('membership-fees.index', ['reminderFilter' => 'sent']) }}"
-                        class="block rounded-xl border border-blue-200 bg-blue-50 p-5 shadow-sm transition hover:border-blue-300 hover:shadow-md"
-                    >
-                        <div class="text-sm text-blue-700">
-                            Bereits erinnert
-                        </div>
-
-                        <div class="mt-2 text-3xl font-semibold text-blue-800">
-                            {{ $membershipFeeStats['reminded'] }}
-                        </div>
-                    </a>
-
+                <div class="flex-1 p-5">
+                    @include('livewire.dashboard.modules.'.str_replace('_', '-', $module->value), ['data' => $moduleData[$module->value]])
                 </div>
+            </section>
 
+        @empty
+
+            <div class="rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500 lg:col-span-2">
+                Alle Module sind ausgeblendet. Über <span class="font-medium">Dashboard anpassen</span> können Sie wieder welche hinzufügen.
             </div>
 
-        @endif
+        @endforelse
     </div>
 
-    <!-- offene und bezahlte beträge -->
-    <div class="grid gap-4 mt-6 md:grid-cols-2">
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="text-sm text-slate-500">
-                Offener Betrag
+    @if($editing && $hiddenModules !== [])
+
+        <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+            <div class="border-b border-slate-200 px-5 py-3">
+                <h3 class="font-semibold text-slate-900">Weitere Module</h3>
             </div>
 
-            <div class="mt-2 text-3xl font-semibold text-red-700">
-                {{ number_format(
-                    $membershipFeeStats['open_amount'],
-                    2,
-                    ',',
-                    '.'
-                ) }} €
+            <div class="divide-y divide-slate-100">
+                @foreach($hiddenModules as $module)
+                    <div wire:key="hidden-{{ $module->value }}" class="flex items-center justify-between gap-4 px-5 py-3">
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-slate-900">{{ $module->label() }}</div>
+                            <div class="text-xs text-slate-500">{{ $module->description() }}</div>
+                        </div>
+
+                        <button type="button" wire:click="showModule('{{ $module->value }}')" class="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                            Hinzufügen
+                        </button>
+                    </div>
+                @endforeach
             </div>
-        </div>
 
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="text-sm text-slate-500">
-                Bereits bezahlt
-            </div>
+        </section>
 
-            <div class="mt-2 text-3xl font-semibold text-emerald-700">
-                {{ number_format(
-                    $membershipFeeStats['paid_amount'],
-                    2,
-                    ',',
-                    '.'
-                ) }} €
-            </div>
-        </div>
-    </div>
-
-    <!-- nächste Aktionen -->
-    <div>
-        @php
-            $membershipFeeActions = $this->membershipFeeActions();
-        @endphp
-
-        <div class="mt-6">
-            <h3 class="mb-3 text-base font-semibold text-slate-900">
-                Nächste Aktionen
-            </h3>
-
-            <div class="grid gap-4 md:grid-cols-2">
-
-                <a
-                    href="{{ route('membership-fees.index', ['reminderFilter' => 'due']) }}"
-                    class="block rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm transition hover:border-amber-300 hover:shadow-md"
-                >
-                    <div class="text-sm font-medium text-amber-700">
-                        Fällige Erinnerungen
-                    </div>
-
-                    <div class="mt-2 text-3xl font-semibold text-amber-800">
-                        {{ $membershipFeeActions['reminder_due'] }}
-                    </div>
-
-                    <div class="mt-2 text-sm text-amber-700">
-                        Jetzt prüfen und versenden
-                    </div>
-                </a>
-
-                <a
-                    href="{{ route('membership-fees.index', [
-                'statusFilter' => 'open',
-                'emailFilter' => 'without_email',
-            ]) }}"
-                    class="block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md"
-                >
-                    <div class="text-sm font-medium text-slate-600">
-                        Offene Beiträge ohne E-Mail
-                    </div>
-
-                    <div class="mt-2 text-3xl font-semibold text-slate-900">
-                        {{ $membershipFeeActions['open_without_email'] }}
-                    </div>
-
-                    <div class="mt-2 text-sm text-slate-500">
-                        Für Postversand vorbereiten
-                    </div>
-                </a>
-
-            </div>
-        </div>
-    </div>
-
-
+    @endif
 
 </div>

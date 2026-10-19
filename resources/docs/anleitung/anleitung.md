@@ -131,12 +131,37 @@ Auf kleinen Bildschirmen ist die Seitenleiste eingeklappt. Tippen Sie auf **☰*
 
 ## 4. Dashboard
 
-Das Dashboard ist die Startseite nach dem Anmelden und zeigt den aktuellen Vereinsstatus auf einen Blick (siehe Abbildung in Kapitel 3):
+Das Dashboard ist die Startseite nach dem Anmelden und zeigt den aktuellen Vereinsstatus auf einen Blick (siehe Abbildung in Kapitel 3). Es besteht aus **Modulen**, die jeder Benutzer für sich ein- und ausblenden und anordnen kann.
 
-- **Aktive Mitglieder** – Anzahl aller aktiven Mitglieder.
-- **Neue Mitglieder seit {Jahr}** – Eintritte im laufenden Kalenderjahr.
-- **Mitgliedsbeiträge {Jahr}** – Stand des aktuellsten Beitragsjahres: *Offen*, *Bezahlt*, *Befreit*, *Erinnerung fällig*, *Bereits erinnert*, dazu der offene und der bereits bezahlte Betrag. **Jede Kachel ist anklickbar** und öffnet die Beitragsliste mit dem passenden Filter.
-- **Nächste Aktionen** – Direkter Sprung zu fälligen Erinnerungen und zu offenen Beiträgen von Mitgliedern **ohne E-Mail-Adresse** (für den Postversand).
+### 4.1 Module
+
+| Modul | Inhalt | Sichtbar für |
+|---|---|---|
+| **Mitglieder** | aktive Mitglieder sowie Eintritte und Austritte im laufenden Jahr | alle |
+| **Nächste Termine** | die nächsten fünf Vereinstermine | alle (Paket mit Terminen) |
+| **Nächste Dienste** | die nächsten Dienste mit Besetzung, z. B. „1/2 besetzt“ – unterbesetzte Dienste sind gelb markiert | alle (Paket mit Dienstplan) |
+| **Geburtstage** | Geburtstage der nächsten 30 Tage, runde und halbrunde hervorgehoben | alle |
+| **Mitgliedsbeiträge** | Stand des aktuellsten Beitragsjahres: *Offen*, *Bezahlt*, *Befreit*, *Erinnerung fällig*, *Bereits erinnert*, offener und bezahlter Betrag. Jede Kachel öffnet die Beitragsliste mit passendem Filter; darunter Links zu fälligen Erinnerungen und zu offenen Beiträgen ohne E-Mail-Adresse (Postversand) | alle |
+| **Mitgliederentwicklung** | Balkendiagramm des Mitgliederstands zum Jahresende (laufendes Jahr: Stand heute), darunter je Jahr Eintritte (+) und Austritte (−). Oben rechts umschaltbar auf 5, 10 oder 20 Jahre | alle |
+| **Kassastand** | Kassastand, Einnahmen und Ausgaben des laufenden Vereinsjahres | Admin, Kassier |
+| **Offene Rechnungen** | Anzahl und Summe versendeter, unbezahlter Rechnungen, davon überfällig | Admin, Kassier (Paket mit Rechnungen) |
+| **Letzte Aktivitäten** | die letzten Einträge im Aktivitätsprotokoll | Admin (Paket mit Aktivitätsprotokoll) |
+| **Homepage-Beiträge** | Entwürfe und zuletzt veröffentlichte Beiträge | Admin, Homepage-Rolle (Paket mit Homepage) |
+
+Module zu Bereichen, die Sie nicht öffnen dürfen, erscheinen nie – auch nicht, wenn sie im Vereinsstandard stehen.
+
+> Der Mitgliederstand wird aus den Ein- und Austritten der Mitglieder berechnet (Kapitel 5.4). Er stimmt deshalb nur so weit, wie Eintritts- und Austrittsdaten gepflegt sind.
+
+### 4.2 Dashboard anpassen
+
+1. Oben rechts auf **Dashboard anpassen** klicken.
+2. Module am Griff **⠿** neben dem Titel an die gewünschte Stelle ziehen.
+3. Mit **Ausblenden** ein Modul entfernen; unter **Weitere Module** fügt **Hinzufügen** es wieder hinzu (am Ende).
+4. **Fertig** klicken.
+
+Jede Änderung wird sofort gespeichert und gilt nur für Sie. **Auf Standard zurücksetzen** verwirft Ihre Anordnung.
+
+**Vereinsstandard (nur Admins):** **Als Vereinsstandard speichern** übernimmt die eigene Anordnung als Standard für alle Benutzer, die ihr Dashboard noch nicht angepasst haben (oder es zurücksetzen). Diese Änderung steht im Aktivitätsprotokoll.
 
 ---
 
