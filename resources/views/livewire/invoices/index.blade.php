@@ -37,6 +37,7 @@
                 <option value="all">Alle Status</option>
                 <option value="draft">Entwurf</option>
                 <option value="sent">Versendet / offen</option>
+                <option value="overdue">Überfällig</option>
                 <option value="paid">Bezahlt</option>
                 <option value="canceled">Storniert</option>
             </select>
@@ -52,6 +53,7 @@
                     <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Datum</th>
                     <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Betrag</th>
                     <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Mahnung</th>
                 </tr>
                 </thead>
 
@@ -89,10 +91,24 @@
                                 {{ $label }}
                             </span>
                         </td>
+
+                        <td class="px-6 py-4 text-sm">
+                            @php($lastReminder = $invoice->reminders->sortByDesc('level')->first())
+
+                            @if($invoice->status === 'sent' && $invoice->isReminderDue())
+                                <span class="font-semibold text-red-700">{{ \App\Models\InvoiceReminder::LEVELS[$invoice->nextReminderLevel()] }} fällig</span>
+                            @elseif($lastReminder)
+                                <span class="text-slate-600">{{ $lastReminder->level_label }} · {{ $lastReminder->sent_at->format('d.m.Y') }}</span>
+                            @elseif($invoice->isOverdue())
+                                <span class="text-amber-700">überfällig</span>
+                            @else
+                                <span class="text-slate-400">–</span>
+                            @endif
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-10 text-center text-sm text-slate-500">
+                        <td colspan="6" class="px-6 py-10 text-center text-sm text-slate-500">
                             Keine Rechnungen gefunden.
                         </td>
                     </tr>

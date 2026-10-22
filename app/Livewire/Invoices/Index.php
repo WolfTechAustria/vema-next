@@ -16,15 +16,19 @@ class Index extends Component
     public function render()
     {
         $invoices = Invoice::query()
-            ->with('recipient')
+            ->with(['recipient', 'reminders'])
             ->when(
-                $this->statusFilter !== 'all',
+                $this->statusFilter === 'overdue',
+                fn ($query) => $query->overdue()
+            )
+            ->when(
+                ! in_array($this->statusFilter, ['all', 'overdue'], true),
                 fn ($query) => $query->where('status', $this->statusFilter)
             )
             ->when(
                 trim($this->search) !== '',
                 function ($query) {
-                    $search = '%' . trim($this->search) . '%';
+                    $search = '%'.trim($this->search).'%';
 
                     $query->where(function ($query) use ($search) {
                         $query

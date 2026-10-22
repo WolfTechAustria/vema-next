@@ -4,10 +4,11 @@ namespace App\Livewire\Invoices;
 
 use App\Mail\InvoiceMail;
 use App\Models\Invoice;
+use App\Models\InvoiceReminder;
 use App\Services\ActivityLogger;
 use App\Services\ImapSentMailService;
 use App\Services\InvoiceFinalizer;
-use Illuminate\Support\Facades\Mail;
+use App\Services\InvoiceReminderService;
 use Livewire\Component;
 
 class Show extends Component
@@ -16,7 +17,7 @@ class Show extends Component
 
     public function mount(Invoice $invoice): void
     {
-        $this->invoice = $invoice->load(['items', 'recipient', 'creator']);
+        $this->invoice = $invoice->load(['items', 'recipient', 'creator', 'reminders']);
     }
 
     public function finalize(): void
@@ -49,34 +50,11 @@ class Show extends Component
             return;
         }
 
-        $mail = new InvoiceMail($this->invoice);
-
-        $rawMessage = null;
-
-        $mail->withSymfonyMessage(
-            function ($message) use (&$rawMessage) {
-                $rawMessage = $message->toString();
-            }
+        app(ImapSentMailService::class)->sendAndAppend(
+            new InvoiceMail($this->invoice),
+            $this->invoice->recipient->email,
+            ['invoiceID' => $this->invoice->invoiceID]
         );
-
-        Mail::to($this->invoice->recipient->email)->send($mail);
-
-        if ($rawMessage) {
-            try {
-                app(ImapSentMailService::class)->append(
-                    $rawMessage
-                );
-            } catch (\Throwable $imapException) {
-
-                \Log::warning(
-                    'Rechnung wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
-                    [
-                        'invoiceID' => $this->invoice->invoiceID,
-                        'error' => $imapException->getMessage(),
-                    ]
-                );
-            }
-        }
 
         $this->invoice->update([
             'sent_at' => now(),
@@ -90,6 +68,39 @@ class Show extends Component
         );
 
         session()->flash('success', 'Rechnung wurde per E-Mail versendet.');
+    }
+
+    public function sendReminderEmail(): void
+    {
+        $this->sendReminder(InvoiceReminderService::EMAIL);
+    }
+
+    public function createReminderPdf()
+    {
+        $reminder = $this->sendReminder(InvoiceReminderService::POST);
+
+        if ($reminder) {
+            return redirect()->route('invoice-reminders.pdf', $reminder);
+        }
+    }
+
+    private function sendReminder(string $deliveryMethod): ?InvoiceReminder
+    {
+        try {
+            $reminder = app(InvoiceReminderService::class)->send($this->invoice, $deliveryMethod);
+        } catch (\RuntimeException $exception) {
+            session()->flash('error', $exception->getMessage());
+
+            return null;
+        }
+
+        $this->invoice->load('reminders');
+
+        session()->flash('success', $reminder->level_label.($deliveryMethod === InvoiceReminderService::EMAIL
+            ? ' wurde per E-Mail versendet.'
+            : ' wurde als PDF erzeugt.'));
+
+        return $reminder;
     }
 
     public function markPaid(): void

@@ -315,6 +315,11 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
         ->middleware('feature:invoices')
         ->name('invoices.pdf');
 
+    Route::get('/invoice-reminders/{reminder}/pdf', [InvoiceController::class, 'downloadReminderPdf'])
+        ->middleware('invoices')
+        ->middleware('feature:invoices')
+        ->name('invoice-reminders.pdf');
+
     Route::livewire('/invoice-recipients', InvoiceRecipientsIndex::class)
         ->middleware('invoices')
         ->middleware('feature:invoices')

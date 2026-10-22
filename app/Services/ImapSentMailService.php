@@ -3,11 +3,45 @@
 namespace App\Services;
 
 use App\Models\Setting;
+use Illuminate\Mail\Mailable;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Webklex\PHPIMAP\Client;
 use Webklex\PHPIMAP\ClientManager;
 
 class ImapSentMailService
 {
+    /**
+     * Verschickt die Mail und legt eine Kopie im IMAP-Gesendet-Ordner ab.
+     * Scheitert nur die Kopie, wird das protokolliert — der Versand gilt
+     * trotzdem als erfolgreich.
+     *
+     * @param  array<string, mixed>  $logContext
+     */
+    public function sendAndAppend(Mailable $mail, string $to, array $logContext = []): void
+    {
+        $rawMessage = null;
+
+        $mail->withSymfonyMessage(function ($message) use (&$rawMessage) {
+            $rawMessage = $message->toString();
+        });
+
+        Mail::to($to)->send($mail);
+
+        if (! $rawMessage) {
+            return;
+        }
+
+        try {
+            $this->append($rawMessage);
+        } catch (\Throwable $imapException) {
+            Log::warning(
+                'Mail wurde versendet, konnte aber nicht im IMAP-Gesendet-Ordner gespeichert werden.',
+                [...$logContext, 'error' => $imapException->getMessage()]
+            );
+        }
+    }
+
     public function append(
         string $rawMessage
     ): void {

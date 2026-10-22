@@ -121,6 +121,91 @@
 
     </section>
 
+    @if(! $invoice->isDraft() && ($invoice->reminders->isNotEmpty() || $invoice->status === 'sent'))
+
+        @php
+            $nextLevel = $invoice->nextReminderLevel();
+            $nextDate = $invoice->nextReminderDate();
+        @endphp
+
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Erinnerungen &amp; Mahnungen</h3>
+
+                    @if($invoice->status === 'sent')
+                        <p class="mt-1 text-sm text-slate-600">
+                            @if($nextLevel === null)
+                                Alle Mahnstufen wurden versendet.
+                            @elseif($invoice->isReminderDue())
+                                <span class="font-semibold text-red-700">{{ \App\Models\InvoiceReminder::LEVELS[$nextLevel] }} ist fällig.</span>
+                            @elseif($nextDate)
+                                {{ \App\Models\InvoiceReminder::LEVELS[$nextLevel] }} ab {{ $nextDate->format('d.m.Y') }}.
+                            @else
+                                Ohne Fälligkeitsdatum wird keine Erinnerung vorgeschlagen.
+                            @endif
+                        </p>
+                    @endif
+                </div>
+
+                @if($invoice->status === 'sent' && $nextLevel !== null)
+                    <div class="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            wire:click="sendReminderEmail"
+                            wire:confirm="{{ \App\Models\InvoiceReminder::LEVELS[$nextLevel] }} jetzt per E-Mail senden?{{ $invoice->isReminderDue() ? '' : ' Die Rechnung ist dafür noch nicht fällig.' }}"
+                            class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
+                        >
+                            {{ \App\Models\InvoiceReminder::LEVELS[$nextLevel] }} per E-Mail
+                        </button>
+
+                        <button
+                            type="button"
+                            wire:click="createReminderPdf"
+                            wire:confirm="{{ \App\Models\InvoiceReminder::LEVELS[$nextLevel] }} als PDF erzeugen und als versendet festhalten?{{ $invoice->isReminderDue() ? '' : ' Die Rechnung ist dafür noch nicht fällig.' }}"
+                            class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
+                        >
+                            {{ \App\Models\InvoiceReminder::LEVELS[$nextLevel] }} als PDF (Post)
+                        </button>
+                    </div>
+                @endif
+            </div>
+
+            @if($invoice->reminders->isNotEmpty())
+                <div class="mt-4 overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead>
+                        <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            <th class="py-2 pr-4">Stufe</th>
+                            <th class="py-2 pr-4">Datum</th>
+                            <th class="py-2 pr-4">Zustellung</th>
+                            <th class="py-2 pr-4">Empfänger</th>
+                            <th class="py-2 text-right">PDF</th>
+                        </tr>
+                        </thead>
+
+                        <tbody class="divide-y divide-slate-100">
+                        @foreach($invoice->reminders as $reminder)
+                            <tr wire:key="reminder-{{ $reminder->reminderID }}">
+                                <td class="py-2 pr-4 font-medium text-slate-900">{{ $reminder->level_label }}</td>
+                                <td class="py-2 pr-4 text-slate-600">{{ $reminder->sent_at->format('d.m.Y H:i') }}</td>
+                                <td class="py-2 pr-4 text-slate-600">{{ $reminder->isPrinted() ? 'Post (PDF)' : 'E-Mail' }}</td>
+                                <td class="py-2 pr-4 text-slate-600">{{ $reminder->sent_to ?? '–' }}</td>
+                                <td class="py-2 text-right">
+                                    <a href="{{ route('invoice-reminders.pdf', $reminder) }}" target="_blank" class="font-medium text-slate-700 underline">Ansehen</a>
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+
+        </section>
+
+    @endif
+
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200">

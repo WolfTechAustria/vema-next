@@ -47,6 +47,10 @@ class Index extends Component
 
     public string $invoice_number_format = InvoiceNumberGenerator::DEFAULT_FORMAT;
 
+    public string $invoice_reminder_first_after_days = '14';
+
+    public string $invoice_reminder_interval_days = '14';
+
     public string $invoice_next_number = '1';
 
     /**
@@ -85,6 +89,8 @@ class Index extends Component
         $this->small_business_default = (bool) $setting->small_business_default;
         $this->invoice_default_tax_rate = number_format((float) ($setting->invoice_default_tax_rate ?? 20), 2, ',', '');
         $this->invoice_footer_text = $setting->invoice_footer_text ?? '';
+        $this->invoice_reminder_first_after_days = (string) ($setting->invoice_reminder_first_after_days ?? 14);
+        $this->invoice_reminder_interval_days = (string) ($setting->invoice_reminder_interval_days ?? 14);
 
         $numberGenerator = app(InvoiceNumberGenerator::class);
         $this->invoice_number_format = $numberGenerator->currentFormat();
@@ -127,6 +133,8 @@ class Index extends Component
             'invoice_footer_text' => ['nullable', 'string'],
             'invoice_number_format' => ['required', 'string', 'max:50'],
             'invoice_next_number' => ['required', 'integer', 'min:1', 'max:99999999'],
+            'invoice_reminder_first_after_days' => ['required', 'integer', 'min:0', 'max:365'],
+            'invoice_reminder_interval_days' => ['required', 'integer', 'min:1', 'max:365'],
         ];
     }
 
@@ -183,6 +191,8 @@ class Index extends Component
             'invoice_default_tax_rate' => round((float) $normalizedTaxRate, 2),
             'invoice_footer_text' => $validated['invoice_footer_text'] ?: null,
             'invoice_number_format' => $numberFormat,
+            'invoice_reminder_first_after_days' => (int) $validated['invoice_reminder_first_after_days'],
+            'invoice_reminder_interval_days' => (int) $validated['invoice_reminder_interval_days'],
         ]);
 
         // Zähler nur setzen, wenn er geändert wurde oder das Format auf einen
@@ -231,6 +241,8 @@ class Index extends Component
         'invoice_footer_text' => 'Standard-Fußtext',
         'invoice_number_format' => 'Format der Rechnungsnummer',
         'invoice_next_number' => 'Nächste Rechnungsnummer',
+        'invoice_reminder_first_after_days' => 'Tage bis zur Zahlungserinnerung',
+        'invoice_reminder_interval_days' => 'Tage zwischen den Mahnstufen',
     ];
 
     /**

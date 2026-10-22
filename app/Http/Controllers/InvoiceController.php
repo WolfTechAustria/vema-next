@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Models\InvoiceReminder;
 use Illuminate\Support\Facades\Storage;
 
 class InvoiceController extends Controller
@@ -27,7 +28,23 @@ class InvoiceController extends Controller
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . $invoice->file_name . '"',
+                'Content-Disposition' => 'inline; filename="'.$invoice->file_name.'"',
+            ]
+        );
+    }
+
+    public function downloadReminderPdf(InvoiceReminder $reminder)
+    {
+        $disk = Storage::disk('local');
+
+        abort_unless($disk->exists($reminder->file_path), 404, 'PDF-Datei nicht gefunden.');
+
+        return response(
+            $disk->get($reminder->file_path),
+            200,
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="'.$reminder->file_name.'"',
             ]
         );
     }

@@ -11,6 +11,14 @@
     </div>
 </div>
 
-<a href="{{ route('invoices.index', ['statusFilter' => 'sent']) }}" wire:navigate class="mt-4 inline-block text-sm font-medium text-slate-700 hover:text-slate-900">
-    Offene Rechnungen →
-</a>
+<div class="mt-4 flex flex-wrap gap-x-4 gap-y-1">
+    <a href="{{ route('invoices.index', ['statusFilter' => 'sent']) }}" wire:navigate class="text-sm font-medium text-slate-700 hover:text-slate-900">
+        Offene Rechnungen →
+    </a>
+
+    @if($data['overdue'] > 0)
+        <a href="{{ route('invoices.index', ['statusFilter' => 'overdue']) }}" wire:navigate class="text-sm font-medium text-red-700 hover:text-red-900">
+            Überfällige ansehen →
+        </a>
+    @endif
+</div>

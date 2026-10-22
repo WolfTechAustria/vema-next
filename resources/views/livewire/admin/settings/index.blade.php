@@ -213,6 +213,36 @@
 
         </div>
 
+        <div class="mt-6 border-t border-slate-100 pt-6">
+
+            <h4 class="text-sm font-semibold text-slate-900">Zahlungserinnerung &amp; Mahnungen</h4>
+
+            <p class="mt-1 text-xs text-slate-500">
+                Stufen: Zahlungserinnerung, 1. Mahnung, 2. Mahnung. Die Fristen gelten für alle Rechnungen mit Fälligkeitsdatum.
+            </p>
+
+            <div class="mt-3 grid gap-4 md:grid-cols-2">
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Tage nach Fälligkeit bis zur Zahlungserinnerung</label>
+                    <input type="number" min="0" max="365" wire:model="invoice_reminder_first_after_days" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                    @error('invoice_reminder_first_after_days')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Tage zwischen den Mahnstufen</label>
+                    <input type="number" min="1" max="365" wire:model="invoice_reminder_interval_days" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                    @error('invoice_reminder_interval_days')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+            </div>
+
+        </div>
+
         <div class="mt-6">
             <button
                 type="button"
