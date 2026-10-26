@@ -882,7 +882,7 @@ Leere Felder verwenden die Einstellungen des Servers.
 - den **Status** zwischen *Aktiv* und *Gesperrt* umschalten (sich selbst kann man nicht sperren),
 - die Rolle **Admin** / *Mitarbeiter* vergeben (der letzte Admin kann seine Rechte nicht verlieren),
 - die Rolle **Kassier** vergeben oder entziehen,
-- die Rolle **Homepage** vergeben oder entziehen (Kapitel 16.9),
+- die Rolle **Homepage** vergeben oder entziehen (Kapitel 16.10),
 - mit **Link erneut senden** eine neue Einladung bzw. einen Passwort-Link verschicken.
 
 > **Vereine auf vemat.at:** Die Zahl der aktiven Vorstandszugänge hängt vom Paket ab. Ist sie erreicht, können keine weiteren Benutzer angelegt oder entsperrt werden – sperren Sie bei Bedarf einen nicht mehr benötigten Zugang.
@@ -1113,7 +1113,7 @@ Unter **Homepage → Beiträge** sehen Sie alle Beiträge mit Status, Datum und 
 
 1. **Neuer Beitrag** klicken.
 2. **Titel** eingeben. Die **Adresse** (z. B. `/news/sommerfest-2026`) schlägt VEMA vor; Sie können sie ändern.
-3. Optional einen **Kurztext** eintragen. Er erscheint in der Übersicht und in Suchmaschinen. Ohne Kurztext nimmt VEMA den Anfang des Beitrags.
+3. Optional einen **Kurztext** eintragen. Er erscheint in der Übersicht und in Suchmaschinen. Ohne Kurztext nimmt VEMA den Anfang des Beitrags. Eigenen Titel und eigene Beschreibung für Google tragen Sie unter **Suchmaschinen (Google)** ein (Kapitel 16.9).
 4. Den **Text** schreiben: Überschriften, fett/kursiv, Links, Zitate und Aufzählungen.
 5. Unter **Bildergalerie** **Bilder auswählen** (JPG, PNG oder WebP, je max. 10 MB, mehrere auf einmal).
 6. Optional unter **Downloads** **PDF auswählen**, z. B. eine Ergebnisliste (je max. 20 MB). Die Bezeichnung können Sie ändern.
@@ -1136,7 +1136,7 @@ Das bisherige Titelbild bleibt in beiden Fällen in der Galerie. Mit **↑** und
 
 **Auf der Homepage** öffnet ein Klick auf ein Bild die Vollbild-Ansicht im selben Fenster. Mit den Pfeil-Buttons, den Pfeiltasten oder durch Wischen am Handy blättern Sie durch alle Bilder des Beitrags; **Esc** oder **×** schließt die Ansicht. Der Button oben rechts schaltet zusätzlich in den echten Vollbildmodus des Browsers. Dasselbe gilt für Bilder in Seitenabschnitten.
 
-> **Umstieg von WordPress:** Beiträge einer bisherigen WordPress-Seite übernimmt ein Administrator des Servers einmalig mit `php artisan homepage:import-wordpress https://mein-verein.at` (mit `--dry-run` zuerst nur anzeigen). Übernommen werden Text, Titelbild, Bilder und verlinkte PDFs; bereits übernommene Beiträge werden übersprungen.
+> **Umstieg von WordPress:** Beiträge einer bisherigen WordPress-Seite übernimmt ein Administrator des Servers einmalig mit `php artisan homepage:import-wordpress https://mein-verein.at` (mit `--dry-run` zuerst nur anzeigen). Übernommen werden Text, Titelbild, Bilder und verlinkte PDFs; bereits übernommene Beiträge werden übersprungen. Die alte Adresse jedes Beitrags wird gespeichert und später automatisch weitergeleitet (Kapitel 16.9) – den Import also **vor** dem Umstellen der Domain ausführen.
 
 > **Hinweis:** Bilder werden beim Hochladen automatisch verkleinert und neu gespeichert. Dabei gehen versteckte Metadaten wie der Aufnahmeort (GPS) verloren – gewollt, aus Datenschutzgründen.
 
@@ -1264,9 +1264,34 @@ Die Homepage ist zunächst unter der Adresse von VEMA mit `/site` erreichbar, z.
 - **Eigene Installation:** Die Domain unter **Homepage → Gestaltung → Eigene Domain** eintragen (ohne `https://` und ohne `www.` – beide Varianten funktionieren). Die Domain muss per DNS auf den VEMA-Server zeigen und dort im Webserver samt SSL-Zertifikat eingerichtet sein.
 - **Vereine auf vemat.at:** Teilen Sie dem Support Ihre Wunschdomain mit. Nach der Einrichtung steht sie unter **Eigene Domain**.
 
-Unter der eigenen Domain ist **nur die Homepage** erreichbar – Anmeldung und Verwaltung laufen weiter über die bisherige VEMA-Adresse.
+Unter der eigenen Domain ist **nur die Homepage** erreichbar – Anmeldung und Verwaltung laufen weiter über die bisherige VEMA-Adresse. Aufrufe mit `www.` werden automatisch auf die Domain ohne `www.` umgeleitet.
 
-### 16.9 Berechtigung „Homepage“
+### 16.9 Suchmaschinen und Weiterleitungen
+
+Damit die Homepage bei Google gut gefunden wird, erledigt VEMA das Wichtigste selbst:
+
+- **Sitemap** – ein Verzeichnis aller Seiten und Beiträge unter `https://mein-verein.at/sitemap.xml`, dazu eine passende `robots.txt`. Solange die Homepage nicht veröffentlicht ist, bleibt sie für Suchmaschinen gesperrt. Die VEMA-Adresse selbst (Anmeldung, Verwaltung, Vorschau unter `/site`) erscheint nie in Suchmaschinen.
+- **Eine Adresse je Seite** – jede Seite nennt Suchmaschinen ihre maßgebliche Adresse unter der eigenen Domain.
+- **Strukturierte Daten** – Verein (Name, Logo, Anschrift), Beiträge und Termine werden zusätzlich maschinenlesbar beschrieben. Google kann Termine dadurch direkt in den Suchergebnissen zeigen.
+- **Vorschau beim Teilen** – Titel, Beschreibung und Bild für Facebook, WhatsApp & Co.
+- **Bildbeschreibungen** – Bilder ohne Bildunterschrift werden mit dem Titel des Beitrags beschrieben.
+
+**Titel und Beschreibung anpassen:** Bei jedem Beitrag und jeder eigenen Seite gibt es den aufklappbaren Bereich **Suchmaschinen (Google)**:
+
+- **Titel in Suchergebnissen** – leer = Titel der Seite. Der Vereinsname wird automatisch angehängt. Bis etwa 60 Zeichen zeigt Google vollständig.
+- **Beschreibung in Suchergebnissen** – leer = Kurztext bzw. Anfang des Beitrags, bei Seiten die allgemeine Beschreibung unter **Gestaltung**. Ideal sind ein bis zwei Sätze mit bis zu 160 Zeichen.
+
+**Bei Google anmelden:** In der [Google Search Console](https://search.google.com/search-console) die Domain bestätigen und unter „Sitemaps“ die Adresse `https://mein-verein.at/sitemap.xml` einreichen. Die genaue Adresse steht unter **Homepage → Suchmaschinen**.
+
+**Weiterleitungen** – wichtig beim Umstieg von einer früheren Homepage, damit Links in Google, bei Partnern oder in alten Mails nicht ins Leere führen:
+
+- Viele alte Adressen erkennt VEMA **automatisch** und leitet sie dauerhaft weiter, z. B. `/archive/sommerfest-2024/` → Beitrag `/news/sommerfest-2024`, `/archive/2024/06/30/` → News des Jahres 2024, `/kategorie/…`, `/thema/…` oder `/aktuelles/page/2/` → News, `/mitglied-werden.html` → eigene Seite `/mitglied-werden`.
+- Ändern Sie die **Adresse** eines veröffentlichten Beitrags oder einer Seite, wird die alte Adresse automatisch weitergeleitet.
+- Weitere Weiterleitungen legen Sie unter **Homepage → Suchmaschinen** an: **Alte Adresse** (z. B. `/ergebnisse`) und **Ziel** (z. B. `/news`, `/ergebnisse-2025` oder eine vollständige Adresse mit `https://`). Endet die alte Adresse auf `*`, gilt sie für alle Adressen, die so beginnen – z. B. `/files/*` → `/news`.
+
+**Nicht gefunden:** Rechts auf derselben Seite listet VEMA die Adressen, die aufgerufen wurden, aber nicht existieren – mit Anzahl und letztem Aufruf. Mit **Weiterleiten** übernehmen Sie eine Adresse direkt ins Formular, mit **Ausblenden** entfernen Sie sie aus der Liste. Schauen Sie nach dem Umstellen der Domain in den ersten Wochen regelmäßig hinein.
+
+### 16.10 Berechtigung „Homepage“
 
 Damit z. B. ein Pressewart Beiträge schreiben kann, ohne Admin zu sein, vergibt ein Admin in der **Benutzerverwaltung** die Rolle **Homepage** (Kapitel 12.3). Wer diese Rolle hat, darf Beiträge, Seiten, Inhalte und Gestaltung bearbeiten, aber keine anderen Admin-Bereiche öffnen.
 

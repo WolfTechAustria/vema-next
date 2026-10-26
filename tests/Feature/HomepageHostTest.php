@@ -13,13 +13,19 @@ describe('single installation', function () {
     it('serves the homepage on its own domain without the /site prefix', function () {
         $post = Post::factory()->create(['title' => 'Konzertbericht']);
 
-        $this->get('http://www.mv-angerberg.at/')
+        $this->get('http://mv-angerberg.at/')
             ->assertOk()
             ->assertSee('Konzertbericht')
-            ->assertSee('http://www.mv-angerberg.at/news/'.$post->slug, false)
+            ->assertSee('http://mv-angerberg.at/news/'.$post->slug, false)
             ->assertDontSee('/site/', false);
 
         $this->get('http://mv-angerberg.at/news/'.$post->slug)->assertOk();
+    });
+
+    it('redirects www to the domain without www', function () {
+        $this->get('http://www.mv-angerberg.at/news?jahr=2025')
+            ->assertStatus(301)
+            ->assertRedirect('http://mv-angerberg.at/news?jahr=2025');
     });
 
     it('does not expose the app on the homepage domain', function () {

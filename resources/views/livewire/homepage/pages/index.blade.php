@@ -108,6 +108,8 @@
                 </label>
             </div>
 
+            <x-seo-fields :open="$seoTitle !== '' || $seoDescription !== ''" :title-placeholder="$title" description-placeholder="Leer = allgemeine Beschreibung der Homepage" />
+
             <p class="text-xs text-slate-500">
                 Nicht im Menü angezeigte Seiten (z. B. Impressum) erscheinen als Link in der Fußzeile.
             </p>

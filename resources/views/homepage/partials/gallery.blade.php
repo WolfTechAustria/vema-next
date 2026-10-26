@@ -1,7 +1,7 @@
-{{-- Bildergalerie eines Beitrags (ohne Titelbild); Klick öffnet die Vollbild-Ansicht. --}}
+{{-- Bildergalerie eines Beitrags (ohne Titelbild); Klick öffnet die Vollbild-Ansicht. Ohne Bildunterschrift: „Titel – Bild 2“ als Alternativtext. --}}
 @if($images->isNotEmpty())
     <div class="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        @foreach($images as $image)
+        @foreach($images->values() as $imageIndex => $image)
             <figure>
                 <a
                     href="{{ $imageUrls->postImage($image, 'gross') }}"
@@ -11,7 +11,7 @@
                 >
                     <img
                         src="{{ $imageUrls->postImage($image) }}"
-                        alt="{{ $image->caption ?? '' }}"
+                        alt="{{ $image->caption ?: (isset($altText) ? $altText.' – Bild '.($imageIndex + 2) : '') }}"
                         loading="lazy"
                         class="aspect-[4/3] w-full object-cover transition duration-300 hover:scale-105"
                     >

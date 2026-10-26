@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\PostStatus;
+use App\Models\HomepageRedirect;
 use App\Models\Post;
 use DOMDocument;
 use DOMElement;
@@ -64,6 +65,7 @@ class WordPressPostImporter
         foreach ($this->fetchPosts() as $wordPressPost) {
             $title = $this->plainText($wordPressPost['title']['rendered'] ?? '');
             $slug = $this->slugFor($wordPressPost, $title);
+            $legacyPath = $this->legacyPath($wordPressPost);
 
             $existing = Post::query()->where('slug', $slug)->first();
 
@@ -74,6 +76,10 @@ class WordPressPostImporter
             }
 
             if ($existing !== null) {
+                if (! $dryRun && $existing->legacy_path === null && $legacyPath !== null) {
+                    $existing->update(['legacy_path' => $legacyPath]);
+                }
+
                 $result['skipped']++;
                 $this->report('übersprungen (bereits vorhanden): '.$title);
 
@@ -97,6 +103,7 @@ class WordPressPostImporter
             $post = Post::create([
                 'title' => Str::limit($title, 200, ''),
                 'slug' => $slug,
+                'legacy_path' => $legacyPath,
                 'body_html' => $content['html'] ?: null,
                 // Erst nach allen Dateien veröffentlichen (siehe oben).
                 'status' => PostStatus::Draft,
@@ -368,6 +375,18 @@ class WordPressPostImporter
         }
 
         return Str::limit(Str::slug(urldecode($slug), '-', 'de'), 220, '');
+    }
+
+    /**
+     * Adresse des Beitrags auf der alten Seite (für Weiterleitungen).
+     *
+     * @param  array<string, mixed>  $wordPressPost
+     */
+    private function legacyPath(array $wordPressPost): ?string
+    {
+        $path = parse_url((string) ($wordPressPost['link'] ?? ''), PHP_URL_PATH);
+
+        return is_string($path) && trim($path, '/') !== '' ? HomepageRedirect::normalizePath($path) : null;
     }
 
     private function plainText(string $html): string

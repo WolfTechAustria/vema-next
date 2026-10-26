@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\HomepageController;
 use App\Http\Controllers\HomepageMediaController;
+use App\Http\Controllers\HomepageSeoController;
 use App\Services\HomepageHosts;
 use Illuminate\Support\Facades\Route;
 
@@ -10,6 +11,10 @@ use Illuminate\Support\Facades\Route;
  * ServeHomepageHost jede Anfrage intern hierher um (ohne /site in der
  * Adresse); auf der App-Domain dient /site als Vorschau.
  */
+// Auch für eine (noch) nicht veröffentlichte Homepage: dann „alles gesperrt“.
+Route::get(HomepageHosts::PATH_PREFIX.'/robots.txt', [HomepageSeoController::class, 'homepageRobots'])
+    ->name('homepage.robots');
+
 Route::prefix(HomepageHosts::PATH_PREFIX)
     ->name('homepage.')
     ->middleware('homepage.published')
@@ -66,7 +71,16 @@ Route::prefix(HomepageHosts::PATH_PREFIX)
             ->whereNumber('member')
             ->name('board.photo');
 
+        Route::get('/sitemap.xml', [HomepageSeoController::class, 'sitemap'])
+            ->name('sitemap');
+
         Route::get('/{slug}', [HomepageController::class, 'page'])
             ->where('slug', '[a-z0-9-]+')
             ->name('page');
+
+        // Alle übrigen Adressen: „nicht gefunden“ — innerhalb der Web-Middleware,
+        // damit ServeHomepageHost alte Adressen weiterleiten kann.
+        Route::get('/{path}', [HomepageSeoController::class, 'notFound'])
+            ->where('path', '.+')
+            ->name('not-found');
     });

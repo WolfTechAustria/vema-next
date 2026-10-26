@@ -22,7 +22,7 @@
                 >
                     <img
                         src="{{ $imageUrls->postImage($post->images->first(), 'gross') }}"
-                        alt="{{ $post->images->first()->caption ?? '' }}"
+                        alt="{{ $post->images->first()->caption ?: $post->title }}"
                         class="w-full rounded-xl object-cover"
                     >
                 </a>
@@ -41,6 +41,6 @@
 
         @include('homepage.partials.downloads', ['attachments' => $post->attachments])
 
-        @include('homepage.partials.gallery', ['images' => $post->images->slice(1), 'group' => 'post-'.$post->postID])
+        @include('homepage.partials.gallery', ['images' => $post->images->slice(1), 'group' => 'post-'.$post->postID, 'altText' => $post->title])
     </article>
 @endsection

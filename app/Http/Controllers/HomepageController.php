@@ -11,6 +11,7 @@ use App\Services\HomepageBoard;
 use App\Services\HomepageEvents;
 use App\Services\HomepageHosts;
 use App\Services\HomepageImageUrls;
+use App\Services\HomepageStructuredData;
 use App\Services\HtmlSanitizer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ class HomepageController extends Controller
         private HomepageImageUrls $imageUrls,
         private HomepageHosts $hosts,
         private HomepageEvents $events,
+        private HomepageStructuredData $structuredData,
     ) {}
 
     public function home(): View
@@ -40,9 +42,16 @@ class HomepageController extends Controller
             ->limit(6)
             ->get();
 
+        $upcomingEvents = $this->events->upcoming(3);
+        $club = Setting::current();
+
         return $this->render('home', [
             'posts' => $posts,
-            'upcomingEvents' => $this->events->upcoming(3),
+            'upcomingEvents' => $upcomingEvents,
+            'structuredData' => [
+                $this->structuredData->organization($club),
+                ...$this->structuredData->events($upcomingEvents, $club),
+            ],
         ]);
     }
 
@@ -93,11 +102,15 @@ class HomepageController extends Controller
      */
     public function renderPost(Post $post, bool $isPreview = false): View
     {
+        $description = $post->seo_description ?: $post->teaser(160);
+
         return $this->render('post', [
             'post' => $post,
             'bodyHtml' => $this->sanitizer->sanitize($post->body_html),
             'pageTitle' => $post->title,
-            'metaDescription' => $post->teaser(160),
+            'seoTitle' => $post->seo_title,
+            'metaDescription' => $description,
+            'structuredData' => [$this->structuredData->article($post, Setting::current(), $description)],
             'ogImage' => $post->images->first() ? $this->imageUrls->postImage($post->images->first(), 'gross') : null,
             'isPreview' => $isPreview,
         ]);
@@ -110,6 +123,7 @@ class HomepageController extends Controller
         $upcoming = $this->events->upcoming();
 
         return $this->render('events', [
+            'structuredData' => $this->structuredData->events($upcoming, Setting::current()),
             'upcomingByMonth' => $upcoming->groupBy(fn ($event) => $event->starts_at->locale('de')->translatedFormat('F Y')),
             'pastEvents' => $this->events->past(),
             'pageTitle' => 'Termine',
@@ -172,6 +186,8 @@ class HomepageController extends Controller
             'pageHeading' => $page->subtitle,
             'bodyHtml' => $this->sanitizer->sanitize($page->body_html),
             'pageTitle' => $page->title,
+            'seoTitle' => $page->seo_title,
+            'metaDescription' => $page->seo_description ?: HomepageSetting::current()->meta_description,
         ]);
     }
 
@@ -181,6 +197,7 @@ class HomepageController extends Controller
     private function render(string $page, array $data = []): View
     {
         $settings = HomepageSetting::current();
+        $isPreview = (bool) ($data['isPreview'] ?? false);
         $pages = HomepagePage::query()->published()->ordered()->get(['pageID', 'title', 'slug', 'in_menu']);
 
         $templatePath = 'homepage.templates.'.$settings->template->value;
@@ -202,10 +219,29 @@ class HomepageController extends Controller
             'logoUrl' => $this->imageUrls->logo(),
             'heroUrl' => $this->imageUrls->hero($settings),
             'pageTitle' => null,
+            'seoTitle' => null,
             'metaDescription' => $settings->meta_description,
             'ogImage' => null,
+            'canonicalUrl' => $isPreview ? null : $this->canonicalUrl(),
+            'structuredData' => [],
             'isPreview' => false,
         ], $data));
+    }
+
+    /**
+     * Maßgebliche Adresse der Seite auf der Homepage-Domain — ohne /site und
+     * ohne Abfrageparameter außer Jahr und Seitenzahl der News.
+     */
+    private function canonicalUrl(): string
+    {
+        $query = array_filter([
+            'jahr' => request()->query('jahr'),
+            'page' => (int) request()->query('page') > 1 ? (int) request()->query('page') : null,
+        ], fn ($value) => is_scalar($value) && $value !== '');
+
+        $url = $this->hosts->publicUrl('/'.request()->path());
+
+        return $query === [] ? $url : $url.'?'.http_build_query($query);
     }
 
     /**

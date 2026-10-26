@@ -105,6 +105,69 @@ class HomepageHosts
     }
 
     /**
+     * Bevorzugter Host einer Homepage-Domain: „www.“ entfällt, sofern die
+     * Domain auch ohne erreichbar ist (Weiterleitung, damit Suchmaschinen
+     * jede Seite nur unter einer Adresse finden).
+     */
+    public function preferredHost(string $host): string
+    {
+        $host = Str::lower($host);
+
+        if (str_starts_with($host, 'www.') && $this->matches(substr($host, 4))) {
+            return substr($host, 4);
+        }
+
+        return $host;
+    }
+
+    /**
+     * Öffentliche Adresse der Homepage (https://domain) oder null, solange
+     * keine eigene Domain eingetragen ist.
+     */
+    public function publicRoot(): ?string
+    {
+        if ($this->active) {
+            return 'https://'.$this->preferredHost(request()->getHost());
+        }
+
+        $domain = $this->tenantManager->isMultiTenant() ? $this->tenantDomain() : $this->singleDomain();
+
+        return filled($domain) ? 'https://'.$domain : null;
+    }
+
+    /**
+     * Absolute öffentliche Adresse eines Homepage-Pfads, z. B. „/news/titel“
+     * (ohne den internen Präfix /site). Ohne eigene Domain: aktuelle Adresse.
+     */
+    public function publicUrl(string $path): string
+    {
+        $path = '/'.ltrim($path, '/');
+        $prefix = '/'.self::PATH_PREFIX;
+
+        if ($path === $prefix || str_starts_with($path, $prefix.'/')) {
+            $path = substr($path, strlen($prefix)) ?: '/';
+        }
+
+        $root = $this->publicRoot();
+
+        if ($root === null) {
+            return url(self::PATH_PREFIX.($path === '/' ? '' : $path));
+        }
+
+        return $root.($path === '/' ? '' : $path);
+    }
+
+    /**
+     * Öffentliche Adresse einer benannten Homepage-Route.
+     *
+     * @param  array<string, mixed>  $parameters
+     */
+    public function publicRoute(string $name, array $parameters = []): string
+    {
+        return $this->publicUrl(route($name, $parameters, false));
+    }
+
+    /**
      * Domain ohne Schema, Pfad und „www.“ — so wird sie gespeichert.
      */
     public static function normalize(?string $domain): ?string
@@ -115,6 +178,22 @@ class HomepageHosts
         $domain = (string) preg_replace('/^www\./', '', $domain);
 
         return $domain === '' ? null : $domain;
+    }
+
+    private function tenantDomain(): ?string
+    {
+        $tenant = $this->tenantManager->current();
+
+        if ($tenant === null) {
+            return null;
+        }
+
+        return TenantDomain::query()
+            ->where('tenant_id', $tenant->getKey())
+            ->where('purpose', self::PURPOSE)
+            ->pluck('domain')
+            ->sortBy(fn (string $domain) => str_starts_with($domain, 'www.') ? 1 : 0)
+            ->first();
     }
 
     private function singleDomain(): string

@@ -124,6 +124,8 @@
                 @enderror
             </div>
 
+            <x-seo-fields :open="$seoTitle !== '' || $seoDescription !== ''" :title-placeholder="$title" description-placeholder="Leer = Kurztext bzw. Anfang des Beitrags" />
+
         </section>
 
         <div class="space-y-6">

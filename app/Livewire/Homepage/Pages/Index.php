@@ -3,6 +3,7 @@
 namespace App\Livewire\Homepage\Pages;
 
 use App\Models\HomepagePage;
+use App\Models\HomepageRedirect;
 use App\Models\HomepageSection;
 use App\Services\ActivityLogger;
 use App\Services\HtmlSanitizer;
@@ -20,6 +21,10 @@ class Index extends Component
     public string $subtitle = '';
 
     public string $slug = '';
+
+    public string $seoTitle = '';
+
+    public string $seoDescription = '';
 
     public string $bodyHtml = '';
 
@@ -59,6 +64,8 @@ class Index extends Component
                 Rule::unique('tb_homepage_pages', 'slug')->ignore($this->editingPageID, 'pageID'),
             ],
             'bodyHtml' => ['nullable', 'string'],
+            'seoTitle' => ['nullable', 'string', 'max:120'],
+            'seoDescription' => ['nullable', 'string', 'max:300'],
             'sort' => ['integer', 'min:0', 'max:999'],
             'inMenu' => ['boolean'],
             'published' => ['boolean'],
@@ -69,6 +76,8 @@ class Index extends Component
             'subtitle' => 'Überschrift im Seitenkopf',
             'slug' => 'Adresse',
             'sort' => 'Reihenfolge',
+            'seoTitle' => 'Titel in Suchergebnissen',
+            'seoDescription' => 'Beschreibung in Suchergebnissen',
         ]);
 
         $attributes = [
@@ -76,6 +85,8 @@ class Index extends Component
             'subtitle' => filled($validated['subtitle']) ? $validated['subtitle'] : null,
             'slug' => $validated['slug'],
             'body_html' => $sanitizer->sanitize($validated['bodyHtml']) ?: null,
+            'seo_title' => filled($validated['seoTitle']) ? $validated['seoTitle'] : null,
+            'seo_description' => filled($validated['seoDescription']) ? $validated['seoDescription'] : null,
             'sort' => $validated['sort'],
             'in_menu' => $validated['inMenu'],
             'published' => $validated['published'],
@@ -96,9 +107,16 @@ class Index extends Component
         } else {
             $page = HomepagePage::findOrFail($this->editingPageID);
             $before = $page->only(array_keys(HomepagePage::ACTIVITY_LABELS));
-            $bodyChanged = $page->body_html !== $attributes['body_html'];
+            $bodyChanged = $page->body_html !== $attributes['body_html'] || $page->seo_title !== $attributes['seo_title'] || $page->seo_description !== $attributes['seo_description'];
+            $previousSlug = $page->slug;
+            $wasPublished = $page->published;
 
             $page->update($attributes);
+
+            // Bereits veröffentlichte Adresse bleibt über eine Weiterleitung erreichbar.
+            if ($wasPublished && $previousSlug !== $page->slug) {
+                HomepageRedirect::remember('/'.$previousSlug, '/'.$page->slug);
+            }
 
             $changes = ActivityLogger::changes($before, $page->fresh()->only(array_keys(HomepagePage::ACTIVITY_LABELS)), HomepagePage::ACTIVITY_LABELS);
 
@@ -127,6 +145,8 @@ class Index extends Component
         $this->subtitle = $page->subtitle ?? '';
         $this->slug = $page->slug;
         $this->bodyHtml = $page->body_html ?? '';
+        $this->seoTitle = $page->seo_title ?? '';
+        $this->seoDescription = $page->seo_description ?? '';
         $this->sort = $page->sort;
         $this->inMenu = $page->in_menu;
         $this->published = $page->published;
@@ -161,7 +181,7 @@ class Index extends Component
 
     private function resetForm(): void
     {
-        $this->reset(['title', 'subtitle', 'slug', 'bodyHtml', 'sort', 'inMenu', 'published', 'editingPageID']);
+        $this->reset(['title', 'subtitle', 'slug', 'seoTitle', 'seoDescription', 'bodyHtml', 'sort', 'inMenu', 'published', 'editingPageID']);
         $this->formVersion++;
     }
 

@@ -3,6 +3,7 @@
 namespace App\Livewire\Homepage\Posts;
 
 use App\Enums\PostStatus;
+use App\Models\HomepageRedirect;
 use App\Models\Post;
 use App\Models\PostImage;
 use App\Services\ActivityLogger;
@@ -36,6 +37,10 @@ class Edit extends Component
     public bool $slugTouched = false;
 
     public string $excerpt = '';
+
+    public string $seoTitle = '';
+
+    public string $seoDescription = '';
 
     public string $bodyHtml = '';
 
@@ -89,6 +94,8 @@ class Edit extends Component
         $this->slug = $post->slug;
         $this->slugTouched = true;
         $this->excerpt = $post->excerpt ?? '';
+        $this->seoTitle = $post->seo_title ?? '';
+        $this->seoDescription = $post->seo_description ?? '';
         $this->bodyHtml = $post->body_html ?? '';
         $this->status = $post->status->value;
         $this->publishedAt = $post->published_at?->format('Y-m-d\TH:i') ?? '';
@@ -172,6 +179,8 @@ class Edit extends Component
                 Rule::unique('tb_posts', 'slug')->ignore($this->post?->postID, 'postID'),
             ],
             'excerpt' => ['nullable', 'string', 'max:500'],
+            'seoTitle' => ['nullable', 'string', 'max:120'],
+            'seoDescription' => ['nullable', 'string', 'max:300'],
             'bodyHtml' => ['nullable', 'string'],
             'status' => ['required', Rule::enum(PostStatus::class)],
             'publishedAt' => ['nullable', 'date'],
@@ -181,6 +190,8 @@ class Edit extends Component
             'title' => 'Titel',
             'slug' => 'Adresse',
             'excerpt' => 'Kurztext',
+            'seoTitle' => 'Titel in Suchergebnissen',
+            'seoDescription' => 'Beschreibung in Suchergebnissen',
             'publishedAt' => 'Veröffentlichungsdatum',
         ]);
 
@@ -195,6 +206,8 @@ class Edit extends Component
             'title' => $validated['title'],
             'slug' => $validated['slug'],
             'excerpt' => filled($validated['excerpt']) ? $validated['excerpt'] : null,
+            'seo_title' => filled($validated['seoTitle']) ? $validated['seoTitle'] : null,
+            'seo_description' => filled($validated['seoDescription']) ? $validated['seoDescription'] : null,
             'body_html' => $sanitizer->sanitize($validated['bodyHtml']) ?: null,
             'status' => $status,
             'published_at' => $publishedAt,
@@ -224,8 +237,14 @@ class Edit extends Component
 
         $before = $this->post->activitySnapshot();
         $wasPublic = $this->post->isPublic();
+        $previousSlug = $this->post->slug;
 
         $this->post->update($attributes);
+
+        // Bereits veröffentlichte Adresse bleibt über eine Weiterleitung erreichbar.
+        if ($wasPublic && $previousSlug !== $this->post->slug) {
+            HomepageRedirect::remember('/news/'.$previousSlug, '/news/'.$this->post->slug);
+        }
         $this->saveCaptions();
         $this->saveAttachmentLabels();
 

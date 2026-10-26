@@ -43,6 +43,7 @@ function fakeWordpressSite(): void
                 'id' => 10,
                 'date' => '2024-10-03T18:30:00',
                 'slug' => 'dorfmeisterschaft-2024',
+                'link' => 'https://verein.test/archive/dorfmeisterschaft-2024/',
                 'title' => ['rendered' => 'Dorfmeisterschaft 2024 &#8211; Bericht'],
                 'content' => ['rendered' => $elementorContent],
                 'featured_media' => 99,
@@ -80,7 +81,8 @@ it('imports posts with text, original images and pdf downloads', function () {
         ->and($post->body_html)->not->toContain('alert')
         ->and($post->body_html)->not->toContain('Ergebnisliste Einzelwertung')
         ->and($post->images)->toHaveCount(3)
-        ->and($post->attachments()->sole()->label)->toBe('Ergebnisliste Einzelwertung');
+        ->and($post->attachments()->sole()->label)->toBe('Ergebnisliste Einzelwertung')
+        ->and($post->legacy_path)->toBe('/archive/dorfmeisterschaft-2024');
 
     // Titelbild zuerst, CDN-Adressen wurden auf das Original umgestellt.
     Http::assertSent(fn ($request) => $request->url() === 'https://verein.test/wp-content/uploads/2024/10/Foto-1.jpeg');

@@ -8,6 +8,7 @@ use App\Http\Controllers\CashBookController;
 use App\Http\Controllers\CircularController;
 use App\Http\Controllers\DemoModeController;
 use App\Http\Controllers\HomepagePreviewController;
+use App\Http\Controllers\HomepageSeoController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MemberAuthController;
 use App\Http\Controllers\MemberCalendarController;
@@ -34,6 +35,7 @@ use App\Livewire\Homepage\Pages\Index as HomepagePagesIndex;
 use App\Livewire\Homepage\Posts\Edit as HomepagePostsEdit;
 use App\Livewire\Homepage\Posts\Index as HomepagePostsIndex;
 use App\Livewire\Homepage\Sections as HomepageSections;
+use App\Livewire\Homepage\Seo as HomepageSeo;
 use App\Livewire\Homepage\Settings as HomepageSettings;
 use App\Livewire\Invoices\Articles\Index as InvoiceArticlesIndex;
 use App\Livewire\Invoices\Create as InvoicesCreate;
@@ -57,6 +59,9 @@ use App\Livewire\MembershipFees\Index as MembershipFeesIndex;
 use App\Livewire\Templates\Index as TemplatesIndex;
 use App\Livewire\UserManual\Index as UserManualIndex;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/robots.txt', [HomepageSeoController::class, 'appRobots'])
+    ->name('robots');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])
@@ -250,6 +255,9 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
 
             Route::livewire('/notices', HomepageNotices::class)
                 ->name('notices');
+
+            Route::livewire('/seo', HomepageSeo::class)
+                ->name('seo');
         });
 
     Route::livewire('/users', App\Livewire\Admin\Users\Index::class)

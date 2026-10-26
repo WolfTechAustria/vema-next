@@ -21,7 +21,7 @@
 
                 @if($coverImage)
                     <a href="{{ $imageUrls->postImage($coverImage, 'gross') }}" data-lightbox="post-{{ $post->postID }}" data-caption="{{ $coverImage->caption }}" class="block cursor-zoom-in">
-                        <img src="{{ $imageUrls->postImage($coverImage, 'gross') }}" alt="{{ $coverImage->caption ?? $post->title }}" class="mb-7 max-h-[560px] w-full rounded-xl object-cover">
+                        <img src="{{ $imageUrls->postImage($coverImage, 'gross') }}" alt="{{ $coverImage->caption ?: $post->title }}" class="mb-7 max-h-[560px] w-full rounded-xl object-cover">
                     </a>
                 @endif
 
@@ -44,9 +44,9 @@
                 </h2>
 
                 <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
-                    @foreach($galleryImages as $image)
+                    @foreach($galleryImages->values() as $imageIndex => $image)
                         <a href="{{ $imageUrls->postImage($image, 'gross') }}" data-lightbox="post-{{ $post->postID }}" data-caption="{{ $image->caption }}" title="{{ $image->caption ?? '' }}" class="block cursor-zoom-in">
-                            <img src="{{ $imageUrls->postImage($image) }}" alt="{{ $image->caption ?? '' }}" loading="lazy" class="aspect-square w-full rounded-lg object-cover transition hover:opacity-85">
+                            <img src="{{ $imageUrls->postImage($image) }}" alt="{{ $image->caption ?: $post->title." – Bild ".($imageIndex + 2) }}" loading="lazy" class="aspect-square w-full rounded-lg object-cover transition hover:opacity-85">
                         </a>
                     @endforeach
                 </div>
