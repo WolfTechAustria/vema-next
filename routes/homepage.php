@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\HomepageController;
 use App\Http\Controllers\HomepageMediaController;
 use App\Http\Controllers\HomepageSeoController;
@@ -73,6 +74,13 @@ Route::prefix(HomepageHosts::PATH_PREFIX)
 
         Route::get('/sitemap.xml', [HomepageSeoController::class, 'sitemap'])
             ->name('sitemap');
+
+        Route::get('/favicon.ico', [BrandingController::class, 'favicon'])
+            ->name('favicon');
+
+        Route::get('/icon-{size}.png', [BrandingController::class, 'icon'])
+            ->whereIn('size', ['32', '180', '192'])
+            ->name('icon');
 
         Route::get('/{slug}', [HomepageController::class, 'page'])
             ->where('slug', '[a-z0-9-]+')

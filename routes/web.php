@@ -390,3 +390,10 @@ Route::get('/calendar/duty/{token}.ics', [MemberCalendarController::class, 'show
 
 Route::get('/branding/logo', [BrandingController::class, 'logo'])
     ->name('branding.logo');
+
+Route::get('/favicon.ico', [BrandingController::class, 'favicon'])
+    ->name('favicon');
+
+Route::get('/branding/icon-{size}.png', [BrandingController::class, 'icon'])
+    ->whereIn('size', ['32', '180', '192'])
+    ->name('branding.icon');

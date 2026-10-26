@@ -36,9 +36,7 @@
     <script type="application/ld+json">{!! json_encode($structuredItem, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
 @endforeach
 
-@if($logoUrl)
-    <link rel="icon" href="{{ $logoUrl }}">
-@endif
+@include('partials.favicon', ['iconRoute' => 'homepage.icon', 'faviconRoute' => 'homepage.favicon'])
 
 @vite(['resources/css/homepage.css', 'resources/js/homepage.js'])
 

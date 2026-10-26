@@ -13,6 +13,8 @@
         {{ $title ?? 'Mitgliederbereich | VEMA' }}
     </title>
 
+    @include('partials.favicon')
+
     @vite([
         'resources/css/app.css',
         'resources/js/app.js'
