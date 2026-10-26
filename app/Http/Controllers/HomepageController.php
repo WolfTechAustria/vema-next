@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Feature;
 use App\Models\HomepagePage;
 use App\Models\HomepageSection;
 use App\Models\HomepageSetting;
@@ -13,9 +14,13 @@ use App\Services\HomepageHosts;
 use App\Services\HomepageImageUrls;
 use App\Services\HomepageStructuredData;
 use App\Services\HtmlSanitizer;
+use App\Services\PlanEntitlements;
+use App\Services\TenantManager;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
+use Throwable;
 
 /**
  * Öffentliche Seiten der Vereinshomepage. Alle Seiten nutzen dieselben
@@ -189,6 +194,48 @@ class HomepageController extends Controller
             'seoTitle' => $page->seo_title,
             'metaDescription' => $page->seo_description ?: HomepageSetting::current()->meta_description,
         ]);
+    }
+
+    /**
+     * „Seite nicht gefunden“ im Design der Homepage — für jede 404 auf der
+     * Homepage-Domain bzw. in der Vorschau unter /site (siehe bootstrap/app.php).
+     * Null, wenn die Homepage nicht sichtbar ist: dann die allgemeine Fehlerseite.
+     */
+    public function notFoundResponse(Request $request): ?Response
+    {
+        $isHomepageRequest = $this->hosts->isActive() || $request->is(HomepageHosts::PATH_PREFIX, HomepageHosts::PATH_PREFIX.'/*');
+
+        if (! $isHomepageRequest || $request->expectsJson()) {
+            return null;
+        }
+
+        try {
+            $tenantManager = app(TenantManager::class);
+
+            if ($tenantManager->isMultiTenant() && $tenantManager->current() === null) {
+                return null;
+            }
+
+            $canPreview = auth()->guard('web')->user()?->hasAnyRole(['admin', 'homepage']) ?? false;
+
+            if (! app(PlanEntitlements::class)->allows(Feature::Homepage) || ! (HomepageSetting::current()->enabled || $canPreview)) {
+                return null;
+            }
+
+            $posts = Post::query()->published()->with('coverImage')->orderByDesc('published_at')->limit(3)->get();
+
+            return response($this->render('not-found', [
+                'posts' => $posts,
+                'pageTitle' => 'Seite nicht gefunden',
+                'metaDescription' => null,
+                'canonicalUrl' => null,
+                'isPreview' => ! $this->hosts->isActive(),
+            ]), 404);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return null;
+        }
     }
 
     /**

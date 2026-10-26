@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\HomepageTemplate;
 use App\Enums\PostStatus;
 use App\Livewire\Homepage\Pages\Index as PagesIndex;
 use App\Livewire\Homepage\Posts\Edit as PostsEdit;
@@ -281,5 +282,42 @@ describe('administration', function () {
 
         expect($page->fresh()->seo_description)->toBe('So wirst du Mitglied.')
             ->and(HomepageRedirect::query()->sole()->only(['source_path', 'target']))->toBe(['source_path' => '/mitglied', 'target' => '/mitglied-werden']);
+    });
+});
+
+describe('not found pages', function () {
+    it('shows the not found page in the design of the homepage', function (HomepageTemplate $template) {
+        HomepageSetting::current()->update(['template' => $template]);
+        Post::factory()->create(['title' => 'Konzertbericht']);
+
+        $this->get(HOMEPAGE.'/gibt-es-nicht')
+            ->assertNotFound()
+            ->assertSee('Diese Seite gibt es leider nicht.')
+            ->assertSee('Zur Startseite')
+            ->assertSee('Konzertbericht')
+            ->assertSee('<title>Seite nicht gefunden | ', false)
+            ->assertDontSee('rel="canonical"', false);
+    })->with(HomepageTemplate::cases());
+
+    it('also covers deeper unknown addresses', function () {
+        $this->get(HOMEPAGE.'/gibt/es/nicht.pdf')
+            ->assertNotFound()
+            ->assertSee('Diese Seite gibt es leider nicht.');
+    });
+
+    it('shows the general page while the homepage is not published', function () {
+        HomepageSetting::current()->update(['enabled' => false]);
+
+        $this->get(HOMEPAGE.'/')
+            ->assertNotFound()
+            ->assertSee('Hier gibt es leider nichts.')
+            ->assertDontSee('Diese Seite gibt es leider nicht.');
+    });
+
+    it('shows its own not found page in the app', function () {
+        $this->get('http://localhost/gibt-es-nicht')
+            ->assertNotFound()
+            ->assertSee('Hier gibt es leider nichts.')
+            ->assertSee('Zur Startseite');
     });
 });

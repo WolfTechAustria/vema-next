@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HomepageController;
 use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureHomepageIsPublished;
 use App\Http\Middleware\EnsureStaffAccountIsActive;
@@ -14,6 +15,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\StartSession;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -64,6 +66,9 @@ return Application::configure(basePath: dirname(__DIR__))
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // 404 auf der Vereinshomepage im Design der Homepage.
+        $exceptions->render(fn (NotFoundHttpException $exception, Request $request) => app(HomepageController::class)->notFoundResponse($request));
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
