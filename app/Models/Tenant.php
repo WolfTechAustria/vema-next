@@ -11,6 +11,7 @@ use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -148,6 +149,32 @@ class Tenant extends Model
     public function federationMemberships(): HasMany
     {
         return $this->hasMany(FederationMembership::class, 'club_id');
+    }
+
+    /**
+     * Verbände, denen der Verein aktiv angehört.
+     *
+     * @return Collection<int, int>
+     */
+    public function activeFederationIds(): Collection
+    {
+        return $this->federationMemberships()->active()->pluck('federation_id');
+    }
+
+    /**
+     * @return HasMany<FederationMessage, $this>
+     */
+    public function federationMessages(): HasMany
+    {
+        return $this->hasMany(FederationMessage::class, 'federation_id');
+    }
+
+    /**
+     * @return HasMany<FederationFile, $this>
+     */
+    public function federationFiles(): HasMany
+    {
+        return $this->hasMany(FederationFile::class, 'federation_id');
     }
 
     /**

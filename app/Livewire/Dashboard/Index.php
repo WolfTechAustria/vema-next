@@ -9,6 +9,7 @@ use App\Models\CashBookYear;
 use App\Models\ClubEvent;
 use App\Models\ClubStatistic;
 use App\Models\DutyPlanEvent;
+use App\Models\FederationMessage;
 use App\Models\Invoice;
 use App\Models\Member;
 use App\Models\MemberMembershipPeriod;
@@ -21,6 +22,7 @@ use App\Services\DashboardLayout;
 use App\Services\MemberHistory;
 use App\Services\TenantManager;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 /**
@@ -140,6 +142,7 @@ class Index extends Component
         return match ($module) {
             DashboardModule::MemberStats => $this->memberStats(),
             DashboardModule::FederationClubs => $this->federationClubStats(),
+            DashboardModule::FederationNews => $this->federationNews(),
             DashboardModule::MemberHistory => ['years' => app(MemberHistory::class)->years($this->historyYears)],
             DashboardModule::MembershipFees => ['stats' => $this->membershipFeeStats(), 'actions' => $this->membershipFeeActions()],
             DashboardModule::UpcomingEvents => ['events' => ClubEvent::query()->upcoming()->orderBy('starts_at')->limit(5)->get()],
@@ -181,6 +184,25 @@ class Index extends Component
                 ->get()
                 ->sum(fn (ClubStatistic $statistic) => $statistic->data['members'] ?? 0),
             'invited' => (clone $memberships)->invited()->count(),
+        ];
+    }
+
+    /**
+     * @return array{messages: Collection<int, FederationMessage>, readIds: list<int>}
+     */
+    private function federationNews(): array
+    {
+        $club = app(TenantManager::class)->current();
+        $messages = FederationMessage::query()
+            ->whereIn('federation_id', $club->activeFederationIds())
+            ->with('federation')
+            ->latest('id')
+            ->limit(3)
+            ->get();
+
+        return [
+            'messages' => $messages,
+            'readIds' => FederationMessage::readIdsFor($club, $messages->pluck('id')),
         ];
     }
 

@@ -24,6 +24,7 @@ enum DashboardModule: string
     case RecentActivity = 'recent_activity';
     case HomepagePosts = 'homepage_posts';
     case FederationClubs = 'federation_clubs';
+    case FederationNews = 'federation_news';
 
     public function label(): string
     {
@@ -39,6 +40,7 @@ enum DashboardModule: string
             self::RecentActivity => 'Letzte Aktivitäten',
             self::HomepagePosts => 'Homepage-Beiträge',
             self::FederationClubs => 'Mitgliedsvereine',
+            self::FederationNews => 'Neues vom Verband',
         };
     }
 
@@ -56,6 +58,7 @@ enum DashboardModule: string
             self::RecentActivity => 'Die letzten Einträge im Aktivitätsprotokoll.',
             self::HomepagePosts => 'Entwürfe und zuletzt veröffentlichte Beiträge.',
             self::FederationClubs => 'Mitgliedsvereine des Verbands mit ihren Mitgliedern (Verbandszentrale).',
+            self::FederationNews => 'Die letzten Mitteilungen der Verbände, denen der Verein angehört.',
         };
     }
 
@@ -77,6 +80,7 @@ enum DashboardModule: string
             self::RecentActivity => $user->hasRole('admin') && $entitlements->allows(Feature::ActivityLog),
             self::HomepagePosts => $user->hasAnyRole(['admin', 'homepage']) && $entitlements->allows(Feature::Homepage),
             self::FederationClubs => app(TenantManager::class)->current()?->isFederation() ?? false,
+            self::FederationNews => app(TenantManager::class)->current()?->activeFederationIds()->isNotEmpty() ?? false,
         };
     }
 
@@ -89,6 +93,7 @@ enum DashboardModule: string
     {
         return [
             self::FederationClubs,
+            self::FederationNews,
             self::MemberStats,
             self::UpcomingEvents,
             self::UpcomingDuties,

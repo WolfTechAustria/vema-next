@@ -8,16 +8,23 @@ use App\Livewire\Admin\Settings\Federations;
 use App\Livewire\Central\Admin\TenantDetail;
 use App\Livewire\Dashboard\Index;
 use App\Livewire\Federation\Clubs;
+use App\Livewire\Federation\Documents;
+use App\Livewire\Federation\Inbox;
+use App\Livewire\Federation\Messages;
 use App\Livewire\Federation\Statistics;
 use App\Mail\FederationInvitationMail;
+use App\Mail\FederationMessageMail;
 use App\Models\ClubStatistic;
+use App\Models\FederationFile;
 use App\Models\FederationMembership;
+use App\Models\FederationMessage;
 use App\Models\Member;
 use App\Models\PlatformAdmin;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\TenantManager;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 use Maatwebsite\Excel\Facades\Excel;
@@ -294,5 +301,116 @@ describe('statistics', function () {
         Excel::assertDownloaded('mitgliedsvereine-'.now()->format('Y-m-d').'.xlsx', function (FederationStatisticsExport $export) {
             return $export->array()[0][0] === 'Musikverein' && $export->array()[0][2] === 2;
         });
+    });
+});
+
+/**
+ * Musikverein ist aktives Mitglied des Landesverbands.
+ */
+function connectClub(Tenant $federation, Tenant $club): void
+{
+    FederationMembership::query()->create([
+        'federation_id' => $federation->id,
+        'club_id' => $club->id,
+        'status' => FederationMembershipStatus::Active,
+        'invited_at' => now(),
+        'responded_at' => now(),
+    ]);
+}
+
+describe('messages and documents', function () {
+    beforeEach(function () {
+        connectClub($this->federation, $this->club);
+    });
+
+    it('sends a message with attachment that the club can read', function () {
+        app(TenantManager::class)->runFor($this->federation, function () {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Messages::class)
+                ->set('subject', 'Landesmeisterschaft 2027')
+                ->set('body', "Liebe Vereine,\nanbei die Ausschreibung.")
+                ->set('attachments', [UploadedFile::fake()->create('ausschreibung.pdf', 100, 'application/pdf')])
+                ->call('send')
+                ->assertHasNoErrors()
+                ->assertSee('Mitteilung an 1 Verein veröffentlicht')
+                ->assertSee('gelesen von 0 / 1 Vereinen');
+        });
+
+        Mail::assertSent(FederationMessageMail::class, fn ($mail) => $mail->hasTo('obfrau@musikverein.at'));
+
+        $message = FederationMessage::query()->sole();
+        $attachment = $message->attachments()->sole();
+
+        expect($attachment->absolutePath())->toStartWith($this->federation->storagePath('private'))
+            ->and(is_file($attachment->absolutePath()))->toBeTrue();
+
+        app(TenantManager::class)->runFor($this->club->fresh(), function () use ($message, $attachment) {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Inbox::class)
+                ->assertSee('Landesmeisterschaft 2027')
+                ->assertSee('neu')
+                ->call('open', $message->id)
+                ->assertSee('anbei die Ausschreibung')
+                ->assertSee('ausschreibung.pdf');
+
+            expect(FederationMessage::readIdsFor($this->club, collect([$message->id])))->toBe([$message->id]);
+
+            $this->actingAs(User::query()->first())
+                ->get(route('federation-files.show', $attachment))
+                ->assertOk();
+        });
+    });
+
+    it('counts the notification mails against the quota of the federation', function () {
+        $this->federation->update(['limit_overrides' => ['emails_per_month' => 0]]);
+
+        app(TenantManager::class)->runFor($this->federation->fresh(), function () {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Messages::class)
+                ->set('subject', 'Info')
+                ->set('body', 'Text')
+                ->call('send')
+                ->assertSee('E-Mail-Kontingent eures Pakets');
+        });
+
+        expect(FederationMessage::query()->count())->toBe(0);
+    });
+
+    it('shares documents only with active member clubs', function () {
+        $outsider = createTenantWithDatabase('schuetzen', 'Schützengilde');
+
+        app(TenantManager::class)->runFor($this->federation, function () {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Documents::class)
+                ->set('title', 'Satzung')
+                ->set('file', UploadedFile::fake()->create('satzung.pdf', 50, 'application/pdf'))
+                ->call('upload')
+                ->assertHasNoErrors()
+                ->assertSee('Satzung');
+        });
+
+        $document = FederationFile::query()->sole();
+
+        app(TenantManager::class)->runFor($this->club->fresh(), function () {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Inbox::class)
+                ->assertSee('Satzung');
+        });
+
+        expect($document->isAccessibleFor($this->club->fresh()))->toBeTrue()
+            ->and($document->isAccessibleFor($this->federation))->toBeTrue()
+            ->and($document->isAccessibleFor($outsider))->toBeFalse();
+
+        FederationMembership::query()->sole()->update(['status' => FederationMembershipStatus::Left]);
+
+        expect($document->isAccessibleFor($this->club->fresh()))->toBeFalse();
+
+        app(TenantManager::class)->runFor($this->federation, function () use ($document) {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Documents::class)
+                ->call('delete', $document->id);
+        });
+
+        expect(is_file($document->absolutePath()))->toBeFalse();
     });
 });

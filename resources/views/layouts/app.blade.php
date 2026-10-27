@@ -223,6 +223,21 @@
                 @endif
 
 
+                @if(app(\App\Services\TenantManager::class)->current()?->activeFederationIds()->isNotEmpty())
+                    <a
+                        href="{{ route('federation-inbox') }}"
+                        wire:navigate
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                        {{ request()->routeIs('federation-inbox')
+                            ? 'bg-slate-900 text-white'
+                            : 'text-slate-700 hover:bg-slate-100' }}"
+                    >
+                        <span>✉</span>
+                        Verband
+                    </a>
+                @endif
+
+
 
 
                 <a

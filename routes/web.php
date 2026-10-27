@@ -8,6 +8,7 @@ use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\CashBookController;
 use App\Http\Controllers\CircularController;
 use App\Http\Controllers\DemoModeController;
+use App\Http\Controllers\FederationFileController;
 use App\Http\Controllers\HomepagePreviewController;
 use App\Http\Controllers\HomepageSeoController;
 use App\Http\Controllers\InvoiceController;
@@ -31,6 +32,9 @@ use App\Livewire\DutyPlan\Volunteers as DutyPlanVolunteers;
 use App\Livewire\Events\Index as EventsIndex;
 use App\Livewire\ExternalContacts\Index;
 use App\Livewire\Federation\Clubs as FederationClubs;
+use App\Livewire\Federation\Documents as FederationDocuments;
+use App\Livewire\Federation\Inbox as FederationInbox;
+use App\Livewire\Federation\Messages as FederationMessages;
 use App\Livewire\Federation\Statistics as FederationStatistics;
 use App\Livewire\Homepage\Content as HomepageContent;
 use App\Livewire\Homepage\MailPosts as HomepageMailPosts;
@@ -298,6 +302,21 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/federation/statistics', FederationStatistics::class)
         ->middleware('feature:federation')
         ->name('federation.statistics');
+
+    Route::livewire('/federation/messages', FederationMessages::class)
+        ->middleware('feature:federation')
+        ->name('federation.messages');
+
+    Route::livewire('/federation/documents', FederationDocuments::class)
+        ->middleware('feature:federation')
+        ->name('federation.documents');
+
+    // Mitteilungen und Dokumente der Verbände, denen der Verein angehört.
+    Route::livewire('/verband', FederationInbox::class)
+        ->name('federation-inbox');
+
+    Route::get('/federation-files/{federationFile}', [FederationFileController::class, 'show'])
+        ->name('federation-files.show');
 
     Route::livewire('/activity-log', App\Livewire\Admin\ActivityLog\Index::class)
         ->middleware('admin')
