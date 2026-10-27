@@ -91,7 +91,7 @@ describe('club details', function () {
             User::factory()->count(3)->create();
         });
 
-        tenantDetail($this->club)->assertSee('Limit von Starter aktuell überschritten');
+        tenantDetail($this->club)->assertSee('Limit aktuell überschritten');
     });
 
     it('adds and removes own domains', function () {

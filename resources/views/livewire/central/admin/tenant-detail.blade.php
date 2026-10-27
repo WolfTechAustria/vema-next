@@ -160,9 +160,16 @@
                 @if($tenant->isOnTrial())
                     (Testphase, danach {{ $tenant->plan->label() }})
                 @endif
-                — bis {{ $effectivePlan->memberLimit() ?? 'unbegrenzt' }} Mitglieder,
-                {{ $effectivePlan->staffLimit() ?? 'unbegrenzt' }} Vorstandszugänge.
+                @if($tenant->hasCustomizations())
+                    <span class="text-amber-700">mit individuellen Anpassungen</span>
+                @endif
             </p>
+
+            <ul class="mt-2 grid gap-x-4 gap-y-1 text-sm text-slate-600 sm:grid-cols-2">
+                @foreach($limitCases as $limitCase)
+                    <li>{{ $limitCase->label() }}: <strong>{{ $limitCase->format($tenant->limit($limitCase)) }}</strong></li>
+                @endforeach
+            </ul>
         </section>
 
         <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -184,6 +191,22 @@
                         <dt class="text-slate-500">Aktive Mitglieder / Vorstandszugänge</dt>
                         <dd>{{ $usage['members'] }} / {{ $usage['staff'] }}</dd>
                     </div>
+
+                    <div>
+                        <dt class="text-slate-500">E-Mails diesen Monat</dt>
+                        <dd>
+                            {{ \App\Enums\Limit::EmailsPerMonth->format($usage['emails']) }}
+                            von {{ \App\Enums\Limit::EmailsPerMonth->format($tenant->limit(\App\Enums\Limit::EmailsPerMonth)) }}
+                        </dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-slate-500">Speicher belegt</dt>
+                        <dd>
+                            {{ \App\Enums\Limit::formatMegabytes($usage['storage_mb']) }}
+                            von {{ \App\Enums\Limit::StorageMb->format($tenant->limit(\App\Enums\Limit::StorageMb)) }}
+                        </dd>
+                    </div>
                 @elseif($tenant->provisioned_at === null)
                     <div>
                         <dt class="text-slate-500">Einrichtung</dt>
@@ -198,6 +221,87 @@
                     </div>
                 @endif
             </dl>
+        </section>
+
+        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-3">
+            <h2 class="mb-1 font-semibold">Individuelle Anpassungen</h2>
+            <p class="mb-4 text-sm text-slate-500">
+                Abweichungen vom Paket nur für diesen Verein — z. B. eine einzelne Funktion freischalten oder zugebuchten Speicher.
+                Sie gelten auch während der Testphase und bleiben bei einem Paketwechsel erhalten.
+            </p>
+
+            <form wire:submit="saveOverrides" class="space-y-5">
+                <div class="grid gap-5 lg:grid-cols-2">
+                    <div>
+                        <h3 class="mb-2 text-sm font-semibold text-slate-700">Funktionen</h3>
+
+                        <ul class="divide-y divide-slate-100 text-sm">
+                            @foreach($featureCases as $featureCase)
+                                <li wire:key="override-feature-{{ $featureCase->value }}" class="flex items-center justify-between gap-3 py-1.5">
+                                    <span>
+                                        {{ $featureCase->label() }}
+                                        <span class="text-xs text-slate-400">(Paket: {{ $effectivePlan->includes($featureCase) ? 'ja' : 'nein' }})</span>
+                                    </span>
+
+                                    <div class="inline-flex overflow-hidden rounded-lg border border-slate-300 text-xs">
+                                        @foreach(['plan' => 'Paket', 'on' => 'An', 'off' => 'Aus'] as $mode => $modeLabel)
+                                            <label @class([
+                                                'cursor-pointer px-2.5 py-1',
+                                                'bg-slate-900 text-white' => ($featureOverrides[$featureCase->value] ?? 'plan') === $mode,
+                                                'text-slate-600 hover:bg-slate-50' => ($featureOverrides[$featureCase->value] ?? 'plan') !== $mode,
+                                            ])>
+                                                <input type="radio" wire:model.live="featureOverrides.{{ $featureCase->value }}" value="{{ $mode }}" class="sr-only">
+                                                {{ $modeLabel }}
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="mb-2 text-sm font-semibold text-slate-700">Limits</h3>
+
+                        <ul class="divide-y divide-slate-100 text-sm">
+                            @foreach($limitCases as $limitCase)
+                                <li wire:key="override-limit-{{ $limitCase->value }}" class="py-2">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <span>
+                                            {{ $limitCase->label() }}
+                                            <span class="text-xs text-slate-400">(Paket: {{ $limitCase->format($effectivePlan->limit($limitCase)) }})</span>
+                                        </span>
+
+                                        <div class="flex items-center gap-2">
+                                            <select wire:model.live="limitModes.{{ $limitCase->value }}" class="rounded-lg border border-slate-300 px-2 py-1 text-xs">
+                                                <option value="plan">laut Paket</option>
+                                                <option value="custom">eigener Wert</option>
+                                                <option value="unlimited">unbegrenzt</option>
+                                            </select>
+
+                                            @if(($limitModes[$limitCase->value] ?? 'plan') === 'custom')
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    wire:model="limitValues.{{ $limitCase->value }}"
+                                                    class="w-28 rounded-lg border border-slate-300 px-2 py-1 text-right text-xs"
+                                                >
+                                            @endif
+                                        </div>
+                                    </div>
+                                    @error('limitValues.'.$limitCase->value) <p class="mt-1 text-right text-xs text-red-600">{{ $message }}</p> @enderror
+                                </li>
+                            @endforeach
+                        </ul>
+
+                        <p class="mt-2 text-xs text-slate-500">Speicher in MB (1 GB = 1024 MB).</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                    Anpassungen speichern
+                </button>
+            </form>
         </section>
 
         <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">

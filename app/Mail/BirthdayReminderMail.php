@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Contracts\ExemptFromMailQuota;
 use App\Models\Member;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -10,7 +11,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class BirthdayReminderMail extends Mailable
+class BirthdayReminderMail extends Mailable implements ExemptFromMailQuota
 {
     use Queueable, SerializesModels;
 

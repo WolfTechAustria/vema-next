@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\Feature;
+use App\Enums\Limit;
 use App\Enums\Plan;
 use App\Enums\TenantStatus;
 use Database\Factories\TenantFactory;
@@ -40,6 +42,8 @@ class Tenant extends Model
             'trial_ends_at' => 'datetime',
             'email_verified_at' => 'datetime',
             'provisioned_at' => 'datetime',
+            'feature_overrides' => 'array',
+            'limit_overrides' => 'array',
         ];
     }
 
@@ -64,6 +68,45 @@ class Tenant extends Model
         }
 
         return $plan;
+    }
+
+    /**
+     * Individuelle Freischaltung/Sperre einer Funktion; null = laut Paket.
+     */
+    public function featureOverride(Feature $feature): ?bool
+    {
+        return $this->feature_overrides[$feature->value] ?? null;
+    }
+
+    /**
+     * Funktion verfügbar: individuelle Einstellung vor dem geltenden Paket.
+     */
+    public function allows(Feature $feature): bool
+    {
+        return $this->featureOverride($feature) ?? $this->effectivePlan()->includes($feature);
+    }
+
+    public function hasLimitOverride(Limit $limit): bool
+    {
+        return array_key_exists($limit->value, $this->limit_overrides ?? []);
+    }
+
+    /**
+     * Geltendes Limit: individueller Wert vor dem Paket; null = unbegrenzt.
+     */
+    public function limit(Limit $limit): ?int
+    {
+        return $this->hasLimitOverride($limit)
+            ? $this->limit_overrides[$limit->value]
+            : $this->effectivePlan()->limit($limit);
+    }
+
+    /**
+     * Gibt es individuelle Abweichungen vom Paket?
+     */
+    public function hasCustomizations(): bool
+    {
+        return filled($this->feature_overrides) || filled($this->limit_overrides);
     }
 
     /**

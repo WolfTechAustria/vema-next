@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\Feature;
+use App\Enums\Limit;
 use App\Enums\Plan;
 use App\Models\Member;
 use App\Models\User;
@@ -25,19 +26,30 @@ class PlanEntitlements
         return $this->tenantManager->current()?->effectivePlan();
     }
 
+    /**
+     * Funktion verfügbar — Paket plus individuelle Anpassungen des Vereins.
+     */
     public function allows(Feature $feature): bool
     {
-        return $this->plan()?->includes($feature) ?? true;
+        return $this->tenantManager->current()?->allows($feature) ?? true;
+    }
+
+    /**
+     * Geltendes Limit des aktuellen Vereins; null = unbegrenzt.
+     */
+    public function limit(Limit $limit): ?int
+    {
+        return $this->tenantManager->current()?->limit($limit);
     }
 
     public function memberLimit(): ?int
     {
-        return $this->plan()?->memberLimit();
+        return $this->limit(Limit::Members);
     }
 
     public function staffLimit(): ?int
     {
-        return $this->plan()?->staffLimit();
+        return $this->limit(Limit::Staff);
     }
 
     public function activeMemberCount(): int
@@ -72,7 +84,7 @@ class PlanEntitlements
 
     public function memberLimitMessage(): string
     {
-        return 'Euer Paket „'.$this->plan()?->label().'“ umfasst bis zu '.$this->memberLimit()
+        return 'Euer Paket „'.$this->plan()?->label().'“ umfasst bis zu '.Limit::Members->format($this->memberLimit())
             .' aktive Mitglieder. Für mehr Mitglieder bitte ein größeres Paket buchen.';
     }
 

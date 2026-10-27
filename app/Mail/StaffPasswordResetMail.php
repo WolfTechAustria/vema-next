@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Contracts\ExemptFromMailQuota;
 use App\Models\User;
 use App\Services\WelcomeMailService;
 use Illuminate\Bus\Queueable;
@@ -14,7 +15,7 @@ use Illuminate\Queue\SerializesModels;
  * Passwort-Link für Funktionäre. Bei einem neu angelegten Zugang ist das
  * zugleich die Willkommens-E-Mail (Text aus dem Template „staff_welcome“).
  */
-class StaffPasswordResetMail extends Mailable
+class StaffPasswordResetMail extends Mailable implements ExemptFromMailQuota
 {
     use Queueable, SerializesModels;
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Rules\WithinStorageQuota;
 use App\Services\UploadLimits;
 
 it('formats limits in megabytes', function () {
@@ -14,8 +15,11 @@ it('never allows more than the server or the app limit', function () {
     expect(app(UploadLimits::class)->effectiveKb(10240))->toBe($serverMaxKb === null ? 10240 : min(10240, $serverMaxKb));
 });
 
-it('raises the livewire limit for temporary uploads to 25 MB', function () {
-    expect(config('livewire.temporary_file_upload.rules'))->toBe(['required', 'file', 'max:25600']);
+it('raises the livewire limit for temporary uploads to 25 MB and checks the storage of the plan', function () {
+    $rules = config('livewire.temporary_file_upload.rules');
+
+    expect(array_slice($rules, 0, 3))->toBe(['required', 'file', 'max:25600'])
+        ->and($rules[3])->toBeInstanceOf(WithinStorageQuota::class);
 });
 
 it('replaces raw upload errors with an understandable message', function () {

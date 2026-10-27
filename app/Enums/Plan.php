@@ -2,8 +2,11 @@
 
 namespace App\Enums;
 
+use App\Services\PlanCatalog;
+
 /**
- * Pakete laut Preisliste auf vemat.at: Funktionsumfang und Limits.
+ * Pakete laut Preisliste auf vemat.at. Funktionen und Limits stellt der
+ * Plattform-Admin ein (PlanCatalog); hier stehen die Standardwerte.
  */
 enum Plan: string
 {
@@ -41,11 +44,50 @@ enum Plan: string
     }
 
     /**
-     * Funktionen dieses Pakets — jedes Paket enthält alle der kleineren.
+     * Funktionen dieses Pakets (wie im Plattform-Admin eingestellt).
      *
      * @return array<int, Feature>
      */
     public function features(): array
+    {
+        return app(PlanCatalog::class)->features($this);
+    }
+
+    public function includes(Feature $feature): bool
+    {
+        return in_array($feature, $this->features(), true);
+    }
+
+    /**
+     * Wert eines Limits (wie im Plattform-Admin eingestellt); null = unbegrenzt.
+     */
+    public function limit(Limit $limit): ?int
+    {
+        return app(PlanCatalog::class)->limit($this, $limit);
+    }
+
+    /**
+     * Aktive Mitglieder; null = unbegrenzt.
+     */
+    public function memberLimit(): ?int
+    {
+        return $this->limit(Limit::Members);
+    }
+
+    /**
+     * Aktive Vorstandszugänge (Staff-Benutzer); null = unbegrenzt.
+     */
+    public function staffLimit(): ?int
+    {
+        return $this->limit(Limit::Staff);
+    }
+
+    /**
+     * Standardfunktionen laut Preisliste — jedes Paket enthält alle der kleineren.
+     *
+     * @return array<int, Feature>
+     */
+    public function defaultFeatures(): array
     {
         $features = [];
 
@@ -64,36 +106,40 @@ enum Plan: string
         return $features;
     }
 
-    public function includes(Feature $feature): bool
-    {
-        return in_array($feature, $this->features(), true);
-    }
-
     /**
-     * Aktive Mitglieder; null = unbegrenzt.
+     * Standardlimits laut Preisliste; null = unbegrenzt.
      */
-    public function memberLimit(): ?int
+    public function defaultLimit(Limit $limit): ?int
     {
-        return match ($this) {
-            self::Starter => 10,
-            self::Basis => 50,
-            self::Verein => 150,
-            self::VereinPlus => 500,
-            self::Grossverein, self::Verband => null,
-        };
-    }
-
-    /**
-     * Aktive Vorstandszugänge (Staff-Benutzer); null = unbegrenzt.
-     */
-    public function staffLimit(): ?int
-    {
-        return match ($this) {
-            self::Starter => 1,
-            self::Basis => 2,
-            self::Verein => 3,
-            self::VereinPlus => 10,
-            self::Grossverein, self::Verband => null,
+        return match ($limit) {
+            Limit::Members => match ($this) {
+                self::Starter => 10,
+                self::Basis => 50,
+                self::Verein => 150,
+                self::VereinPlus => 500,
+                self::Grossverein, self::Verband => null,
+            },
+            Limit::Staff => match ($this) {
+                self::Starter => 1,
+                self::Basis => 2,
+                self::Verein => 3,
+                self::VereinPlus => 10,
+                self::Grossverein, self::Verband => null,
+            },
+            Limit::EmailsPerMonth => match ($this) {
+                self::Starter => 100,
+                self::Basis => 1000,
+                self::Verein => 2000,
+                self::VereinPlus => 10000,
+                self::Grossverein, self::Verband => null,
+            },
+            Limit::StorageMb => match ($this) {
+                self::Starter => 250,
+                self::Basis => 2 * 1024,
+                self::Verein => 5 * 1024,
+                self::VereinPlus => 20 * 1024,
+                self::Grossverein, self::Verband => null,
+            },
         };
     }
 

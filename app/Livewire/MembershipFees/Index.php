@@ -10,6 +10,7 @@ use App\Models\MembershipFeeYear;
 use App\Models\Template;
 use App\Services\ActivityLogger;
 use App\Services\ImapSentMailService;
+use App\Services\MailQuota;
 use App\Services\PdfLetterheadService;
 use App\Services\TemplateRendererService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -169,6 +170,9 @@ class Index extends Component
 
             return;
         }
+
+        // Vor dem ersten Versand: reicht das E-Mail-Kontingent für alle?
+        app(MailQuota::class)->ensureAvailable($entries->count());
 
         $template = Template::query()
             ->where('key', 'membership_fee_prescription')
@@ -358,6 +362,8 @@ class Index extends Component
 
             return;
         }
+
+        app(MailQuota::class)->ensureAvailable($entries->count());
 
         $sent = 0;
         $skipped = 0;

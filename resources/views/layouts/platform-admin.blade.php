@@ -23,9 +23,16 @@
 
 <header class="border-b border-slate-200 bg-white">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <a href="{{ route('central.admin.tenants') }}" wire:navigate class="font-bold tracking-tight">
-            VEMA · Plattform-Admin
-        </a>
+        <div class="flex flex-wrap items-center gap-5">
+            <a href="{{ route('central.admin.tenants') }}" wire:navigate class="font-bold tracking-tight">
+                VEMA · Plattform-Admin
+            </a>
+
+            <nav class="flex gap-4 text-sm">
+                <a href="{{ route('central.admin.tenants') }}" wire:navigate @class(['hover:text-slate-900', 'font-semibold text-slate-900' => request()->routeIs('central.admin.tenants*'), 'text-slate-500' => ! request()->routeIs('central.admin.tenants*')])>Vereine</a>
+                <a href="{{ route('central.admin.plans') }}" wire:navigate @class(['hover:text-slate-900', 'font-semibold text-slate-900' => request()->routeIs('central.admin.plans'), 'text-slate-500' => ! request()->routeIs('central.admin.plans')])>Pakete</a>
+            </nav>
+        </div>
 
         <div class="flex items-center gap-3 text-sm">
             <a href="{{ route('central.admin.account') }}" wire:navigate class="text-slate-500 hover:text-slate-800 hover:underline">{{ auth('platform')->user()?->name }}</a>

@@ -75,6 +75,9 @@
                             @if($tenant->isOnTrial())
                                 <span class="text-xs text-sky-700">(Test: {{ $tenant->effectivePlan()->label() }})</span>
                             @endif
+                            @if($tenant->hasCustomizations())
+                                <span class="text-xs text-amber-700">· individuell</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3">{{ $tenant->trial_ends_at?->format('d.m.Y') ?? '–' }}</td>
                         <td class="px-4 py-3">{{ $tenant->license_valid_until?->format('d.m.Y') ?? 'unbegrenzt' }}</td>

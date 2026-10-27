@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Contracts\ExemptFromMailQuota;
 use App\Models\Member;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -9,15 +10,14 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class MemberMagicLoginMail extends Mailable
+class MemberMagicLoginMail extends Mailable implements ExemptFromMailQuota
 {
     use Queueable, SerializesModels;
 
     public function __construct(
         public Member $member,
         public string $token
-    ) {
-    }
+    ) {}
 
     public function envelope(): Envelope
     {

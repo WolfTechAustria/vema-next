@@ -151,7 +151,7 @@
 
                     <div>
                         <div class="text-xs font-medium uppercase tracking-wide text-slate-400">
-                            Wettkampfmitglied
+                            Ordentliches Mitglied
                         </div>
 
                         <div class="mt-1 text-sm font-medium text-slate-900">

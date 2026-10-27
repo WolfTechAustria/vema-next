@@ -10,6 +10,7 @@ use App\Models\Member;
 use App\Services\ActivityLogger;
 use App\Services\CircularPdfService;
 use App\Services\ImapSentMailService;
+use App\Services\MailQuota;
 use App\Services\PdfLetterheadService;
 use App\Services\TemplateRendererService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -205,6 +206,9 @@ class CircularController extends Controller
          */
         $households = $emailRecipients
             ->groupBy(fn (CircularRecipient $recipient) => CircularRecipient::normalizeEmail($recipient->email));
+
+        // Eine Mail je Adresse — reicht das E-Mail-Kontingent für alle?
+        app(MailQuota::class)->ensureAvailable($households->count());
 
         foreach ($households as $householdRecipients) {
 

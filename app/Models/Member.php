@@ -337,7 +337,7 @@ class Member extends Model
         'dateOfJoin' => 'Eintrittsdatum',
         'street' => 'Straße',
         'zip' => 'PLZ',
-        'competitionMember' => 'Wettkampfmitglied',
+        'competitionMember' => 'Ordentliches Mitglied',
         'supportingMember' => 'Unterstützendes Mitglied',
         'emails' => 'E-Mail-Adressen',
         'phones' => 'Telefonnummern',

@@ -156,7 +156,7 @@
                     >
 
                     <span class="text-sm font-medium text-slate-700">
-                        Wettkampfmitglied
+                        Ordentliches Mitglied
                     </span>
                 </label>
 

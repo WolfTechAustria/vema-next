@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\MailQuotaExceededException;
 use App\Http\Controllers\HomepageController;
 use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureHomepageIsPublished;
@@ -68,6 +69,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // 404 auf der Vereinshomepage im Design der Homepage.
         $exceptions->render(fn (NotFoundHttpException $exception, Request $request) => app(HomepageController::class)->notFoundResponse($request));
+
+        // E-Mail-Kontingent des Pakets aufgebraucht: Meldung statt Fehlerseite.
+        $exceptions->render(fn (MailQuotaExceededException $exception, Request $request) => $request->expectsJson()
+            ? null
+            : back()->with('error', $exception->getMessage()));
 
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),

@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Contracts\ExemptFromMailQuota;
 use App\Models\Post;
 use App\Models\Setting;
 use Illuminate\Bus\Queueable;
@@ -14,7 +15,7 @@ use Illuminate\Queue\SerializesModels;
  * Bestätigung an den Absender: Der per E-Mail eingereichte Beitrag liegt
  * als Entwurf in VEMA.
  */
-class MailPostReceivedMail extends Mailable
+class MailPostReceivedMail extends Mailable implements ExemptFromMailQuota
 {
     use Queueable, SerializesModels;
 

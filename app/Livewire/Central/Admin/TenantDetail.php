@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Central\Admin;
 
+use App\Enums\Feature;
+use App\Enums\Limit;
 use App\Enums\Plan;
 use App\Enums\TenantStatus;
 use App\Mail\Central\TenantAccessMail;
@@ -11,6 +13,8 @@ use App\Models\Tenant;
 use App\Models\TenantDomain;
 use App\Models\User;
 use App\Services\HomepageHosts;
+use App\Services\MailQuota;
+use App\Services\StorageUsage;
 use App\Services\TenantDeleter;
 use App\Services\TenantManager;
 use App\Services\TenantProvisioner;
@@ -54,6 +58,21 @@ class TenantDetail extends Component
 
     public string $deleteConfirmation = '';
 
+    /**
+     * @var array<string, string> Funktion => 'plan' | 'on' | 'off'
+     */
+    public array $featureOverrides = [];
+
+    /**
+     * @var array<string, string> Limit => 'plan' | 'custom' | 'unlimited'
+     */
+    public array $limitModes = [];
+
+    /**
+     * @var array<string, string> Limit => eigener Wert
+     */
+    public array $limitValues = [];
+
     public function mount(Tenant $tenant): void
     {
         $this->tenant = $tenant;
@@ -69,6 +88,26 @@ class TenantDetail extends Component
         $this->contact_name = (string) $this->tenant->contact_name;
         $this->contact_email = (string) $this->tenant->contact_email;
         $this->admin_notes = (string) $this->tenant->admin_notes;
+
+        foreach (Feature::cases() as $feature) {
+            $this->featureOverrides[$feature->value] = match ($this->tenant->featureOverride($feature)) {
+                true => 'on',
+                false => 'off',
+                null => 'plan',
+            };
+        }
+
+        foreach (Limit::cases() as $limit) {
+            $value = $this->tenant->limit_overrides[$limit->value] ?? null;
+
+            $this->limitModes[$limit->value] = match (true) {
+                ! $this->tenant->hasLimitOverride($limit) => 'plan',
+                $value === null => 'unlimited',
+                default => 'custom',
+            };
+
+            $this->limitValues[$limit->value] = (string) ($value ?? '');
+        }
     }
 
     public function save(): void
@@ -153,6 +192,97 @@ class TenantDetail extends Component
         $this->refreshTenant();
 
         session()->flash('success', 'Stammdaten gespeichert.');
+    }
+
+    /**
+     * Individuelle Anpassungen: einzelne Funktionen frei- oder abschalten,
+     * Limits abweichend vom Paket (z. B. zugebuchter Speicher).
+     */
+    public function saveOverrides(): void
+    {
+        $rules = [];
+
+        foreach (Feature::cases() as $feature) {
+            $rules["featureOverrides.{$feature->value}"] = ['required', Rule::in(['plan', 'on', 'off'])];
+        }
+
+        foreach (Limit::cases() as $limit) {
+            $rules["limitModes.{$limit->value}"] = ['required', Rule::in(['plan', 'custom', 'unlimited'])];
+            $rules["limitValues.{$limit->value}"] = [
+                Rule::requiredIf(($this->limitModes[$limit->value] ?? null) === 'custom'),
+                'nullable',
+                'integer',
+                'min:1',
+                'max:100000000',
+            ];
+        }
+
+        $this->validate($rules, [
+            'limitValues.*.required' => 'Bitte einen Wert eingeben.',
+            'limitValues.*.integer' => 'Bitte eine ganze Zahl eingeben.',
+            'limitValues.*.min' => 'Mindestens 1.',
+        ]);
+
+        $featureOverrides = [];
+
+        foreach (Feature::cases() as $feature) {
+            $mode = $this->featureOverrides[$feature->value];
+
+            if ($mode !== 'plan') {
+                $featureOverrides[$feature->value] = $mode === 'on';
+            }
+        }
+
+        $limitOverrides = [];
+
+        foreach (Limit::cases() as $limit) {
+            $limitOverrides += match ($this->limitModes[$limit->value]) {
+                'custom' => [$limit->value => (int) $this->limitValues[$limit->value]],
+                'unlimited' => [$limit->value => null],
+                default => [],
+            };
+        }
+
+        $before = $this->overridesSummary($this->tenant);
+
+        $this->tenant->update([
+            'feature_overrides' => $featureOverrides ?: null,
+            'limit_overrides' => $limitOverrides ?: null,
+        ]);
+
+        $after = $this->overridesSummary($this->tenant);
+
+        if ($before !== $after) {
+            $this->audit('Individuelle Anpassungen geändert', ['vorher' => $before ?: 'keine', 'nachher' => $after ?: 'keine']);
+        }
+
+        $this->refreshTenant();
+
+        session()->flash('success', 'Individuelle Anpassungen gespeichert.');
+    }
+
+    /**
+     * Lesbare Zusammenfassung für den Verlauf, z. B. "Dienstplan: an, Speicher (MB): 10 GB".
+     */
+    private function overridesSummary(Tenant $tenant): string
+    {
+        $parts = [];
+
+        foreach (Feature::cases() as $feature) {
+            $override = $tenant->featureOverride($feature);
+
+            if ($override !== null) {
+                $parts[] = $feature->label().': '.($override ? 'an' : 'aus');
+            }
+        }
+
+        foreach (Limit::cases() as $limit) {
+            if ($tenant->hasLimitOverride($limit)) {
+                $parts[] = $limit->label().': '.$limit->format($tenant->limit($limit));
+            }
+        }
+
+        return implode(', ', $parts);
     }
 
     public function extendTrial(int $days): void
@@ -424,18 +554,18 @@ class TenantDetail extends Component
     }
 
     /**
-     * Nutzung aus der Vereinsdatenbank; null, wenn (noch) nicht erreichbar.
+     * Nutzung des Vereins; null, wenn die Datenbank (noch) nicht erreichbar ist.
      *
-     * @return array{members: int, staff: int}|null
+     * @return array{members: int, staff: int, emails: int, storage_mb: float}|null
      */
-    private function usage(TenantManager $tenantManager): ?array
+    private function usage(TenantManager $tenantManager, MailQuota $mailQuota, StorageUsage $storageUsage): ?array
     {
         if ($this->tenant->provisioned_at === null) {
             return null;
         }
 
         try {
-            return $tenantManager->runFor($this->tenant, fn (): array => [
+            $counts = $tenantManager->runFor($this->tenant, fn (): array => [
                 'members' => Member::query()->active()->count(),
                 'staff' => User::query()->where('enabled', true)->count(),
             ]);
@@ -444,6 +574,11 @@ class TenantDetail extends Component
 
             return null;
         }
+
+        return $counts + [
+            'emails' => $mailQuota->sentThisMonth($this->tenant),
+            'storage_mb' => round($storageUsage->usedBytes($this->tenant) / 1024 / 1024, 1),
+        ];
     }
 
     /**
@@ -454,48 +589,55 @@ class TenantDetail extends Component
         $this->tenant->recordEvent($action, $details);
     }
 
-    public function render(TenantManager $tenantManager)
+    public function render(TenantManager $tenantManager, MailQuota $mailQuota, StorageUsage $storageUsage)
     {
-        $usage = $this->usage($tenantManager);
-        $effectivePlan = $this->tenant->effectivePlan();
-        $bookedPlan = $this->tenant->plan;
+        $usage = $this->usage($tenantManager, $mailQuota, $storageUsage);
+        $tenant = $this->tenant;
+
+        // Nach der Testphase: gebuchtes Paket, individuelle Werte bleiben.
+        $limitAfterTrial = fn (Limit $limit): ?int => $tenant->hasLimitOverride($limit)
+            ? $tenant->limit($limit)
+            : $tenant->plan->limit($limit);
 
         return view('livewire.central.admin.tenant-detail', [
             'usage' => $usage,
             'plans' => Plan::cases(),
-            'effectivePlan' => $effectivePlan,
+            'effectivePlan' => $tenant->effectivePlan(),
+            'featureCases' => Feature::cases(),
+            'limitCases' => Limit::cases(),
             'limitWarnings' => $usage === null ? [] : array_filter([
-                $this->limitWarning($effectivePlan, $usage, 'aktuell'),
-                $this->tenant->isOnTrial() ? $this->limitWarning($bookedPlan, $usage, 'nach der Testphase') : null,
+                $this->limitWarning(fn (Limit $limit) => $tenant->limit($limit), $usage, 'aktuell'),
+                $tenant->isOnTrial() ? $this->limitWarning($limitAfterTrial, $usage, 'nach der Testphase') : null,
             ]),
-            'domains' => $this->tenant->domains()->orderBy('domain')->get(),
-            'events' => $this->tenant->events()->with('admin')->latest('id')->limit(30)->get(),
-            'verificationExpired' => $this->tenant->email_verified_at === null
-                && $this->tenant->created_at->lt(now()->subHours((int) config('tenancy.verification_hours'))),
+            'domains' => $tenant->domains()->orderBy('domain')->get(),
+            'events' => $tenant->events()->with('admin')->latest('id')->limit(30)->get(),
+            'verificationExpired' => $tenant->email_verified_at === null
+                && $tenant->created_at->lt(now()->subHours((int) config('tenancy.verification_hours'))),
         ])->layout('layouts.platform-admin', [
-            'title' => $this->tenant->name.' | Plattform-Admin',
+            'title' => $tenant->name.' | Plattform-Admin',
         ]);
     }
 
     /**
-     * @param  array{members: int, staff: int}  $usage
+     * @param  callable(Limit): ?int  $limitFor
+     * @param  array{members: int, staff: int, emails: int, storage_mb: float}  $usage
      */
-    private function limitWarning(Plan $plan, array $usage, string $when): ?string
+    private function limitWarning(callable $limitFor, array $usage, string $when): ?string
     {
         $exceeded = [];
 
-        if ($plan->memberLimit() !== null && $usage['members'] > $plan->memberLimit()) {
-            $exceeded[] = "{$usage['members']} von {$plan->memberLimit()} Mitgliedern";
-        }
+        foreach (['members' => Limit::Members, 'staff' => Limit::Staff] as $key => $limit) {
+            $value = $limitFor($limit);
 
-        if ($plan->staffLimit() !== null && $usage['staff'] > $plan->staffLimit()) {
-            $exceeded[] = "{$usage['staff']} von {$plan->staffLimit()} Vorstandszugängen";
+            if ($value !== null && $usage[$key] > $value) {
+                $exceeded[] = $usage[$key].' von '.$limit->format($value).' '.($key === 'members' ? 'Mitgliedern' : 'Vorstandszugängen');
+            }
         }
 
         if ($exceeded === []) {
             return null;
         }
 
-        return "Limit von {$plan->label()} {$when} überschritten: ".implode(', ', $exceeded).'.';
+        return "Limit {$when} überschritten: ".implode(', ', $exceeded).'.';
     }
 }

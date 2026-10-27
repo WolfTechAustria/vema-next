@@ -3,18 +3,24 @@
 namespace App\Providers;
 
 use App\Enums\Feature;
+use App\Exceptions\MailQuotaExceededException;
 use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureUserCanManageHomepage;
+use App\Rules\WithinStorageQuota;
 use App\Services\ClubMailSender;
 use App\Services\DemoMode;
 use App\Services\HomepageHosts;
 use App\Services\MailPosts\ImapMailPostInbox;
 use App\Services\MailPosts\MailPostInbox;
+use App\Services\MailQuota;
+use App\Services\PlanCatalog;
 use App\Services\PlanEntitlements;
+use App\Services\StorageUsage;
 use App\Services\TenantManager;
 use App\Services\UploadLimits;
 use Carbon\CarbonImmutable;
 use Illuminate\Mail\Events\MessageSending;
+use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +28,9 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Livewire;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\RawMessage;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,6 +43,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(TenantManager::class);
         $this->app->scoped(ClubMailSender::class);
         $this->app->scoped(PlanEntitlements::class);
+        $this->app->scoped(PlanCatalog::class);
+        $this->app->scoped(MailQuota::class);
+        $this->app->scoped(StorageUsage::class);
         $this->app->scoped(HomepageHosts::class);
         $this->app->bind(MailPostInbox::class, ImapMailPostInbox::class);
     }
@@ -49,6 +61,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureClubMailSender();
         $this->configurePlanFeatures();
         $this->configureUploads();
+        $this->configureMailQuota();
     }
 
     /**
@@ -57,7 +70,49 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureUploads(): void
     {
-        config(['livewire.temporary_file_upload.rules' => ['required', 'file', 'max:'.UploadLimits::TEMPORARY_UPLOAD_MAX_KB]]);
+        config(['livewire.temporary_file_upload.rules' => [
+            'required',
+            'file',
+            'max:'.UploadLimits::TEMPORARY_UPLOAD_MAX_KB,
+            // Speicher laut Paket (Plattform-Betrieb) — gilt so für jeden Upload.
+            new WithinStorageQuota,
+        ]]);
+    }
+
+    /**
+     * Monatliches E-Mail-Kontingent (Plattform-Betrieb): vor dem Versand
+     * prüfen, danach je Empfänger zählen. Livewire-Aktionen zeigen eine
+     * Meldung statt eines Fehlers.
+     */
+    protected function configureMailQuota(): void
+    {
+        Event::listen(function (MessageSending $event): void {
+            if (MailQuota::counts($event->data['__laravel_mailable'] ?? null)) {
+                app(MailQuota::class)->ensureAvailable(self::recipientCount($event->message));
+            }
+        });
+
+        Event::listen(function (MessageSent $event): void {
+            if (MailQuota::counts($event->data['__laravel_mailable'] ?? null)) {
+                app(MailQuota::class)->record(self::recipientCount($event->message));
+            }
+        });
+
+        Livewire::listen('exception', function ($component, Throwable $exception, callable $stopPropagation): void {
+            if ($exception instanceof MailQuotaExceededException) {
+                session()->flash('error', $exception->getMessage());
+                $stopPropagation();
+            }
+        });
+    }
+
+    private static function recipientCount(RawMessage $message): int
+    {
+        if (! $message instanceof Email) {
+            return 1;
+        }
+
+        return max(1, count($message->getTo()) + count($message->getCc()) + count($message->getBcc()));
     }
 
     /**

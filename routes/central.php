@@ -4,6 +4,7 @@ use App\Http\Controllers\Central\AdminLoginController;
 use App\Http\Controllers\Central\RegistrationController;
 use App\Http\Controllers\Central\SupportLoginController;
 use App\Livewire\Central\Admin\Account;
+use App\Livewire\Central\Admin\Plans;
 use App\Livewire\Central\Admin\TenantDetail;
 use App\Livewire\Central\Admin\Tenants;
 use App\Livewire\Central\FindClub;
@@ -58,6 +59,8 @@ Route::domain(config('tenancy.platform_host'))->group(function () {
             Route::post('/vereine/{tenant}/anmelden', SupportLoginController::class)
                 ->middleware('throttle:20,1')
                 ->name('central.admin.tenants.support-login');
+
+            Route::livewire('/pakete', Plans::class)->name('central.admin.plans');
 
             Route::livewire('/konto', Account::class)->name('central.admin.account');
         });

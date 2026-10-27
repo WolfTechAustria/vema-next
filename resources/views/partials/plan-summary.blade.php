@@ -10,8 +10,35 @@
 @if($tenant)
     @php
         $effectivePlan = $tenant->effectivePlan();
-        $memberLimit = $entitlements->memberLimit();
-        $staffLimit = $entitlements->staffLimit();
+        $emailLimit = $tenant->limit(\App\Enums\Limit::EmailsPerMonth);
+        $storageLimit = $tenant->limit(\App\Enums\Limit::StorageMb);
+
+        $usageTiles = [
+            [
+                'label' => 'Aktive Mitglieder',
+                'used' => $entitlements->activeMemberCount(),
+                'limit' => $tenant->limit(\App\Enums\Limit::Members),
+                'format' => \App\Enums\Limit::Members,
+            ],
+            [
+                'label' => 'Vorstandszugänge',
+                'used' => $entitlements->activeStaffCount(),
+                'limit' => $tenant->limit(\App\Enums\Limit::Staff),
+                'format' => \App\Enums\Limit::Staff,
+            ],
+            [
+                'label' => 'E-Mails im '.now()->locale('de')->translatedFormat('F'),
+                'used' => app(\App\Services\MailQuota::class)->sentThisMonth($tenant),
+                'limit' => $emailLimit,
+                'format' => \App\Enums\Limit::EmailsPerMonth,
+            ],
+            [
+                'label' => 'Speicher',
+                'used' => round(app(\App\Services\StorageUsage::class)->currentUsedBytes() / 1024 / 1024, 1),
+                'limit' => $storageLimit,
+                'format' => \App\Enums\Limit::StorageMb,
+            ],
+        ];
     @endphp
 
     <section class="max-w-2xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -42,29 +69,38 @@
         </div>
 
         <dl class="mt-4 grid gap-3 sm:grid-cols-2">
-            <div class="rounded-lg bg-slate-50 px-4 py-3">
-                <dt class="text-xs text-slate-500">Aktive Mitglieder</dt>
-                <dd class="mt-1 text-lg font-semibold text-slate-900">
-                    {{ $entitlements->activeMemberCount() }}
-                    <span class="text-sm font-normal text-slate-500">/ {{ $memberLimit ?? 'unbegrenzt' }}</span>
-                </dd>
-            </div>
+            @foreach($usageTiles as $tile)
+                @php
+                    $percent = $tile['limit'] ? min(100, (int) round($tile['used'] / $tile['limit'] * 100)) : null;
+                @endphp
 
-            <div class="rounded-lg bg-slate-50 px-4 py-3">
-                <dt class="text-xs text-slate-500">Vorstandszugänge</dt>
-                <dd class="mt-1 text-lg font-semibold text-slate-900">
-                    {{ $entitlements->activeStaffCount() }}
-                    <span class="text-sm font-normal text-slate-500">/ {{ $staffLimit ?? 'unbegrenzt' }}</span>
-                </dd>
-            </div>
+                <div class="rounded-lg bg-slate-50 px-4 py-3">
+                    <dt class="text-xs text-slate-500">{{ $tile['label'] }}</dt>
+                    <dd class="mt-1 text-lg font-semibold text-slate-900">
+                        {{ $tile['format'] === \App\Enums\Limit::StorageMb ? \App\Enums\Limit::formatMegabytes($tile['used']) : $tile['format']->format((int) $tile['used']) }}
+                        <span class="text-sm font-normal text-slate-500">/ {{ $tile['format']->format($tile['limit']) }}</span>
+                    </dd>
+
+                    @if($percent !== null)
+                        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                            <div @class([
+                                'h-full rounded-full',
+                                'bg-emerald-500' => $percent < 80,
+                                'bg-amber-500' => $percent >= 80 && $percent < 100,
+                                'bg-red-500' => $percent >= 100,
+                            ]) style="width: {{ $percent }}%"></div>
+                        </div>
+                    @endif
+                </div>
+            @endforeach
         </dl>
 
         <ul class="mt-4 grid gap-1.5 text-sm sm:grid-cols-2">
             @foreach(\App\Enums\Feature::cases() as $feature)
-                <li class="flex items-center gap-2 {{ $effectivePlan->includes($feature) ? 'text-slate-700' : 'text-slate-400' }}">
-                    <span aria-hidden="true">{{ $effectivePlan->includes($feature) ? '✓' : '–' }}</span>
+                <li class="flex items-center gap-2 {{ $tenant->allows($feature) ? 'text-slate-700' : 'text-slate-400' }}">
+                    <span aria-hidden="true">{{ $tenant->allows($feature) ? '✓' : '–' }}</span>
                     {{ $feature->label() }}
-                    @unless($effectivePlan->includes($feature))
+                    @unless($tenant->allows($feature))
                         <span class="text-xs">(ab {{ \App\Enums\Plan::lowestWith($feature)->label() }})</span>
                     @endunless
                 </li>
