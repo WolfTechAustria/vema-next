@@ -288,6 +288,30 @@
 
             </div>
 
+
+            <div class="col-span-2 md:col-span-3">
+
+                <label class="mb-1 block text-sm font-medium text-slate-700">
+                    Hinweis im PDF
+                </label>
+
+                <input
+                    type="text"
+                    wire:model="pdfNote"
+                    placeholder="z. B. bei Verhinderung bitte selbstständig Ersatz suchen - Dienstbeginn: 17:30 Uhr"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                >
+
+                <p class="mt-1 text-xs text-slate-500">
+                    Erscheint unter dem Titel des PDF-Exports und wird mit „Speichern“ übernommen.
+                </p>
+
+                @error('pdfNote')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+
+            </div>
+
         </div>
 
     </section>

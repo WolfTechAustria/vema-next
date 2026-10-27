@@ -14,6 +14,7 @@ use App\Models\Member;
 use App\Services\ActivityLogger;
 use App\Services\DutyPlanAssignmentService;
 use App\Services\DutyPlanGeneratorService;
+use App\Services\PdfLetterheadService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Livewire\Attributes\On;
@@ -41,6 +42,8 @@ class Index extends Component
     public string $exportRole = 'all';
 
     public bool $excludeHolidays = true;
+
+    public string $pdfNote = '';
 
     #[On('duty-plan-roles-updated')]
     public function refreshAfterRolesUpdated(): void
@@ -84,6 +87,8 @@ class Index extends Component
 
         $this->excludeHolidays =
             (bool) $plan->exclude_holidays;
+
+        $this->pdfNote = $plan->pdf_note ?? '';
 
         $this->resetValidation();
     }
@@ -226,6 +231,12 @@ class Index extends Component
             'excludeHolidays' => [
                 'boolean',
             ],
+
+            'pdfNote' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
         ]);
 
         $plan = DutyPlan::findOrFail($this->planId);
@@ -236,6 +247,7 @@ class Index extends Component
             'date_from' => $validated['dateFrom'],
             'date_to' => $validated['dateTo'],
             'exclude_holidays' => $validated['excludeHolidays'],
+            'pdf_note' => $validated['pdfNote'] ?: null,
         ]);
 
         $changes = ActivityLogger::changes($before, $plan->fresh()->activitySnapshot(), DutyPlan::ACTIVITY_LABELS);
@@ -269,6 +281,7 @@ class Index extends Component
             'date_from' => $source->date_from,
             'date_to' => $source->date_to,
             'exclude_holidays' => $source->exclude_holidays,
+            'pdf_note' => $source->pdf_note,
         ]);
 
         $copied = $this->copyRolesAndVolunteers($source, $copy);
@@ -375,17 +388,22 @@ class Index extends Component
             $this->dateTo
         );
 
+        $plan = DutyPlan::find($this->planId);
+
         $pdf = Pdf::loadView('pdf.duty-plan', [
             'events' => $events,
+            'title' => 'Arbeitseinteilung '.($plan?->name ?? ''),
+            'note' => $plan?->pdf_note,
             'dateFrom' => $this->dateFrom,
             'dateTo' => $this->dateTo,
-            'weekdayName' => $weekdayName,
             'maxHelperColumns' => $maxHelperColumns,
         ])
-            ->setPaper('a4', 'landscape');
+            ->setPaper('a4', 'portrait');
+
+        $finalPdf = app(PdfLetterheadService::class)->applyListBackground($pdf->output());
 
         return response()->streamDownload(
-            fn () => print ($pdf->output()),
+            fn () => print ($finalPdf),
             $filename
         );
     }

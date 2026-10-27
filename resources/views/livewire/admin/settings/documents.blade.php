@@ -20,7 +20,7 @@
         <h3 class="mb-1 font-semibold text-slate-900">Logo & Briefpapier</h3>
 
         <p class="mb-4 text-sm text-slate-500">
-            Das Logo erscheint auf den Login-Seiten, in der E-Mail-Signatur und auf Listen. Das Briefpapier (PDF, erste Seite) wird unter jeden Brief gelegt.
+            Das Logo erscheint auf den Login-Seiten, in der E-Mail-Signatur und auf Listen. Das Briefpapier (PDF, erste Seite) wird unter jeden Brief gelegt, der Hintergrund für Listen unter Dienstpläne und Geburtstagslisten – mit Hintergrund entfällt dort das Logo.
         </p>
 
         @if($isDemoActive)
@@ -34,6 +34,7 @@
             @foreach([
                 ['slot' => 'logo', 'property' => 'logoUpload', 'label' => 'Logo', 'accept' => 'image/png,image/jpeg', 'present' => $logoUrl !== null, 'hint' => 'JPG oder PNG, max. 5 MB'],
                 ['slot' => 'letterhead', 'property' => 'letterheadUpload', 'label' => 'Briefpapier', 'accept' => 'application/pdf', 'present' => $hasLetterhead, 'hint' => 'PDF, max. 10 MB'],
+                ['slot' => 'list_background', 'property' => 'listBackgroundUpload', 'label' => 'Hintergrund für Listen', 'accept' => 'application/pdf', 'present' => $hasListBackground, 'hint' => 'PDF im A4-Hochformat, max. 10 MB'],
             ] as $file)
                 <div class="rounded-lg border border-slate-200 p-4">
                     <p class="text-sm font-medium text-slate-700">{{ $file['label'] }}</p>
@@ -77,6 +78,46 @@
                 </div>
             @endforeach
 
+        </div>
+
+    </section>
+
+    {{-- Listen --}}
+    <section class="max-w-2xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+
+        <h3 class="mb-1 font-semibold text-slate-900">Seitenränder für Listen</h3>
+
+        <p class="mb-4 text-sm text-slate-500">
+            Abstand des Inhalts vom Blattrand in Millimetern, z. B. damit der Text unter dem Kopf des Hintergrunds beginnt. Gilt für Dienstpläne und Geburtstagslisten.
+        </p>
+
+        <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+            @foreach([
+                'list_margin_top' => 'Oben',
+                'list_margin_right' => 'Rechts',
+                'list_margin_bottom' => 'Unten',
+                'list_margin_left' => 'Links',
+            ] as $property => $label)
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">{{ $label }} (mm)</label>
+                    <input type="number" min="0" max="100" wire:model="{{ $property }}" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                    @error($property)
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-6">
+            <button
+                type="button"
+                wire:click="saveListLayout"
+                wire:loading.attr="disabled"
+                wire:target="saveListLayout"
+                class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            >
+                Speichern
+            </button>
         </div>
 
     </section>

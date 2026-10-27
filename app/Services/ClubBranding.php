@@ -22,6 +22,7 @@ class ClubBranding
     public const SLOTS = [
         'logo' => ['column' => 'logo_path', 'basename' => 'logo'],
         'letterhead' => ['column' => 'letterhead_path', 'basename' => 'letterhead'],
+        'list_background' => ['column' => 'list_background_path', 'basename' => 'list-background'],
         'signature_1' => ['column' => 'signatory_1_image_path', 'basename' => 'signature-1'],
         'signature_2' => ['column' => 'signatory_2_image_path', 'basename' => 'signature-2'],
     ];
@@ -53,6 +54,32 @@ class ClubBranding
     public function letterheadPath(): ?string
     {
         return $this->path('letterhead');
+    }
+
+    /**
+     * Hintergrund für Listen (Dienstplan, Geburtstagsliste) — im Gegensatz
+     * zum Briefpapier ohne Adressfeld.
+     */
+    public function listBackgroundPath(): ?string
+    {
+        return $this->path('list_background');
+    }
+
+    /**
+     * Seitenränder für Listen in Millimetern.
+     *
+     * @return array{top: int, right: int, bottom: int, left: int}
+     */
+    public function listMargins(): array
+    {
+        $setting = Setting::current();
+
+        return [
+            'top' => (int) ($setting->list_margin_top ?? 15),
+            'right' => (int) ($setting->list_margin_right ?? 15),
+            'bottom' => (int) ($setting->list_margin_bottom ?? 15),
+            'left' => (int) ($setting->list_margin_left ?? 15),
+        ];
     }
 
     /**

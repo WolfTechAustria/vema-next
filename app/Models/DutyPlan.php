@@ -28,6 +28,7 @@ class DutyPlan extends Model
         'date_from' => 'Von',
         'date_to' => 'Bis',
         'exclude_holidays' => 'Feiertage auslassen',
+        'pdf_note' => 'Hinweis im PDF',
     ];
 
     /**
@@ -40,6 +41,7 @@ class DutyPlan extends Model
             'date_from' => $this->date_from,
             'date_to' => $this->date_to,
             'exclude_holidays' => (bool) $this->exclude_holidays,
+            'pdf_note' => $this->pdf_note,
         ];
     }
 

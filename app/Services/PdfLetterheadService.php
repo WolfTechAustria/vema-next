@@ -31,6 +31,24 @@ class PdfLetterheadService
     }
 
     /**
+     * Legt den Listen-Hintergrund des Vereins unter jede Seite. Ohne
+     * hinterlegten Hintergrund bleibt das PDF unverändert.
+     */
+    public function applyListBackground(string $contentPdf): string
+    {
+        $backgroundPdf = $this->branding->listBackgroundPath();
+
+        if ($backgroundPdf === null) {
+            return $contentPdf;
+        }
+
+        return $this->apply(
+            StreamReader::createByString($contentPdf),
+            $backgroundPdf
+        );
+    }
+
+    /**
      * @param  string|StreamReader  $contentPdf  Dateipfad oder PDF-Stream
      */
     public function apply(

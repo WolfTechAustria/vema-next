@@ -3,11 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Mail\BirthdayListMail;
-use App\Models\Member;
 use App\Models\Setting;
+use App\Services\BirthdayListPdf;
 use App\Services\BirthdayRecipientService;
 use App\Services\ImapSentMailService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 
@@ -18,7 +17,8 @@ class SendMonthlyBirthdayList extends Command
     protected $description = 'Erzeugt die PDF-Geburtstagsliste des aktuellen Monats und verschickt sie an den Vorstand';
 
     public function __construct(
-        private BirthdayRecipientService $recipientService
+        private BirthdayRecipientService $recipientService,
+        private BirthdayListPdf $birthdayListPdf
     ) {
         parent::__construct();
     }
@@ -27,24 +27,7 @@ class SendMonthlyBirthdayList extends Command
     {
         $month = now()->month;
 
-        $members = Member::query()
-            ->active()
-            ->whereNotNull('dateOfBirth')
-            ->whereMonth('dateOfBirth', $month)
-            ->orderByRaw('DAY(dateOfBirth)')
-            ->orderBy('surname')
-            ->orderBy('name')
-            ->get()
-            ->map(function (Member $member) {
-                $age = $member->ageOn(now());
-
-                return [
-                    'member' => $member,
-                    'age' => $age,
-                    'isRound' => $member->isRoundBirthday($age),
-                    'isHalfRound' => $member->isHalfRoundBirthday($age),
-                ];
-            });
+        $members = $this->birthdayListPdf->members($month);
 
         $monthName = now()->translatedFormat('F Y');
 
@@ -60,14 +43,6 @@ class SendMonthlyBirthdayList extends Command
             return self::FAILURE;
         }
 
-        $pdf = Pdf::loadView(
-            'pdf.members-birthdays',
-            [
-                'members' => $members,
-                'monthName' => $monthName,
-            ]
-        )->setPaper('a4', 'portrait');
-
         $pdfFileName = 'Geburtstagsliste_'
             .now()->format('m_Y')
             .'.pdf';
@@ -75,7 +50,7 @@ class SendMonthlyBirthdayList extends Command
         $mail = new BirthdayListMail(
             monthName: $monthName,
             memberCount: $members->count(),
-            pdfContent: $pdf->output(),
+            pdfContent: $this->birthdayListPdf->render($month, $members),
             pdfFileName: $pdfFileName
         );
 

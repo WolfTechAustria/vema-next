@@ -3,183 +3,92 @@
 <head>
     <meta charset="utf-8">
 
-    <title>Dienstplan</title>
+    <title>{{ $title }}</title>
+
+    @include('pdf.partials.list-layout', ['part' => 'styles'])
 
     <style>
-        @page {
-            margin: 18mm 12mm 16mm 12mm;
-        }
-
-        body {
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 10px;
-            color: #1e293b;
-        }
-
-        h1 {
-            font-size: 20px;
-            margin: 0 0 4px 0;
-        }
-
-        .meta {
-            margin-bottom: 18px;
-            color: #64748b;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            display: table-header-group;
-        }
-
-        th {
-            background: #f1f5f9;
-            text-align: left;
-            font-size: 9px;
-            text-transform: uppercase;
-            padding: 7px 8px;
-            border-bottom: 1px solid #cbd5e1;
-        }
-
-        td {
-            padding: 7px 8px;
-            border-bottom: 1px solid #e2e8f0;
-            vertical-align: top;
-        }
-
-        .date {
-            white-space: nowrap;
-            width: 90px;
-        }
-
-        .weekday {
-            width: 90px;
-        }
-
-        .service {
-            width: 160px;
-        }
-
-        .helper {
-            width: {{ round(55 / max(1, $maxHelperColumns ?? 4)) }}%;
-        }
-
-        .footer {
-            position: fixed;
-            bottom: -8mm;
-            left: 0;
-            right: 0;
-            text-align: center;
-            color: #94a3b8;
-            font-size: 8px;
+        .separator {
+            padding-right: 2mm;
         }
     </style>
 </head>
 
 <body>
 
-<h1>Dienstplan</h1>
+@include('pdf.partials.list-layout', ['part' => 'logo'])
 
-<div class="meta">
-    Zeitraum:
-    {{ \Carbon\Carbon::parse($dateFrom)->format('d.m.Y') }}
-    –
-    {{ \Carbon\Carbon::parse($dateTo)->format('d.m.Y') }}
-    <br>
-
-    Wochentag: {{ $weekdayName }}
-</div>
+@include('pdf.partials.list-layout', [
+    'part' => 'header',
+    'listTitle' => $title,
+    'listSubtitle' => filled($note)
+        ? '('.$note.')'
+        : \Carbon\Carbon::parse($dateFrom)->format('d.m.Y').' – '.\Carbon\Carbon::parse($dateTo)->format('d.m.Y'),
+])
 
 @php
-    $maxHelperColumns = $maxHelperColumns ?? 4;
+    $showRoleColumn = $events->pluck('roleID')->unique()->count() > 1;
+
+    /*
+     * Bis 3 Helfer je eine Spalte mit „&“ (wie die Vorlage), ab 4 Helfern
+     * alle Namen in einer umbrechenden Zelle, damit die Tabelle im Blatt bleibt.
+     */
+    $helpersInOneCell = $maxHelperColumns > 3;
 
     $eventsByDate = $events->groupBy(
         fn ($event) => $event->duty_date->toDateString()
     );
 @endphp
 
-<table>
+<table @class(['list-table', 'full-width' => $helpersInOneCell])>
 
-    <thead>
-    <tr>
-        <th class="date">Datum</th>
-        <th class="weekday">Wochentag</th>
-        <th class="service">Dienst</th>
-
-        @for($i = 1; $i <= $maxHelperColumns; $i++)
-            <th class="helper">Helfer {{ $i }}</th>
-        @endfor
-    </tr>
-    </thead>
-
-    <tbody>
-
-    @foreach($eventsByDate as $dateKey => $eventsOfDate)
+    @foreach($eventsByDate as $eventsOfDate)
 
         @foreach($eventsOfDate as $index => $event)
 
             @php
-                $assignments = $event->assignments
+                $helperNames = $event->assignments
                     ->sortBy('slot_no')
+                    ->map(fn ($assignment) => $assignment->member?->full_name ?? $assignment->externalContact?->full_name)
+                    ->filter()
                     ->values();
             @endphp
 
             <tr>
-
-                @if($index === 0)
-
-                    <td class="date" rowspan="{{ $eventsOfDate->count() }}">
-                        {{ $event->duty_date->format('d.m.Y') }}
-                    </td>
-
-                    <td class="weekday" rowspan="{{ $eventsOfDate->count() }}">
-                        {{ $event->duty_date
-                            ->locale('de')
-                            ->translatedFormat('l') }}
-                    </td>
-
-                @endif
-
-                <td class="service">
-                    {{ $event->duty_name }}
+                <td class="nowrap">
+                    @if($index === 0)
+                        {{ mb_strtoupper($event->duty_date->locale('de')->isoFormat('dd')) }}
+                    @endif
                 </td>
 
-                @for($slot = 0; $slot < $maxHelperColumns; $slot++)
+                <td class="nowrap">
+                    @if($index === 0)
+                        {{ $event->duty_date->format('d.m.Y') }}
+                    @endif
+                </td>
 
-                    @php
-                        $assignment = $assignments->get($slot);
+                @if($showRoleColumn)
+                    <td class="nowrap">{{ $event->duty_name }}</td>
+                @endif
 
-                        $helperName = '';
+                @if($helpersInOneCell)
+                    <td style="width: 100%;">{{ $helperNames->join(', ', ' & ') }}</td>
+                @else
+                    @for($slot = 0; $slot < $maxHelperColumns; $slot++)
+                        @if($slot > 0)
+                            <td class="separator nowrap">{{ $helperNames->has($slot) ? '&' : '' }}</td>
+                        @endif
 
-                        if ($assignment?->member) {
-                            $helperName = $assignment->member->full_name;
-                        } elseif ($assignment?->externalContact) {
-                            $helperName = $assignment->externalContact->full_name;
-                        }
-                    @endphp
-
-                    <td class="helper">
-                        {{ $helperName }}
-                    </td>
-
-                @endfor
-
+                        <td class="nowrap">{{ $helperNames->get($slot) }}</td>
+                    @endfor
+                @endif
             </tr>
 
         @endforeach
 
     @endforeach
 
-    </tbody>
-
 </table>
-
-<div class="footer">
-    Erstellt am {{ now()->format('d.m.Y H:i') }}
-</div>
 
 </body>
 </html>

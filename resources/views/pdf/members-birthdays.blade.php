@@ -3,194 +3,53 @@
 <head>
     <meta charset="UTF-8">
 
-    <style>
-        @page {
-            margin: 12mm;
-        }
+    <title>Geburtstage im {{ $monthName }}</title>
 
-        body {
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 10pt;
-            color: #111827;
-        }
-
-        h1 {
-            margin: 0 0 3mm 0;
-            font-size: 16pt;
-        }
-
-        .meta {
-            margin-bottom: 5mm;
-            color: #6b7280;
-            font-size: 8pt;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: #f3f4f6;
-            text-align: left;
-            font-size: 8.5pt;
-            padding: 2.5mm;
-            border-bottom: 1px solid #d1d5db;
-        }
-
-        td {
-            padding: 2.5mm;
-            border-bottom: 1px solid #e5e7eb;
-            vertical-align: top;
-        }
-
-        .nowrap {
-            white-space: nowrap;
-        }
-
-        .center {
-            text-align: center;
-        }
-
-        .muted {
-            color: #6b7280;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 0.5mm 2mm;
-            border-radius: 3mm;
-            font-size: 7.5pt;
-        }
-
-        .badge-round {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .badge-half-round {
-            background: #e0f2fe;
-            color: #075985;
-        }
-
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 5mm;
-        }
-
-        .header-table td {
-            border: 0;
-            padding: 0;
-        }
-
-        .header-title {
-            width: 75%;
-            vertical-align: middle;
-        }
-
-        .header-logo {
-            width: 25%;
-            text-align: right;
-            vertical-align: middle;
-        }
-
-        .header-logo img {
-            max-height: 18mm;
-            max-width: 45mm;
-        }
-
-        .header-title h1 {
-            margin: 0 0 2mm 0;
-        }
-    </style>
+    @include('pdf.partials.list-layout', ['part' => 'styles'])
 </head>
 
 <body>
 
-<table class="header-table">
-    <tr>
-        <td class="header-title">
-            <h1>Geburtstage im {{ $monthName }}</h1>
+@include('pdf.partials.list-layout', ['part' => 'logo'])
 
-            <div class="meta">
-                Stand: {{ now()->format('d.m.Y') }}
-                &nbsp;|&nbsp;
-                Anzahl: {{ $members->count() }}
-            </div>
-        </td>
+@include('pdf.partials.list-layout', [
+    'part' => 'header',
+    'listTitle' => 'Geburtstage im '.$monthName,
+    'listSubtitle' => '(Stand: '.now()->format('d.m.Y').' – '.$members->count().' '.($members->count() === 1 ? 'Mitglied' : 'Mitglieder').')',
+])
 
-        <td class="header-logo">
-            @php
-                $clubLogoPath = app(\App\Services\ClubBranding::class)->logoPath();
-            @endphp
-
-            @if($clubLogoPath)
-                <img
-                    src="{{ $clubLogoPath }}"
-                    alt="Vereinslogo"
-                >
-            @endif
-        </td>
-    </tr>
-</table>
-
-<table>
-    <thead>
-    <tr>
-        <th>Anrede</th>
-        <th>Nachname</th>
-        <th>Vorname</th>
-        <th>Geburtsdatum</th>
-        <th class="center">Alter</th>
-        <th></th>
-    </tr>
-    </thead>
-
-    <tbody>
+<table class="list-table full-width">
     @forelse($members as $row)
-        @php $member = $row['member']; @endphp
+        @php
+            $member = $row['member'];
+            $dateOfBirth = \Carbon\Carbon::parse($member->dateOfBirth);
+            $birthday = \Carbon\Carbon::create($year, $dateOfBirth->month, 1)->day(
+                min($dateOfBirth->day, \Carbon\Carbon::create($year, $dateOfBirth->month, 1)->daysInMonth)
+            );
+        @endphp
 
-        <tr>
-            <td class="nowrap">
-                @php
-                    $salutation = match (strtolower((string) $member->gender)) {
-                        'm', 'male', 'mann', 'männlich' => 'Herr',
-                        'w', 'f', 'female', 'frau', 'weiblich' => 'Frau',
-                        default => '—',
-                    };
-                @endphp
-                {{ $salutation }}
-            </td>
+        <tr @class(['highlight' => $row['isRound'] || $row['isHalfRound']])>
+            <td class="nowrap" style="width: 8%;">{{ mb_strtoupper($birthday->locale('de')->isoFormat('dd')) }}</td>
 
-            <td>{{ $member->surname }}</td>
+            <td class="nowrap" style="width: 10%;">{{ $dateOfBirth->format('d.m.') }}</td>
 
-            <td>{{ $member->name }}</td>
+            <td style="width: 45%;">{{ $member->full_name }}</td>
 
-            <td class="nowrap">
-                {{ \Carbon\Carbon::parse($member->dateOfBirth)->format('d.m.Y') }}
-            </td>
+            <td class="nowrap" style="width: 12%;">{{ $row['age'] }} Jahre</td>
 
-            <td class="center">
-                {{ $row['age'] }}
-            </td>
-
-            <td class="nowrap">
-                @if ($row['isRound'])
-                    <span class="badge badge-round">rund</span>
-                @elseif ($row['isHalfRound'])
-                    <span class="badge badge-half-round">halbrund</span>
+            <td>
+                @if($row['isRound'])
+                    runder Geburtstag
+                @elseif($row['isHalfRound'])
+                    halbrunder Geburtstag
                 @endif
             </td>
         </tr>
     @empty
         <tr>
-            <td colspan="6" class="muted">
-                Keine Geburtstage aktiver Mitglieder in diesem Monat.
-            </td>
+            <td>Keine Geburtstage aktiver Mitglieder in diesem Monat.</td>
         </tr>
     @endforelse
-    </tbody>
 </table>
 
 </body>

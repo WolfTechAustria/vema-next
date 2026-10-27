@@ -26,6 +26,7 @@ class Documents extends Component
     private const UPLOAD_SLOTS = [
         'logoUpload' => 'logo',
         'letterheadUpload' => 'letterhead',
+        'listBackgroundUpload' => 'list_background',
         'signature1Upload' => 'signature_1',
         'signature2Upload' => 'signature_2',
     ];
@@ -39,6 +40,16 @@ class Documents extends Component
         'signatory_1_name' => 'Unterzeichner 1 – Name',
         'signatory_2_title' => 'Unterzeichner 2 – Funktion',
         'signatory_2_name' => 'Unterzeichner 2 – Name',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    private const LIST_ACTIVITY_LABELS = [
+        'list_margin_top' => 'Listen-Rand oben',
+        'list_margin_right' => 'Listen-Rand rechts',
+        'list_margin_bottom' => 'Listen-Rand unten',
+        'list_margin_left' => 'Listen-Rand links',
     ];
 
     /**
@@ -70,6 +81,16 @@ class Documents extends Component
     public ?TemporaryUploadedFile $logoUpload = null;
 
     public ?TemporaryUploadedFile $letterheadUpload = null;
+
+    public ?TemporaryUploadedFile $listBackgroundUpload = null;
+
+    public int $list_margin_top = 15;
+
+    public int $list_margin_right = 15;
+
+    public int $list_margin_bottom = 15;
+
+    public int $list_margin_left = 15;
 
     public ?TemporaryUploadedFile $signature1Upload = null;
 
@@ -107,6 +128,12 @@ class Documents extends Component
         $this->signatory_1_name = $setting->signatory_1_name ?? '';
         $this->signatory_2_title = $setting->signatory_2_title ?? '';
         $this->signatory_2_name = $setting->signatory_2_name ?? '';
+
+        $margins = app(ClubBranding::class)->listMargins();
+        $this->list_margin_top = $margins['top'];
+        $this->list_margin_right = $margins['right'];
+        $this->list_margin_bottom = $margins['bottom'];
+        $this->list_margin_left = $margins['left'];
 
         $this->mail_from_address = $setting->mail_from_address ?? '';
         $this->mail_from_name = $setting->mail_from_name ?? '';
@@ -154,6 +181,36 @@ class Documents extends Component
         session()->flash('success', 'Briefeinstellungen wurden gespeichert.');
     }
 
+    public function saveListLayout(): void
+    {
+        $validated = $this->validate([
+            'list_margin_top' => ['required', 'integer', 'between:0,100'],
+            'list_margin_right' => ['required', 'integer', 'between:0,100'],
+            'list_margin_bottom' => ['required', 'integer', 'between:0,100'],
+            'list_margin_left' => ['required', 'integer', 'between:0,100'],
+        ]);
+
+        $before = Setting::current()->only(array_keys(self::LIST_ACTIVITY_LABELS));
+
+        Setting::current()->update($validated);
+
+        $changes = ActivityLogger::changes(
+            $before,
+            Setting::current()->fresh()->only(array_keys(self::LIST_ACTIVITY_LABELS)),
+            self::LIST_ACTIVITY_LABELS
+        );
+
+        if ($changes !== []) {
+            ActivityLogger::log(
+                'settings.list_layout_updated',
+                'Seitenränder für Listen wurden geändert.',
+                changes: $changes
+            );
+        }
+
+        session()->flash('success', 'Seitenränder für Listen wurden gespeichert.');
+    }
+
     /**
      * Uploads werden sofort nach der Auswahl gespeichert.
      */
@@ -172,7 +229,7 @@ class Documents extends Component
         }
 
         $this->validateOnly($property, [
-            $property => $slot === 'letterhead'
+            $property => in_array($slot, ['letterhead', 'list_background'], true)
                 ? ['file', 'mimes:pdf', 'max:10240']
                 : ['image', 'mimes:jpg,jpeg,png', 'max:5120'],
         ]);
@@ -306,6 +363,7 @@ class Documents extends Component
         return match ($slot) {
             'logo' => 'Logo',
             'letterhead' => 'Briefpapier',
+            'list_background' => 'Hintergrund für Listen',
             'signature_1' => 'Unterschrift 1',
             'signature_2' => 'Unterschrift 2',
         };
@@ -319,6 +377,7 @@ class Documents extends Component
             'isDemoActive' => $this->brandingLocked(),
             'logoUrl' => $branding->logoUrl(),
             'hasLetterhead' => $branding->letterheadPath() !== null,
+            'hasListBackground' => $branding->listBackgroundPath() !== null,
             'hasSignature' => [
                 1 => $branding->path('signature_1') !== null,
                 2 => $branding->path('signature_2') !== null,
