@@ -4,6 +4,7 @@ namespace App\Enums;
 
 use App\Models\User;
 use App\Services\PlanEntitlements;
+use App\Services\TenantManager;
 
 /**
  * Bausteine des Dashboards. Ein Modul ist nur sichtbar, wenn der Benutzer
@@ -22,6 +23,7 @@ enum DashboardModule: string
     case OpenInvoices = 'open_invoices';
     case RecentActivity = 'recent_activity';
     case HomepagePosts = 'homepage_posts';
+    case FederationClubs = 'federation_clubs';
 
     public function label(): string
     {
@@ -36,6 +38,7 @@ enum DashboardModule: string
             self::OpenInvoices => 'Offene Rechnungen',
             self::RecentActivity => 'Letzte Aktivitäten',
             self::HomepagePosts => 'Homepage-Beiträge',
+            self::FederationClubs => 'Mitgliedsvereine',
         };
     }
 
@@ -52,6 +55,7 @@ enum DashboardModule: string
             self::OpenInvoices => 'Versendete, noch nicht bezahlte Rechnungen.',
             self::RecentActivity => 'Die letzten Einträge im Aktivitätsprotokoll.',
             self::HomepagePosts => 'Entwürfe und zuletzt veröffentlichte Beiträge.',
+            self::FederationClubs => 'Mitgliedsvereine des Verbands mit ihren Mitgliedern (Verbandszentrale).',
         };
     }
 
@@ -72,6 +76,7 @@ enum DashboardModule: string
             self::OpenInvoices => $user->hasAnyRole(['admin', 'kassier']) && $entitlements->allows(Feature::Invoices),
             self::RecentActivity => $user->hasRole('admin') && $entitlements->allows(Feature::ActivityLog),
             self::HomepagePosts => $user->hasAnyRole(['admin', 'homepage']) && $entitlements->allows(Feature::Homepage),
+            self::FederationClubs => app(TenantManager::class)->current()?->isFederation() ?? false,
         };
     }
 
@@ -83,6 +88,7 @@ enum DashboardModule: string
     public static function defaultOrder(): array
     {
         return [
+            self::FederationClubs,
             self::MemberStats,
             self::UpcomingEvents,
             self::UpcomingDuties,

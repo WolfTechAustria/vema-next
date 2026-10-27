@@ -7,6 +7,7 @@ use App\Enums\PostStatus;
 use App\Models\ActivityLog;
 use App\Models\CashBookYear;
 use App\Models\ClubEvent;
+use App\Models\ClubStatistic;
 use App\Models\DutyPlanEvent;
 use App\Models\Invoice;
 use App\Models\Member;
@@ -138,6 +139,7 @@ class Index extends Component
     {
         return match ($module) {
             DashboardModule::MemberStats => $this->memberStats(),
+            DashboardModule::FederationClubs => $this->federationClubStats(),
             DashboardModule::MemberHistory => ['years' => app(MemberHistory::class)->years($this->historyYears)],
             DashboardModule::MembershipFees => ['stats' => $this->membershipFeeStats(), 'actions' => $this->membershipFeeActions()],
             DashboardModule::UpcomingEvents => ['events' => ClubEvent::query()->upcoming()->orderBy('starts_at')->limit(5)->get()],
@@ -163,6 +165,23 @@ class Index extends Component
                 'published' => Post::query()->published()->latest('published_at')->limit(3)->get(),
             ],
         };
+    }
+
+    /**
+     * @return array{clubs: int, members: int, invited: int}
+     */
+    private function federationClubStats(): array
+    {
+        $memberships = app(TenantManager::class)->current()->clubMemberships();
+
+        return [
+            'clubs' => (clone $memberships)->active()->count(),
+            'members' => (int) ClubStatistic::query()
+                ->whereIn('tenant_id', (clone $memberships)->active()->select('club_id'))
+                ->get()
+                ->sum(fn (ClubStatistic $statistic) => $statistic->data['members'] ?? 0),
+            'invited' => (clone $memberships)->invited()->count(),
+        ];
     }
 
     /**

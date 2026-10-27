@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ClubStatistic;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,7 @@ class TenantDeleter
         $tenant->events()->delete();
         $tenant->clubMemberships()->delete();
         $tenant->federationMemberships()->delete();
+        ClubStatistic::query()->where('tenant_id', $tenant->id)->delete();
         $tenant->delete();
     }
 

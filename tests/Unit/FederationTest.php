@@ -3,12 +3,16 @@
 use App\Enums\FederationMembershipStatus;
 use App\Enums\Plan;
 use App\Enums\TenantStatus;
+use App\Exports\FederationStatisticsExport;
 use App\Livewire\Admin\Settings\Federations;
 use App\Livewire\Central\Admin\TenantDetail;
 use App\Livewire\Dashboard\Index;
 use App\Livewire\Federation\Clubs;
+use App\Livewire\Federation\Statistics;
 use App\Mail\FederationInvitationMail;
+use App\Models\ClubStatistic;
 use App\Models\FederationMembership;
+use App\Models\Member;
 use App\Models\PlatformAdmin;
 use App\Models\Tenant;
 use App\Models\User;
@@ -16,6 +20,7 @@ use App\Services\TenantManager;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -210,4 +215,84 @@ it('shows and removes connections in the platform admin', function () {
 
     expect(FederationMembership::query()->count())->toBe(0)
         ->and($this->club->events()->latest('id')->first()->platform_admin_id)->toBe($admin->id);
+});
+
+describe('statistics', function () {
+    beforeEach(function () {
+        app(TenantManager::class)->runFor($this->club, function () {
+            Member::create(['gender' => 'w', 'name' => 'Anna', 'surname' => 'Huber', 'active' => 1, 'dateOfBirth' => now()->subYears(40), 'competitionMember' => 1]);
+            Member::create(['gender' => 'm', 'name' => 'Max', 'surname' => 'Muster', 'active' => 1, 'dateOfBirth' => now()->subYears(12)]);
+            Member::create(['gender' => 'm', 'name' => 'Ernst', 'surname' => 'Alt', 'active' => 0, 'dateOfBirth' => now()->subYears(80)]);
+        });
+
+        inviteClub($this->federation, $this->club);
+
+        app(TenantManager::class)->runFor($this->club->fresh(), function () {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Federations::class)
+                ->call('accept', FederationMembership::query()->sole()->id);
+        });
+    });
+
+    it('stores figures without personal data when the club accepts', function () {
+        $data = ClubStatistic::query()->where('tenant_id', $this->club->id)->sole()->data;
+
+        expect($data)->toMatchArray([
+            'members' => 2,
+            'male' => 1,
+            'female' => 1,
+            'age_under_19' => 1,
+            'age_31_50' => 1,
+            'age_over_70' => 0,
+            'ordinary' => 1,
+        ])
+            ->and(json_encode($data))->not->toContain('Huber')
+            ->not->toContain('Anna');
+
+        app(TenantManager::class)->runFor($this->federation, function () {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Statistics::class)
+                ->assertSee('Musikverein')
+                ->assertSee('Stand '.now()->format('d.m.Y'))
+                ->assertDontSee('Huber');
+
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Index::class)
+                ->assertSee('Mitgliedsvereine');
+        });
+    });
+
+    it('refreshes the figures nightly and stops after leaving', function () {
+        app(TenantManager::class)->runFor($this->club, function () {
+            Member::create(['gender' => 'w', 'name' => 'Eva', 'surname' => 'Neu', 'active' => 1]);
+        });
+
+        $this->artisan('federation:collect-statistics')->assertSuccessful();
+
+        expect(ClubStatistic::query()->sole()->data['members'])->toBe(3)
+            ->and(ClubStatistic::query()->sole()->data['age_unknown'])->toBe(1);
+
+        FederationMembership::query()->sole()->update(['status' => FederationMembershipStatus::Left]);
+
+        app(TenantManager::class)->runFor($this->federation, function () {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Statistics::class)
+                ->assertDontSee('Musikverein')
+                ->assertSee('Noch keine Mitgliedsvereine');
+        });
+    });
+
+    it('exports the figures to excel', function () {
+        Excel::fake();
+
+        app(TenantManager::class)->runFor($this->federation, function () {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Statistics::class)
+                ->call('export');
+        });
+
+        Excel::assertDownloaded('mitgliedsvereine-'.now()->format('Y-m-d').'.xlsx', function (FederationStatisticsExport $export) {
+            return $export->array()[0][0] === 'Musikverein' && $export->array()[0][2] === 2;
+        });
+    });
 });

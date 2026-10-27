@@ -48,6 +48,11 @@ if (config('tenancy.mode') === 'multi') {
         ->dailyAt('04:00')
         ->withoutOverlapping();
 
+    // Kennzahlen der Mitgliedsvereine für die Verbandszentrale
+    Schedule::command('federation:collect-statistics')
+        ->dailyAt('03:30')
+        ->withoutOverlapping();
+
     // Erinnerungen an Testende und Lizenzablauf
     Schedule::command('tenants:send-reminders')
         ->dailyAt('08:00')

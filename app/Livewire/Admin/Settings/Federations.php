@@ -5,6 +5,8 @@ namespace App\Livewire\Admin\Settings;
 use App\Enums\FederationMembershipStatus;
 use App\Models\FederationMembership;
 use App\Models\Tenant;
+use App\Services\ClubStatistics;
+use App\Services\DemoMode;
 use App\Services\FederationMemberships;
 use App\Services\TenantManager;
 use InvalidArgumentException;
@@ -21,9 +23,16 @@ class Federations extends Component
         $this->club();
     }
 
-    public function accept(int $membershipId, FederationMemberships $memberships): void
+    public function accept(int $membershipId, FederationMemberships $memberships, ClubStatistics $statistics, DemoMode $demoMode): void
     {
-        $this->respond($membershipId, fn (FederationMembership $membership, string $by) => $memberships->accept($membership, $by), 'Ihr seid jetzt Mitglied bei :name.');
+        $this->respond($membershipId, function (FederationMembership $membership, string $by) use ($memberships, $statistics, $demoMode) {
+            $memberships->accept($membership, $by);
+
+            // Der Verband sieht die Kennzahlen gleich, nicht erst nach dem nächtlichen Abgleich.
+            if (! $demoMode->isActive()) {
+                $statistics->store($this->club());
+            }
+        }, 'Ihr seid jetzt Mitglied bei :name.');
     }
 
     public function decline(int $membershipId, FederationMemberships $memberships): void

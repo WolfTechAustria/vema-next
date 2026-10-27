@@ -31,6 +31,7 @@ use App\Livewire\DutyPlan\Volunteers as DutyPlanVolunteers;
 use App\Livewire\Events\Index as EventsIndex;
 use App\Livewire\ExternalContacts\Index;
 use App\Livewire\Federation\Clubs as FederationClubs;
+use App\Livewire\Federation\Statistics as FederationStatistics;
 use App\Livewire\Homepage\Content as HomepageContent;
 use App\Livewire\Homepage\MailPosts as HomepageMailPosts;
 use App\Livewire\Homepage\Notices as HomepageNotices;
@@ -293,6 +294,10 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/federation/clubs', FederationClubs::class)
         ->middleware('feature:federation')
         ->name('federation.clubs');
+
+    Route::livewire('/federation/statistics', FederationStatistics::class)
+        ->middleware('feature:federation')
+        ->name('federation.statistics');
 
     Route::livewire('/activity-log', App\Livewire\Admin\ActivityLog\Index::class)
         ->middleware('admin')
