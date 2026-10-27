@@ -384,6 +384,44 @@
             </form>
         </section>
 
+        @if($tenant->isFederation() || $clubMemberships->isNotEmpty() || $federationMemberships->isNotEmpty())
+            <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-3">
+                <h2 class="mb-4 font-semibold">Verband</h2>
+
+                <div class="grid gap-6 md:grid-cols-2">
+                    @foreach([
+                        'Mitgliedsvereine' => [$clubMemberships, 'club', 'Keine Mitgliedsvereine.'],
+                        'Mitglied in Verbänden' => [$federationMemberships, 'federation', 'Mit keinem Verband verbunden.'],
+                    ] as $title => [$list, $relation, $emptyText])
+                        <div>
+                            <h3 class="mb-2 text-sm font-semibold text-slate-700">{{ $title }}</h3>
+
+                            <ul class="divide-y divide-slate-100 text-sm">
+                                @forelse($list as $membership)
+                                    <li wire:key="federation-membership-{{ $membership->id }}" class="flex items-center justify-between gap-2 py-2">
+                                        <span>
+                                            <a href="{{ route('central.admin.tenants.show', $membership->{$relation}) }}" wire:navigate class="hover:underline">{{ $membership->{$relation}->name }}</a>
+                                            <span class="text-xs text-slate-500">({{ $membership->status->label() }})</span>
+                                        </span>
+                                        <button
+                                            type="button"
+                                            wire:click="removeFederationMembership({{ $membership->id }})"
+                                            wire:confirm="Verbindung lösen?"
+                                            class="text-xs text-red-700 hover:underline"
+                                        >
+                                            Lösen
+                                        </button>
+                                    </li>
+                                @empty
+                                    <li class="py-2 text-slate-500">{{ $emptyText }}</li>
+                                @endforelse
+                            </ul>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
             <h2 class="mb-4 font-semibold">Verlauf</h2>
 

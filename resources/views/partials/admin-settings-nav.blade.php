@@ -35,6 +35,19 @@
         Vorstandsfunktionen
     </a>
 
+    @if(app(\App\Services\TenantManager::class)->current())
+        <a
+            href="{{ route('admin.settings.federations') }}"
+            wire:navigate
+            class="whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition
+            {{ request()->routeIs('admin.settings.federations')
+                ? 'border-slate-900 text-slate-900'
+                : 'border-transparent text-slate-500 hover:text-slate-800' }}"
+        >
+            Verbände
+        </a>
+    @endif
+
     <a
         href="{{ route('admin.users.index') }}"
         wire:navigate

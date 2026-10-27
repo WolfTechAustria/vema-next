@@ -18,6 +18,7 @@ enum Feature: string
     case MemberPortal = 'member_portal';
     case ActivityLog = 'activity_log';
     case TestMode = 'test_mode';
+    case Federation = 'federation';
 
     public function label(): string
     {
@@ -32,6 +33,7 @@ enum Feature: string
             self::MemberPortal => 'Mitgliederportal',
             self::ActivityLog => 'Aktivitätsprotokoll',
             self::TestMode => 'Testmodus',
+            self::Federation => 'Verbandszentrale',
         };
     }
 }

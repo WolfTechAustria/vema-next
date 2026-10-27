@@ -8,10 +8,12 @@ use App\Enums\Plan;
 use App\Enums\TenantStatus;
 use App\Mail\Central\TenantAccessMail;
 use App\Mail\Central\TenantWelcomeMail;
+use App\Models\FederationMembership;
 use App\Models\Member;
 use App\Models\Tenant;
 use App\Models\TenantDomain;
 use App\Models\User;
+use App\Services\FederationMemberships;
 use App\Services\HomepageHosts;
 use App\Services\MailQuota;
 use App\Services\StorageUsage;
@@ -491,6 +493,27 @@ class TenantDetail extends Component
         session()->flash('success', "{$domain->domain} entfernt.");
     }
 
+    /**
+     * Verbindung zwischen Verband und Verein lösen (in beide Richtungen).
+     */
+    public function removeFederationMembership(int $membershipId, FederationMemberships $memberships): void
+    {
+        $membership = FederationMembership::query()
+            ->with(['federation', 'club'])
+            ->where(fn ($query) => $query
+                ->where('federation_id', $this->tenant->id)
+                ->orWhere('club_id', $this->tenant->id))
+            ->find($membershipId);
+
+        if ($membership === null) {
+            return;
+        }
+
+        $memberships->remove($membership, auth('platform')->user()->name);
+
+        session()->flash('success', 'Verbindung '.$membership->federation->name.' – '.$membership->club->name.' gelöst.');
+    }
+
     public function deleteTenant(TenantDeleter $deleter)
     {
         if ($this->deleteConfirmation !== $this->tenant->slug) {
@@ -610,6 +633,8 @@ class TenantDetail extends Component
                 $tenant->isOnTrial() ? $this->limitWarning($limitAfterTrial, $usage, 'nach der Testphase') : null,
             ]),
             'domains' => $tenant->domains()->orderBy('domain')->get(),
+            'clubMemberships' => $tenant->clubMemberships()->with('club')->get(),
+            'federationMemberships' => $tenant->federationMemberships()->with('federation')->get(),
             'events' => $tenant->events()->with('admin')->latest('id')->limit(30)->get(),
             'verificationExpired' => $tenant->email_verified_at === null
                 && $tenant->created_at->lt(now()->subHours((int) config('tenancy.verification_hours'))),

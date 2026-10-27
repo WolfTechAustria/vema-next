@@ -55,8 +55,9 @@ describe('plan definitions', function () {
             ->and(Plan::Basis->includes(Feature::DutyPlan))->toBeFalse()
             ->and(Plan::Verein->includes(Feature::DutyPlan))->toBeTrue()
             ->and(Plan::Verein->includes(Feature::MemberPortal))->toBeFalse()
-            ->and(Plan::VereinPlus->features())->toBe(Feature::cases())
-            ->and(Plan::Grossverein->features())->toBe(Feature::cases());
+            ->and(Plan::VereinPlus->features())->toBe(array_values(array_filter(Feature::cases(), fn (Feature $feature) => $feature !== Feature::Federation)))
+            ->and(Plan::Grossverein->features())->toBe(Plan::VereinPlus->features())
+            ->and(Plan::Verband->features())->toBe(Feature::cases());
 
         expect(Plan::lowestWith(Feature::CashBookReceipts))->toBe(Plan::Basis)
             ->and(Plan::lowestWith(Feature::Invoices))->toBe(Plan::Verein)

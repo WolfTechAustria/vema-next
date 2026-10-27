@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\DashboardLayout;
 use App\Services\MemberHistory;
+use App\Services\TenantManager;
 use Carbon\CarbonImmutable;
 use Livewire\Component;
 
@@ -121,6 +122,9 @@ class Index extends Component
                 ))
                 : [],
             'isAdmin' => $user->hasRole('admin'),
+            'federationInvitations' => $user->hasRole('admin')
+                ? app(TenantManager::class)->current()?->federationMemberships()->invited()->with('federation')->get()
+                : null,
         ])->layout('layouts.app', [
             'title' => 'Dashboard | VEMA',
             'heading' => 'Dashboard',

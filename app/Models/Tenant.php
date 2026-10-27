@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Feature;
+use App\Enums\FederationMembershipStatus;
 use App\Enums\Limit;
 use App\Enums\Plan;
 use App\Enums\TenantStatus;
@@ -127,6 +128,45 @@ class Tenant extends Model
     public function domains(): HasMany
     {
         return $this->hasMany(TenantDomain::class);
+    }
+
+    /**
+     * Verbindungen zu Mitgliedsvereinen, wenn dieser Mandant ein Verband ist.
+     *
+     * @return HasMany<FederationMembership, $this>
+     */
+    public function clubMemberships(): HasMany
+    {
+        return $this->hasMany(FederationMembership::class, 'federation_id');
+    }
+
+    /**
+     * Verbindungen zu Verbänden, denen dieser Verein angehört oder die ihn eingeladen haben.
+     *
+     * @return HasMany<FederationMembership, $this>
+     */
+    public function federationMemberships(): HasMany
+    {
+        return $this->hasMany(FederationMembership::class, 'club_id');
+    }
+
+    /**
+     * Ein Verband mit Verbandszentrale (Paket Verband oder individuell freigeschaltet).
+     */
+    public function isFederation(): bool
+    {
+        return $this->allows(Feature::Federation);
+    }
+
+    /**
+     * Gehört der Verein (aktiv) dem Verband an?
+     */
+    public function isMemberOf(self $federation): bool
+    {
+        return $this->federationMemberships()
+            ->where('federation_id', $federation->getKey())
+            ->where('status', FederationMembershipStatus::Active)
+            ->exists();
     }
 
     /**

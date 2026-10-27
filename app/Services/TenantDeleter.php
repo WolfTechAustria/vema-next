@@ -37,6 +37,8 @@ class TenantDeleter
         // Nicht auf ON DELETE CASCADE verlassen (SQLite ohne Fremdschlüssel).
         $tenant->domains()->delete();
         $tenant->events()->delete();
+        $tenant->clubMemberships()->delete();
+        $tenant->federationMemberships()->delete();
         $tenant->delete();
     }
 

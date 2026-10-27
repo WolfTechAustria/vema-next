@@ -21,6 +21,7 @@ use App\Http\Controllers\MembershipFeePrescriptionController;
 use App\Http\Controllers\UserManualController;
 use App\Livewire\Admin\Settings\BoardFunctions;
 use App\Livewire\Admin\Settings\Documents;
+use App\Livewire\Admin\Settings\Federations;
 use App\Livewire\CashBook\Index as CashBookIndex;
 use App\Livewire\CashBook\Years as CashBookYears;
 use App\Livewire\Dashboard\Index as DashboardIndex;
@@ -29,6 +30,7 @@ use App\Livewire\DutyPlan\Index as DutyPlanIndex;
 use App\Livewire\DutyPlan\Volunteers as DutyPlanVolunteers;
 use App\Livewire\Events\Index as EventsIndex;
 use App\Livewire\ExternalContacts\Index;
+use App\Livewire\Federation\Clubs as FederationClubs;
 use App\Livewire\Homepage\Content as HomepageContent;
 use App\Livewire\Homepage\MailPosts as HomepageMailPosts;
 use App\Livewire\Homepage\Notices as HomepageNotices;
@@ -282,6 +284,15 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/settings/board-functions', BoardFunctions::class)
         ->middleware('admin')
         ->name('admin.settings.board-functions');
+
+    Route::livewire('/settings/federations', Federations::class)
+        ->middleware('admin')
+        ->name('admin.settings.federations');
+
+    // Verbandszentrale (Paket Verband, nur Plattformbetrieb).
+    Route::livewire('/federation/clubs', FederationClubs::class)
+        ->middleware('feature:federation')
+        ->name('federation.clubs');
 
     Route::livewire('/activity-log', App\Livewire\Admin\ActivityLog\Index::class)
         ->middleware('admin')

@@ -103,6 +103,10 @@ enum Plan: string
             array_push($features, Feature::MemberPortal, Feature::ActivityLog, Feature::TestMode);
         }
 
+        if ($this === self::Verband) {
+            $features[] = Feature::Federation;
+        }
+
         return $features;
     }
 
