@@ -56,8 +56,6 @@ class TenantRegistration
      */
     public function register(array $data, ?Plan $requestedPlan = null): Tenant
     {
-        $token = Str::random(48);
-
         $tenant = Tenant::create([
             'slug' => $data['slug'],
             'name' => $data['club_name'],
@@ -67,17 +65,40 @@ class TenantRegistration
             'requested_plan' => $requestedPlan,
             'contact_name' => $data['contact_name'],
             'contact_email' => Str::lower($data['contact_email']),
-            'verification_token' => hash('sha256', $token),
         ]);
+
+        $this->sendVerification($tenant);
+
+        $this->notifyPlatform($tenant, 'Neue Registrierung');
+
+        return $tenant;
+    }
+
+    /**
+     * Neuer Bestätigungslink (Plattform-Admin). Die Frist für Bestätigung und
+     * Aufräumen zählt ab created_at — sie beginnt daher neu.
+     */
+    public function resendVerification(Tenant $tenant): void
+    {
+        if ($tenant->email_verified_at !== null) {
+            return;
+        }
+
+        $tenant->forceFill(['created_at' => now()]);
+
+        $this->sendVerification($tenant);
+    }
+
+    private function sendVerification(Tenant $tenant): void
+    {
+        $token = Str::random(48);
+
+        $tenant->forceFill(['verification_token' => hash('sha256', $token)])->save();
 
         Mail::to($tenant->contact_email)->send(new TenantVerificationMail(
             $tenant,
             route('central.register.verify', ['token' => $token]),
         ));
-
-        $this->notifyPlatform($tenant, 'Neue Registrierung');
-
-        return $tenant;
     }
 
     /**

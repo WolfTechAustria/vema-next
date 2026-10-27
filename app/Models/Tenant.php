@@ -8,6 +8,7 @@ use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Ein Verein auf der Plattform (nur TENANCY_MODE=multi). Liegt als eines von
@@ -83,6 +84,36 @@ class Tenant extends Model
     public function domains(): HasMany
     {
         return $this->hasMany(TenantDomain::class);
+    }
+
+    /**
+     * @return HasMany<TenantEvent, $this>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(TenantEvent::class);
+    }
+
+    /**
+     * Aktion des angemeldeten Plattform-Admins im Verlauf und im Log festhalten.
+     *
+     * @param  array<string, mixed>  $details
+     */
+    public function recordEvent(string $action, array $details = []): void
+    {
+        $admin = auth('platform')->user();
+
+        $this->events()->create([
+            'platform_admin_id' => $admin?->getKey(),
+            'action' => $action,
+            'details' => $details ?: null,
+        ]);
+
+        Log::info('[Plattform-Admin] '.$action, [
+            'admin' => $admin?->email,
+            'tenant' => $this->slug,
+            'details' => $details,
+        ]);
     }
 
     /**

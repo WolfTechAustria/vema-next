@@ -28,7 +28,7 @@
         </a>
 
         <div class="flex items-center gap-3 text-sm">
-            <span class="text-slate-500">{{ auth('platform')->user()?->name }}</span>
+            <a href="{{ route('central.admin.account') }}" wire:navigate class="text-slate-500 hover:text-slate-800 hover:underline">{{ auth('platform')->user()?->name }}</a>
 
             <form method="POST" action="{{ route('central.admin.logout') }}">
                 @csrf

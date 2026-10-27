@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\SupportLoginController;
 use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\CashBookController;
 use App\Http\Controllers\CircularController;
@@ -62,6 +63,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/robots.txt', [HomepageSeoController::class, 'appRobots'])
     ->name('robots');
+
+// „Als Verein anmelden“ aus dem Plattform-Admin (nur TENANCY_MODE=multi).
+Route::get('/support-login', SupportLoginController::class)
+    ->middleware(['signed', 'throttle:20,1'])
+    ->name('support.login');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])

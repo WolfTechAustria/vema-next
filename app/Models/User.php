@@ -35,6 +35,18 @@ class User extends Authenticatable
         'enabled' => 'boolean',
     ];
 
+    /**
+     * Hauptzugang eines Vereins für den Plattform-Support: der aktive Admin mit
+     * der Kontakt-E-Mail, sonst der erste aktive Admin.
+     */
+    public static function clubAdmin(?string $contactEmail): ?self
+    {
+        $admins = static::role('admin')->where('enabled', true)->orderBy('id');
+
+        return ($contactEmail ? (clone $admins)->where('email', $contactEmail)->first() : null)
+            ?? $admins->first();
+    }
+
     public function getAuthPassword(): string
     {
         return $this->password;

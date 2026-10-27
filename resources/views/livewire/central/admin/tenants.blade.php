@@ -1,5 +1,9 @@
 <div class="space-y-5">
 
+    @if(session('success'))
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
+    @endif
+
     <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
             <h1 class="text-2xl font-bold tracking-tight">Vereine</h1>
@@ -22,6 +26,13 @@
                 <option value="">Alle Status</option>
                 @foreach($statuses as $statusCase)
                     <option value="{{ $statusCase->value }}">{{ $statusCase->label() }}</option>
+                @endforeach
+            </select>
+
+            <select wire:model.live="focus" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <option value="">Alle Vereine</option>
+                @foreach($focusFilters as $focusKey => $focusLabel)
+                    <option value="{{ $focusKey }}">{{ $focusLabel }}</option>
                 @endforeach
             </select>
         </div>
