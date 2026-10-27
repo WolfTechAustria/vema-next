@@ -7,6 +7,7 @@ use App\Exports\FederationStatisticsExport;
 use App\Livewire\Admin\Settings\Federations;
 use App\Livewire\Central\Admin\TenantDetail;
 use App\Livewire\Dashboard\Index;
+use App\Livewire\Events\Index as EventsIndex;
 use App\Livewire\Federation\Clubs;
 use App\Livewire\Federation\Documents;
 use App\Livewire\Federation\Inbox;
@@ -14,6 +15,8 @@ use App\Livewire\Federation\Messages;
 use App\Livewire\Federation\Statistics;
 use App\Mail\FederationInvitationMail;
 use App\Mail\FederationMessageMail;
+use App\Models\ClubEvent;
+use App\Models\ClubEventSource;
 use App\Models\ClubStatistic;
 use App\Models\FederationFile;
 use App\Models\FederationMembership;
@@ -412,5 +415,129 @@ describe('messages and documents', function () {
         });
 
         expect(is_file($document->absolutePath()))->toBeFalse();
+    });
+});
+
+/**
+ * Termin im Verband anlegen und für die Vereine freigeben.
+ */
+function shareFederationEvent(Tenant $federation, string $title): void
+{
+    app(TenantManager::class)->runFor($federation, function () use ($title) {
+        Livewire::actingAs(federationTestAdmin())
+            ->test(EventsIndex::class)
+            ->assertSee('Für die Mitgliedsvereine freigeben')
+            ->set('title', $title)
+            ->set('startDate', now()->addWeek()->format('Y-m-d'))
+            ->set('startTime', '18:00')
+            ->set('shareWithClubs', true)
+            ->call('saveEvent')
+            ->assertHasNoErrors();
+    });
+}
+
+describe('shared events', function () {
+    beforeEach(function () {
+        $this->club->update(['plan' => Plan::Verein]);
+        inviteClub($this->federation, $this->club);
+    });
+
+    it('shows shared events in the calendar of member clubs', function () {
+        shareFederationEvent($this->federation, 'Landesschießen');
+
+        app(TenantManager::class)->runFor($this->federation, function () {
+            ClubEvent::factory()->create(['title' => 'Interne Sitzung']);
+        });
+
+        app(TenantManager::class)->runFor($this->club->fresh(), function () {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Federations::class)
+                ->call('accept', FederationMembership::query()->sole()->id);
+
+            $source = ClubEventSource::query()->sole();
+            $event = ClubEvent::query()->sole();
+
+            expect($source->federation_id)->toBe($this->federation->id)
+                ->and($source->name)->toBe('Landesverband')
+                ->and($event->title)->toBe('Landesschießen')
+                ->and($event->sourceID)->toBe($source->sourceID)
+                ->and($event->starts_at->format('H:i'))->toBe('18:00');
+
+            Livewire::actingAs(federationTestAdmin())
+                ->test(EventsIndex::class)
+                ->assertSee('Landesschießen')
+                ->assertSee('Austritt unter Einstellungen');
+
+            // Verbandstermine und -kalender sind im Verein nicht änderbar.
+            expect(fn () => Livewire::actingAs(federationTestAdmin())
+                ->test(EventsIndex::class)
+                ->call('deleteSource', $source->sourceID))
+                ->toThrow(ModelNotFoundException::class);
+
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Inbox::class)
+                ->assertSee('Landesschießen');
+        });
+
+        // Neuer Termin im Verband kommt mit dem stündlichen Abgleich.
+        shareFederationEvent($this->federation, 'Bezirksmeisterschaft');
+
+        app(TenantManager::class)->runFor($this->club->fresh(), function () {
+            $this->artisan('events:sync-external')->assertSuccessful();
+
+            expect(ClubEvent::query()->pluck('title')->sort()->values()->all())->toBe(['Bezirksmeisterschaft', 'Landesschießen']);
+        });
+
+        // Freigabe zurücknehmen → verschwindet beim Verein.
+        app(TenantManager::class)->runFor($this->federation, function () {
+            $event = ClubEvent::query()->where('title', 'Bezirksmeisterschaft')->sole();
+
+            Livewire::actingAs(federationTestAdmin())
+                ->test(EventsIndex::class)
+                ->call('deleteEvent', $event->eventID);
+        });
+
+        app(TenantManager::class)->runFor($this->club->fresh(), function () {
+            $this->artisan('events:sync-external')->assertSuccessful();
+
+            expect(ClubEvent::query()->pluck('title')->all())->toBe(['Landesschießen']);
+        });
+    });
+
+    it('removes the calendar when the club leaves or is removed', function () {
+        shareFederationEvent($this->federation, 'Landesschießen');
+
+        app(TenantManager::class)->runFor($this->club->fresh(), function () {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Federations::class)
+                ->call('accept', FederationMembership::query()->sole()->id);
+
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Federations::class)
+                ->call('leave', FederationMembership::query()->sole()->id);
+
+            expect(ClubEventSource::query()->count())->toBe(0)
+                ->and(ClubEvent::query()->count())->toBe(0);
+        });
+
+        // Vom Verband entfernt: der nächste Abgleich räumt auf.
+        FederationMembership::query()->sole()->update(['status' => FederationMembershipStatus::Invited]);
+
+        app(TenantManager::class)->runFor($this->club->fresh(), function () {
+            Livewire::actingAs(federationTestAdmin())
+                ->test(Federations::class)
+                ->call('accept', FederationMembership::query()->sole()->id);
+
+            expect(ClubEvent::query()->count())->toBe(1);
+        });
+
+        FederationMembership::query()->sole()->delete();
+
+        app(TenantManager::class)->runFor($this->club->fresh(), function () {
+            $this->artisan('events:sync-external')->assertSuccessful();
+
+            expect(ClubEventSource::query()->count())->toBe(0)
+                ->and(ClubEvent::query()->count())->toBe(0);
+        });
     });
 });

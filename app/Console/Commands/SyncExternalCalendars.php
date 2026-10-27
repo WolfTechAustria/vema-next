@@ -6,7 +6,9 @@ use App\Enums\Feature;
 use App\Models\ClubEventSource;
 use App\Services\ActivityLogger;
 use App\Services\ExternalCalendarSyncService;
+use App\Services\FederationCalendar;
 use App\Services\PlanEntitlements;
+use App\Services\TenantManager;
 use Illuminate\Console\Command;
 
 class SyncExternalCalendars extends Command
@@ -22,6 +24,13 @@ class SyncExternalCalendars extends Command
             $this->info('Vereinstermine sind im Paket dieses Vereins nicht enthalten.');
 
             return self::SUCCESS;
+        }
+
+        // Verband: freigegebene Termine neu veröffentlichen (das Zeitfenster rückt weiter).
+        $tenant = app(TenantManager::class)->current();
+
+        if ($tenant?->isFederation()) {
+            app(FederationCalendar::class)->publish($tenant);
         }
 
         $sources = ClubEventSource::query()

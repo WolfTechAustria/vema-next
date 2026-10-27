@@ -61,24 +61,45 @@
                 @endforelse
             </section>
 
-            <section class="space-y-3">
-                <h3 class="font-semibold text-slate-900">Dokumente</h3>
+            <div class="space-y-6">
+                <section class="space-y-3">
+                    <h3 class="font-semibold text-slate-900">Nächste Termine</h3>
 
-                @forelse($documents as $federationName => $files)
-                    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <div class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $federationName }}</div>
-                        <ul class="space-y-1 text-sm">
-                            @foreach($files as $file)
-                                <li wire:key="document-{{ $file->id }}">
-                                    <a href="{{ route('federation-files.show', $file) }}" target="_blank" class="text-slate-800 underline">{{ $file->title }}</a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @empty
-                    <p class="text-sm text-slate-500">Noch keine Dokumente.</p>
-                @endforelse
-            </section>
+                    <ul class="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white px-4 shadow-sm">
+                        @forelse($events as $event)
+                            <li wire:key="event-{{ $event->id }}" class="py-2 text-sm">
+                                <div class="font-medium text-slate-900">{{ $event->title }}</div>
+                                <div class="text-xs text-slate-500">
+                                    {{ $event->starts_at->format($event->all_day ? 'd.m.Y' : 'd.m.Y H:i') }}
+                                    @if($event->location) · {{ $event->location }} @endif
+                                    · {{ $event->federation->name }}
+                                </div>
+                            </li>
+                        @empty
+                            <li class="py-2 text-sm text-slate-500">Keine anstehenden Termine.</li>
+                        @endforelse
+                    </ul>
+                </section>
+
+                <section class="space-y-3">
+                    <h3 class="font-semibold text-slate-900">Dokumente</h3>
+
+                    @forelse($documents as $federationName => $files)
+                        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $federationName }}</div>
+                            <ul class="space-y-1 text-sm">
+                                @foreach($files as $file)
+                                    <li wire:key="document-{{ $file->id }}">
+                                        <a href="{{ route('federation-files.show', $file) }}" target="_blank" class="text-slate-800 underline">{{ $file->title }}</a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @empty
+                        <p class="text-sm text-slate-500">Noch keine Dokumente.</p>
+                    @endforelse
+                </section>
+            </div>
 
         </div>
     @endunless

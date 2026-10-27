@@ -7,6 +7,8 @@ use App\Models\FederationMembership;
 use App\Models\Tenant;
 use App\Services\ClubStatistics;
 use App\Services\DemoMode;
+use App\Services\ExternalCalendarSyncService;
+use App\Services\FederationCalendar;
 use App\Services\FederationMemberships;
 use App\Services\TenantManager;
 use InvalidArgumentException;
@@ -23,14 +25,16 @@ class Federations extends Component
         $this->club();
     }
 
-    public function accept(int $membershipId, FederationMemberships $memberships, ClubStatistics $statistics, DemoMode $demoMode): void
+    public function accept(int $membershipId, FederationMemberships $memberships, ClubStatistics $statistics, DemoMode $demoMode, FederationCalendar $calendar, ExternalCalendarSyncService $syncService): void
     {
-        $this->respond($membershipId, function (FederationMembership $membership, string $by) use ($memberships, $statistics, $demoMode) {
+        $this->respond($membershipId, function (FederationMembership $membership, string $by) use ($memberships, $statistics, $demoMode, $calendar, $syncService) {
             $memberships->accept($membership, $by);
 
-            // Der Verband sieht die Kennzahlen gleich, nicht erst nach dem nächtlichen Abgleich.
+            // Im Testmodus nichts in die Test-Datenbank schreiben; der nächtliche Abgleich holt es nach.
             if (! $demoMode->isActive()) {
+                // Der Verband sieht die Kennzahlen gleich, nicht erst nach dem nächtlichen Abgleich.
                 $statistics->store($this->club());
+                $calendar->connect($membership->federation, $syncService);
             }
         }, 'Ihr seid jetzt Mitglied bei :name.');
     }
@@ -40,9 +44,12 @@ class Federations extends Component
         $this->respond($membershipId, fn (FederationMembership $membership, string $by) => $memberships->decline($membership, $by), 'Die Einladung von :name wurde abgelehnt.');
     }
 
-    public function leave(int $membershipId, FederationMemberships $memberships): void
+    public function leave(int $membershipId, FederationMemberships $memberships, FederationCalendar $calendar): void
     {
-        $this->respond($membershipId, fn (FederationMembership $membership, string $by) => $memberships->leave($membership, $by), 'Ihr seid aus :name ausgetreten.');
+        $this->respond($membershipId, function (FederationMembership $membership, string $by) use ($memberships, $calendar) {
+            $memberships->leave($membership, $by);
+            $calendar->disconnect($membership->federation);
+        }, 'Ihr seid aus :name ausgetreten.');
     }
 
     /**

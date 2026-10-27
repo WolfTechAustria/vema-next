@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\ClubEvent;
 use App\Models\ClubEventSource;
+use App\Models\FederationEvent;
+use App\Models\Tenant;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
@@ -25,6 +27,9 @@ use Throwable;
  * Serientermine werden im Zeitfenster (1 Monat zurück bis 1 Jahr voraus)
  * zu Einzelterminen expandiert. Zeiten werden in die Vereinszeitzone
  * umgerechnet und – wie eigene Termine – als Wanduhrzeit gespeichert.
+ *
+ * Quellen mit federation_id lesen statt eines Links die freigegebenen
+ * Termine eines Verbands (FederationCalendar).
  */
 class ExternalCalendarSyncService
 {
@@ -35,6 +40,10 @@ class ExternalCalendarSyncService
      */
     public function sync(ClubEventSource $source): int
     {
+        if ($source->federation_id !== null) {
+            return $this->syncFederation($source);
+        }
+
         try {
             $calendar = $this->fetchCalendar($source->url);
             $count = $this->importEvents($source, $calendar);
@@ -155,6 +164,16 @@ class ExternalCalendarSyncService
             }
         }
 
+        $this->storeEvents($source, $attributesByUid, $windowStart);
+
+        return count($attributesByUid);
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $attributesByUid
+     */
+    private function storeEvents(ClubEventSource $source, array $attributesByUid, CarbonImmutable $windowStart): void
+    {
         DB::transaction(function () use ($source, $attributesByUid, $windowStart) {
             foreach ($attributesByUid as $uid => $attributes) {
                 ClubEvent::query()->updateOrCreate(
@@ -170,6 +189,47 @@ class ExternalCalendarSyncService
                 ->whereNotIn('external_uid', array_keys($attributesByUid))
                 ->delete();
         });
+    }
+
+    /**
+     * Termine eines Verbands übernehmen; ist der Verein nicht mehr Mitglied,
+     * verschwindet der Kalender samt Terminen.
+     */
+    private function syncFederation(ClubEventSource $source): int
+    {
+        $club = app(TenantManager::class)->current();
+        $federation = Tenant::query()->find($source->federation_id);
+
+        if ($club === null || $federation === null || ! $club->isMemberOf($federation)) {
+            app(FederationCalendar::class)->disconnect($source->federation_id);
+
+            return 0;
+        }
+
+        $windowStart = CarbonImmutable::now()->subMonth()->startOfDay();
+
+        $attributesByUid = FederationEvent::query()
+            ->where('federation_id', $federation->id)
+            ->where('starts_at', '>=', $windowStart)
+            ->get()
+            ->mapWithKeys(fn (FederationEvent $event) => [$event->uid => [
+                'external_uid' => $event->uid,
+                'title' => $event->title,
+                'description' => $event->description,
+                'location' => $event->location,
+                'starts_at' => $event->starts_at,
+                'ends_at' => $event->ends_at,
+                'all_day' => $event->all_day,
+            ]])
+            ->all();
+
+        $this->storeEvents($source, $attributesByUid, $windowStart);
+
+        $source->update([
+            'name' => $federation->name,
+            'last_synced_at' => now(),
+            'last_sync_error' => null,
+        ]);
 
         return count($attributesByUid);
     }

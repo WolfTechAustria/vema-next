@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ClubStatistic;
+use App\Models\FederationEvent;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -47,6 +48,7 @@ class TenantDeleter
             ->delete();
         $tenant->federationFiles()->delete();
         $tenant->federationMessages()->delete();
+        FederationEvent::query()->where('federation_id', $tenant->id)->delete();
         $tenant->delete();
     }
 

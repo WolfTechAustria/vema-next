@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Federation;
 
+use App\Models\FederationEvent;
 use App\Models\FederationFile;
 use App\Models\FederationMessage;
 use App\Models\Tenant;
@@ -61,6 +62,13 @@ class Inbox extends Component
             'hasFederations' => $federationIds->isNotEmpty(),
             'messages' => $messages,
             'readIds' => FederationMessage::readIdsFor($club, $messages->pluck('id')),
+            'events' => FederationEvent::query()
+                ->whereIn('federation_id', $federationIds)
+                ->upcoming()
+                ->with('federation')
+                ->orderBy('starts_at')
+                ->limit(10)
+                ->get(),
             'documents' => FederationFile::query()
                 ->documents()
                 ->whereIn('federation_id', $federationIds)

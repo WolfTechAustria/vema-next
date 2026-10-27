@@ -11,6 +11,8 @@ use App\Services\ActivityLogger;
 use App\Services\ClubEventSeriesService;
 use App\Services\ExternalCalendarException;
 use App\Services\ExternalCalendarSyncService;
+use App\Services\FederationCalendar;
+use App\Services\TenantManager;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
@@ -37,6 +39,8 @@ class Index extends Component
     public bool $rsvpEnabled = true;
 
     public bool $showOnHomepage = false;
+
+    public bool $shareWithClubs = false;
 
     /**
      * Mitglieder, die den Termin sehen; leer = alle.
@@ -118,6 +122,7 @@ class Index extends Component
             'allDay' => ['boolean'],
             'rsvpEnabled' => ['boolean'],
             'showOnHomepage' => ['boolean'],
+            'shareWithClubs' => ['boolean'],
             'selectedMembers' => ['array'],
             'selectedMembers.*' => ['integer', Rule::exists('tb_members', 'memberID')],
         ], [], [
@@ -154,10 +159,12 @@ class Index extends Component
             'all_day' => $this->allDay,
             'rsvp_enabled' => $this->rsvpEnabled,
             'show_on_homepage' => $this->showOnHomepage,
+            'share_with_clubs' => $this->isFederation() && $this->shareWithClubs,
         ];
 
         if ($savesSeries) {
             $this->saveSeries($seriesService, $attributes);
+            $this->publishSharedEvents();
 
             return;
         }
@@ -179,6 +186,7 @@ class Index extends Component
         $event->members()->sync(array_map('intval', $this->selectedMembers));
 
         $this->logEventSaved($event->fresh(), $before);
+        $this->publishSharedEvents();
 
         $this->resetForm();
     }
@@ -194,6 +202,7 @@ class Index extends Component
         $this->allDay = $event->all_day;
         $this->rsvpEnabled = $event->rsvp_enabled;
         $this->showOnHomepage = $event->show_on_homepage;
+        $this->shareWithClubs = $event->share_with_clubs;
         $this->selectedMembers = $event->members()
             ->pluck('tb_members.memberID')
             ->map(fn ($memberID) => (string) $memberID)
@@ -455,6 +464,8 @@ class Index extends Component
 
         $this->viewingResponsesEventID = null;
 
+        $this->publishSharedEvents();
+
         session()->flash('success', $deleted.' Termine der Serie wurden gelöscht.');
     }
 
@@ -489,6 +500,8 @@ class Index extends Component
             $this->viewingResponsesEventID = null;
         }
 
+        $this->publishSharedEvents();
+
         session()->flash('success', 'Termin wurde gelöscht.');
     }
 
@@ -522,7 +535,7 @@ class Index extends Component
         ];
 
         if ($this->editingSourceID) {
-            $source = ClubEventSource::findOrFail($this->editingSourceID);
+            $source = ClubEventSource::query()->whereNull('federation_id')->findOrFail($this->editingSourceID);
             $before = $source->activitySnapshot();
             $source->update($attributes);
 
@@ -576,7 +589,7 @@ class Index extends Component
 
     public function editSource(int $sourceID): void
     {
-        $source = ClubEventSource::findOrFail($sourceID);
+        $source = ClubEventSource::query()->whereNull('federation_id')->findOrFail($sourceID);
 
         $this->editingSourceID = $source->sourceID;
         $this->sourceName = $source->name;
@@ -618,7 +631,7 @@ class Index extends Component
 
     public function deleteSource(int $sourceID): void
     {
-        $source = ClubEventSource::findOrFail($sourceID);
+        $source = ClubEventSource::query()->whereNull('federation_id')->findOrFail($sourceID);
         $eventCount = $source->events()->count();
         $source->delete();
 
@@ -707,6 +720,21 @@ class Index extends Component
         return Carbon::parse(($endDate ?? $startsAt->format('Y-m-d')).' '.$endTime);
     }
 
+    private function isFederation(): bool
+    {
+        return app(TenantManager::class)->current()?->isFederation() ?? false;
+    }
+
+    /**
+     * Verband: freigegebene Termine für die Mitgliedsvereine aktualisieren.
+     */
+    private function publishSharedEvents(): void
+    {
+        if ($this->isFederation()) {
+            app(FederationCalendar::class)->publish(app(TenantManager::class)->current());
+        }
+    }
+
     private function resetForm(): void
     {
         $this->reset([
@@ -720,6 +748,7 @@ class Index extends Component
             'allDay',
             'rsvpEnabled',
             'showOnHomepage',
+            'shareWithClubs',
             'selectedMembers',
             'editingEventID',
             'repeat',
@@ -868,6 +897,7 @@ class Index extends Component
             'hiddenEventsCount' => $totalEvents - $events->count(),
             'responseOverview' => $responseOverview,
             'sources' => ClubEventSource::query()->withCount('events')->orderBy('name')->get(),
+            'isFederation' => $this->isFederation(),
             'repeatOptions' => $this->repeatOptions(),
             'seriesPreview' => $this->seriesPreview(),
             'editingSeriesDescription' => $this->editingSeriesID

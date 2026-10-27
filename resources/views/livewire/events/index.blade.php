@@ -356,6 +356,17 @@
                     </label>
                 @endfeature
 
+                @if($isFederation)
+                    <label class="flex items-center gap-2 text-sm">
+                        <input
+                            type="checkbox"
+                            wire:model="shareWithClubs"
+                            class="h-4 w-4 rounded border-slate-300"
+                        >
+                        Für die Mitgliedsvereine freigeben (erscheint in deren Terminen)
+                    </label>
+                @endif
+
                 <div x-data="{ search: '' }">
                     <div class="mb-1 flex items-center justify-between gap-2">
                         <label class="block text-sm font-medium">
@@ -801,6 +812,7 @@
                                     Jetzt synchronisieren
                                 </button>
 
+                                @if($source->federation_id === null)
                                 <button
                                     type="button"
                                     wire:click="editSource({{ $source->sourceID }})"
@@ -817,6 +829,9 @@
                                 >
                                     Löschen
                                 </button>
+                                @else
+                                    <span class="text-xs text-slate-500">Verband: Austritt unter Einstellungen → Verbände</span>
+                                @endif
                             </div>
 
                         </div>
