@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Admin\Settings;
 
+use App\Enums\BoardFunctionTemplate;
 use App\Models\BoardFunction;
 use App\Services\ActivityLogger;
+use App\Services\BoardFunctionTemplates;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -26,6 +28,8 @@ class BoardFunctions extends Component
     public bool $implies_schuetzenrat = false;
 
     public bool $is_council = false;
+
+    public string $template = 'general';
 
     /**
      * @return array<string, list<mixed>>
@@ -188,6 +192,38 @@ class BoardFunctions extends Component
         session()->flash('success', 'Funktion wurde gelöscht.');
     }
 
+    /**
+     * Katalog durch eine Vorlage ersetzen (nur solange keine Funktion vergeben ist).
+     */
+    public function applyTemplate(BoardFunctionTemplates $templates): void
+    {
+        abort_unless(auth()->user()?->hasRole('admin'), 403);
+
+        $template = BoardFunctionTemplate::tryFrom($this->template);
+
+        if ($template === null) {
+            return;
+        }
+
+        if (! $templates->canApply()) {
+            session()->flash('error', 'Es sind bereits Funktionen an Mitglieder vergeben. Bitte die Funktionen einzeln umbenennen oder deaktivieren.');
+
+            return;
+        }
+
+        $templates->apply($template);
+        $this->resetForm();
+
+        ActivityLogger::log(
+            'board_function.template_applied',
+            'Vorstandsfunktionen wurden durch die Vorlage „'.$template->label().'“ ersetzt.',
+            'BoardFunction',
+            null
+        );
+
+        session()->flash('success', 'Vorlage „'.$template->label().'“ übernommen.');
+    }
+
     private function removeCouncilFlagFromOthers(): void
     {
         BoardFunction::where('is_council', true)
@@ -286,6 +322,8 @@ class BoardFunctions extends Component
                 ->orderBy('boardFunctionID')
                 ->get(),
             'councilName' => BoardFunction::where('is_council', true)->value('name'),
+            'templates' => BoardFunctionTemplate::cases(),
+            'canApplyTemplate' => app(BoardFunctionTemplates::class)->canApply(),
         ])
             ->layout('layouts.app', [
                 'title' => 'Vorstandsfunktionen | VEMA',

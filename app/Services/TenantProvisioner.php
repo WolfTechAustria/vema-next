@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\BoardFunctionTemplate;
 use App\Enums\TenantStatus;
 use App\Models\Setting;
 use App\Models\Tenant;
@@ -22,7 +23,10 @@ use Spatie\Permission\Models\Role;
  */
 class TenantProvisioner
 {
-    public function __construct(private TenantManager $tenantManager) {}
+    public function __construct(
+        private TenantManager $tenantManager,
+        private BoardFunctionTemplates $boardFunctionTemplates,
+    ) {}
 
     /**
      * Datenbankname für einen neuen Verein; bei SQLite (Tests) ein Dateipfad.
@@ -68,6 +72,9 @@ class TenantProvisioner
                 'name' => $tenant->name,
                 'email' => $tenant->contact_email,
             ]);
+
+            // Die Migration legt die Schützen-Funktionen an; neue Vereine starten allgemein.
+            $this->boardFunctionTemplates->apply(BoardFunctionTemplate::General);
 
             $admin = $this->createAdmin($tenant);
 

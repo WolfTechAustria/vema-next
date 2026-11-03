@@ -7,6 +7,7 @@ use App\Livewire\Central\Register;
 use App\Mail\Central\ClubLinksMail;
 use App\Mail\Central\TenantVerificationMail;
 use App\Mail\Central\TenantWelcomeMail;
+use App\Models\BoardFunction;
 use App\Models\Setting;
 use App\Models\Tenant;
 use App\Models\User;
@@ -180,6 +181,11 @@ describe('confirmation and provisioning', function () {
 
             expect($admin->username)->toBe('obfrau@musterdorf.at')
                 ->and($admin->hasRole('admin'))->toBeTrue();
+
+            // Allgemeine Vorstandsfunktionen statt der Schützen-Bezeichnungen.
+            expect(BoardFunction::query()->orderBy('sort_order')->value('name'))->toBe('Obmann/Obfrau')
+                ->and(BoardFunction::query()->where('is_council', true)->value('name'))->toBe('Ausschussmitglied')
+                ->and(BoardFunction::query()->where('name', 'like', '%Schützen%')->exists())->toBeFalse();
         });
 
         Mail::assertSent(TenantWelcomeMail::class, fn (TenantWelcomeMail $mail) => $mail->hasTo('obfrau@musterdorf.at'));

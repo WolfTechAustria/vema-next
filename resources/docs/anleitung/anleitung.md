@@ -250,9 +250,9 @@ Oben rechts: **Zurück**, **Austritt erfassen** (bzw. **Wiedereintritt erfassen*
 
 Zum Beenden einer Funktion auf **Beenden** klicken, das Enddatum eintragen und **Bestätigen**. Die Funktion verschwindet nicht, sondern steht danach unter **Frühere Funktionen** mit Beginn und Ende – so bleibt nachvollziehbar, wer wann welche Funktion innehatte (z. B. für Ehrungen). Hat jemand mehrere Funktionen gleichzeitig, werden sie auf der Vereinshomepage in einer Zeile zusammengefasst (Kapitel 16).
 
-> **Automatik Schützenrat:** Wer Schriftführer oder Kassier (inkl. Stellvertreter) wird, erhält zusätzlich automatisch die Funktion **Schützenrat** mit demselben Beginn – außer er hat bereits eine Spitzenfunktion (Oberschützenmeister, 1./2. Schützenmeister). Der Schützenrat ist danach ein eigener Eintrag und endet nicht automatisch mit der auslösenden Funktion.
+> **Automatik Rats-Funktion:** Wer Schriftführer oder Kassier (inkl. Stellvertreter) wird, erhält zusätzlich automatisch die Rats-Funktion des Vereins (z. B. **Ausschussmitglied** oder **Schützenrat**) mit demselben Beginn – außer er hat bereits eine Spitzenfunktion (z. B. Obmann, Oberschützenmeister). Die Rats-Funktion ist danach ein eigener Eintrag und endet nicht automatisch mit der auslösenden Funktion.
 
-Welche Funktionen es gibt, wie sie heißen (z. B. **Obmann** statt Oberschützenmeister) und welche davon die Automatik auslösen, legt der Admin unter **Einstellungen → Vorstandsfunktionen** fest (Kapitel 12.6).
+Welche Funktionen es gibt, wie sie heißen und welche davon die Automatik auslösen, legt der Admin unter **Einstellungen → Vorstandsfunktionen** fest (Kapitel 12.6).
 
 ### 5.6 Mitglied bearbeiten
 
@@ -907,7 +907,9 @@ Im Testmodus können Funktionäre VEMA gefahrlos ausprobieren, z. B. zum Einschu
 
 ### 12.6 Vorstandsfunktionen
 
-Hier pflegen Sie die Liste der Funktionen, die Mitgliedern zugewiesen werden können (Kapitel 5.5). Vorbelegt sind die Bezeichnungen einer Schützengilde – andere Vereine passen sie an, z. B. **Obmann** statt Oberschützenmeister.
+Hier pflegen Sie die Liste der Funktionen, die Mitgliedern zugewiesen werden können (Kapitel 5.5). Neue Vereine starten mit allgemeinen Bezeichnungen (Obmann/Obfrau, Obmann-Stv., Schriftführer, Kassier mit Stellvertretern und Ausschussmitglied).
+
+**Vorlage übernehmen:** Solange noch keine Funktion an Mitglieder vergeben ist, können Sie unten auf der Seite eine passende Vorlage wählen – **Allgemein**, **Schützengilde** (Oberschützenmeister … Schützenrat), **Musikkapelle** oder **Sportverein**. Die Vorlage ersetzt alle bisherigen Funktionen; danach lassen sie sich wie gewohnt anpassen.
 
 - **+ Neue Funktion** legt eine weitere Funktion an (z. B. Jugendwart, Beirat); sie erscheint am Ende der Liste.
 - **Bearbeiten** ändert die Bezeichnung. Die neue Bezeichnung gilt auch für bisherige Zuweisungen und den Funktionsverlauf.

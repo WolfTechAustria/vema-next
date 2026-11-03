@@ -12,7 +12,7 @@
             </h2>
 
             <p class="mt-1 text-sm text-slate-500">
-                Bezeichnungen und Reihenfolge der Funktionen, die Mitgliedern zugewiesen werden können (z. B. Obmann statt Oberschützenmeister).
+                Bezeichnungen und Reihenfolge der Funktionen, die Mitgliedern zugewiesen werden können (z. B. Obmann, Kapellmeister oder Oberschützenmeister).
             </p>
         </div>
 
@@ -203,6 +203,45 @@
             @endforelse
 
         </div>
+
+    </section>
+
+    <section class="max-w-2xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+
+        <h3 class="font-semibold text-slate-900">
+            Vorlage übernehmen
+        </h3>
+
+        @if($canApplyTemplate)
+            <p class="mt-1 text-sm text-slate-500">
+                Passende Funktionen für eure Vereinsart. Ersetzt alle bisherigen Funktionen – danach könnt ihr sie wie gewohnt anpassen.
+            </p>
+
+            <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                <select wire:model.live="template" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    @foreach($templates as $templateOption)
+                        <option value="{{ $templateOption->value }}">{{ $templateOption->label() }}</option>
+                    @endforeach
+                </select>
+
+                <button
+                    type="button"
+                    wire:click="applyTemplate"
+                    wire:confirm="Alle bisherigen Funktionen durch diese Vorlage ersetzen?"
+                    class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                    Vorlage übernehmen
+                </button>
+            </div>
+
+            <p class="mt-3 text-xs text-slate-500">
+                {{ collect(\App\Enums\BoardFunctionTemplate::tryFrom($template)?->functions() ?? [])->pluck('name')->join(', ') }}
+            </p>
+        @else
+            <p class="mt-1 text-sm text-slate-500">
+                Es sind bereits Funktionen an Mitglieder vergeben. Bitte die Funktionen einzeln umbenennen, ergänzen oder deaktivieren.
+            </p>
+        @endif
 
     </section>
 
