@@ -47,6 +47,14 @@ class Create extends Component
 
     public bool $duplicateWarningDismissed = false;
 
+    /**
+     * Neue Mitglieder treten in der Regel heute ein (änderbar).
+     */
+    public function mount(): void
+    {
+        $this->dateOfJoin = now(config('app.club_timezone'))->toDateString();
+    }
+
     protected function rules(): array
     {
         return [
