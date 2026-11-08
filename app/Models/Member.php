@@ -243,6 +243,30 @@ class Member extends Model
         return $this->hasMany(MemberFieldValue::class, 'memberID', 'memberID');
     }
 
+    /**
+     * Ausgaben von Material an das Mitglied, neueste zuerst.
+     *
+     * @return HasMany<InventoryLoan, $this>
+     */
+    public function inventoryLoans(): HasMany
+    {
+        return $this->hasMany(InventoryLoan::class, 'memberID', 'memberID')
+            ->orderByDesc('issued_on')
+            ->orderByDesc('loanID');
+    }
+
+    /**
+     * Aktuell ausgegebenes Material.
+     *
+     * @return HasMany<InventoryLoan, $this>
+     */
+    public function openInventoryLoans(): HasMany
+    {
+        return $this->hasMany(InventoryLoan::class, 'memberID', 'memberID')
+            ->whereNull('returned_on')
+            ->orderBy('issued_on');
+    }
+
     public function skills(): BelongsToMany
     {
         return $this->belongsToMany(

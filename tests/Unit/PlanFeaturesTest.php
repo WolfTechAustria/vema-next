@@ -5,6 +5,7 @@ use App\Enums\Plan;
 use App\Http\Middleware\IdentifyTenant;
 use App\Livewire\Admin\Users\Index as UsersIndex;
 use App\Livewire\Members\Create as MembersCreate;
+use App\Models\InventoryItem;
 use App\Models\Member;
 use App\Models\MemberField;
 use App\Models\Tenant;
@@ -13,8 +14,10 @@ use App\Services\MemberFields;
 use App\Services\MembershipPeriodService;
 use App\Services\PlanEntitlements;
 use App\Services\TenantManager;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -142,6 +145,27 @@ describe('feature gates on the platform', function () {
 
         expect(app(TenantManager::class)->runFor($this->starter, fn () => app(MemberFields::class)->fields()->count()))->toBe(0)
             ->and(app(TenantManager::class)->runFor($this->verein, fn () => app(MemberFields::class)->fields()->count()))->toBe(1);
+    });
+
+    it('offers the inventory from package Verein on', function () {
+        $this->withSession(staffSessionFor($this->starter))
+            ->get('http://starter-verein.vemat.test/material')
+            ->assertRedirect(route('dashboard'));
+
+        Mail::fake();
+        app(TenantManager::class)->runFor($this->starter, function () {
+            User::find(1)->update(['email' => 'vorstand@example.test']);
+            User::find(1)->assignRole(Role::findOrCreate('admin', 'web'));
+            InventoryItem::factory()->inspectionDueIn(1)->create();
+            Artisan::call('inventory:send-reminders');
+        });
+        Mail::assertNothingSent();
+
+        app(TenantManager::class)->runFor($this->verein, fn () => User::find(1)->assignRole(Role::findOrCreate('zeugwart', 'web')));
+
+        $this->withSession(staffSessionFor($this->verein))
+            ->get('http://verein-paket.vemat.test/material')
+            ->assertOk();
     });
 
     it('allows modules included in the package or the trial', function () {

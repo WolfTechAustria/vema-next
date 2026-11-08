@@ -27,6 +27,11 @@ Schedule::command('tenants:run', ['duty:send-reminders'])
     ->dailyAt('07:00')
     ->withoutOverlapping();
 
+// montags: fällige Material-Prüfungen und überfällige Rückgaben an Admins/Zeugwarte
+Schedule::command('tenants:run', ['inventory:send-reminders'])
+    ->weeklyOn(1, '07:15')
+    ->withoutOverlapping();
+
 // stündlich: Termine aus externen iCal-Kalendern übernehmen
 Schedule::command('tenants:run', ['events:sync-external'])
     ->hourly()

@@ -56,6 +56,7 @@ Welche Menüpunkte Sie sehen, hängt von Ihrer Rolle ab:
 | **Mitarbeiter** (ohne Zusatzrolle) | Dashboard, Mitglieder, Termine, Dienstplan, Mitgliedsbeiträge und Kommunikation nutzen |
 | **Kassier** | zusätzlich **Kassabuch** und **Rechnungen** |
 | **Homepage** | zusätzlich **Homepage** (Beiträge, Seiten, Gestaltung) |
+| **Zeugwart** | zusätzlich **Material** (Inventar, Ausgabe an Mitglieder, Prüftermine) |
 | **Admin** | alles, zusätzlich **Einstellungen**, **Benutzerverwaltung** und **Aktivitätsprotokoll** |
 
 Versucht jemand eine Seite ohne Berechtigung aufzurufen, erscheint die Meldung „Diese Seite ist nur für Kassier und Administratoren zugänglich“ bzw. „… nur für Administratoren zugänglich“.
@@ -320,6 +321,23 @@ Hochladen, Ändern und Löschen werden im **Aktivitätsprotokoll** festgehalten 
 
 > **Testmodus:** Im Testmodus hochgeladene oder gelöschte Dateien betreffen nur die Testdaten, nicht die echten Unterlagen.
 
+### 5.9 Material
+
+Unter **Material** verwalten Admins und Zeugwarte das Inventar des Vereins – etwa Trachten, Instrumente, Waffen, Schlüssel oder Zelte. Auf vemat.at ist die Materialverwaltung ab Paket „Verein“ enthalten.
+
+**Material erfassen:** **+ Material** öffnet das Formular mit Bezeichnung, Kategorie, Inventarnummer, Lagerort, Zustand, Anschaffung (Datum und Preis), Notiz und Foto. Kategorie und Lagerort tippen Sie einfach ein; bereits verwendete Einträge werden vorgeschlagen. Die Inventarnummer muss eindeutig sein.
+
+**Liste:** Suche nach Bezeichnung, Nummer, Lagerort oder Mitglied sowie Filter nach Kategorie, Zustand und Status (*verfügbar*, *ausgegeben*, *Prüfung fällig*, *Rückgabe überfällig*). Ausgeschiedenes Material ist ausgeblendet, bis Sie beim Zustand „Ausgeschieden“ wählen. **Excel** lädt die gefilterte Liste herunter.
+
+**Ausgabe an Mitglieder:** Auf der Seite eines Materialstücks **+ An Mitglied ausgeben** klicken, Mitglied suchen, Ausgabedatum und optional „Rückgabe bis“ eintragen. Mit **Rückgabe erfassen** wird es zurückgenommen; dabei kann der Zustand angepasst werden. Ein Stück kann immer nur an ein Mitglied ausgegeben sein. Frühere Ausgaben bleiben als Verlauf sichtbar.
+
+Auch auf der **Mitgliederseite** gibt es für Admins und Zeugwarte den Abschnitt **Material**: Dort sehen Sie alles, was das Mitglied hat oder hatte, können mit **+ Material ausgeben** ein verfügbares Stück ausgeben und mit **Zurücknehmen** die Rückgabe mit heutigem Datum erfassen. Hat ein ausgetretenes Mitglied noch Material, weist VEMA darauf hin. In der Mitgliederliste lässt sich die Spalte **Material** einblenden. Jede Ausgabe und Rückgabe steht im Aktivitätsprotokoll – auch beim Mitglied.
+
+**Prüfung / Wartung:** Im Formular können Sie ein **Prüfintervall** in Monaten und die **nächste Prüfung** festlegen. **+ Prüfung erfassen** trägt Datum, Ergebnis (*In Ordnung*, *Mängel*, *Ausgeschieden*) und Notiz ein. Mit Intervall wird der nächste Termin automatisch berechnet; Sie können ihn auch von Hand setzen. „Mängel“ setzt den Zustand auf *Defekt*, „Ausgeschieden“ nimmt das Stück aus dem Bestand.
+
+Fällige Prüfungen (ab 14 Tage vorher) und überfällige Rückgaben erscheinen in der Liste farbig, im Dashboard-Modul **Material** und in einer wöchentlichen Erinnerungs-Mail an Admins und Zeugwarte (Kapitel 14).
+
+> **Löschen oder ausscheiden?** **Löschen** entfernt ein Stück samt Ausgabe- und Prüfverlauf. Für Material, das nicht mehr verwendet wird, setzen Sie besser den Zustand auf **Ausgeschieden** – so bleibt der Verlauf erhalten.
 ---
 
 ## 6. Dienstplan
@@ -890,6 +908,7 @@ Leere Felder verwenden die Einstellungen des Servers.
 - die Rolle **Admin** / *Mitarbeiter* vergeben (der letzte Admin kann seine Rechte nicht verlieren),
 - die Rolle **Kassier** vergeben oder entziehen,
 - die Rolle **Homepage** vergeben oder entziehen (Kapitel 16.10),
+- die Rolle **Zeugwart** vergeben oder entziehen (Kapitel 5.9; nur wenn die Materialverwaltung im Paket enthalten ist),
 - mit **Link erneut senden** eine neue Einladung bzw. einen Passwort-Link verschicken.
 
 > **Vereine auf vemat.at:** Die Zahl der aktiven Vorstandszugänge hängt vom Paket ab. Ist sie erreicht, können keine weiteren Benutzer angelegt oder entsperrt werden – sperren Sie bei Bedarf einen nicht mehr benötigten Zugang.
@@ -1016,6 +1035,10 @@ Das Abo enthält:
 
 Unter **Meine Dokumente** findet das Mitglied Unterlagen, die der Verein für es freigegeben hat – etwa die eigene Beitrittserklärung. Sie lassen sich **ansehen** (PDF und Bilder) und **herunterladen**. Beitragsschreiben und Rundschreiben stehen weiterhin unter **Meine Beiträge** bzw. **Meine Rundschreiben**.
 
+### 13.9 Mein Material
+
+Hat der Verein einem Mitglied Material ausgegeben (z. B. Tracht oder Instrument), erscheint im Mitgliederbereich der Punkt **Mein Material**. Dort steht, was das Mitglied seit wann hat und bis wann es zurückzugeben ist, darunter frühere, bereits zurückgegebene Stücke. Ändern kann das Mitglied hier nichts – dafür ist der Zeugwart zuständig.
+
 ---
 
 ## 14. Automatische Abläufe im Hintergrund
@@ -1026,6 +1049,7 @@ VEMA erledigt einige Aufgaben selbstständig:
 |---|---|---|
 | **Geburtstags-Erinnerung** | täglich 7:00 Uhr | Bei runden und halbrunden Geburtstagen aktiver Mitglieder erhält die eingestellte Empfängergruppe (Standard **„Vorstand“**) eine E-Mail – die Empfänger stehen im BCC. |
 | **Monatliche Geburtstagsliste** | am 1. jedes Monats, 6:30 Uhr | PDF-Liste aller Geburtstage des Monats an dieselbe Gruppe, ebenfalls im BCC. |
+| **Material-Erinnerung** | montags 7:15 Uhr | Admins und Zeugwarte erhalten eine Sammel-Mail mit fälligen Prüfungen und überfälligen Rückgaben – nur wenn seit der letzten Erinnerung etwas Neues fällig wurde (Kapitel 5.9). |
 | **Dienst-Erinnerung** | täglich 7:00 Uhr | Helfer mit Dienst in 2 Tagen erhalten eine E-Mail (sofern nicht abgeschaltet und E-Mail vorhanden). |
 | **Externe Kalender abgleichen** | stündlich | Termine aller aktiven externen Kalender werden übernommen (Kapitel 7.4). |
 | **Beiträge per E-Mail abrufen** | alle 5 Minuten | Berechtigte Mails im Beitrags-Postfach werden zu Homepage-Entwürfen (Kapitel 16.6). |

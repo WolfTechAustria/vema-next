@@ -10,6 +10,8 @@ use App\Models\ClubEvent;
 use App\Models\ClubStatistic;
 use App\Models\DutyPlanEvent;
 use App\Models\FederationMessage;
+use App\Models\InventoryItem;
+use App\Models\InventoryLoan;
 use App\Models\Invoice;
 use App\Models\Member;
 use App\Models\MemberMembershipPeriod;
@@ -158,6 +160,7 @@ class Index extends Component
             DashboardModule::Birthdays => ['birthdays' => $this->upcomingBirthdays()],
             DashboardModule::CashBook => $this->cashBook(),
             DashboardModule::OpenInvoices => $this->openInvoices(),
+            DashboardModule::Inventory => $this->inventory(),
             DashboardModule::RecentActivity => ['entries' => ActivityLog::query()
                 ->with(['user', 'memberAccount'])
                 ->orderByDesc('created_at')
@@ -278,6 +281,19 @@ class Index extends Component
             'balance' => $year->balance(),
             'income' => (float) $totals['income'],
             'expense' => (float) $totals['expense'],
+        ];
+    }
+
+    /**
+     * @return array{items: int, issued: int, overdueReturns: int, dueInspections: Collection<int, InventoryItem>}
+     */
+    private function inventory(): array
+    {
+        return [
+            'items' => InventoryItem::query()->inService()->count(),
+            'issued' => InventoryLoan::query()->whereNull('returned_on')->count(),
+            'overdueReturns' => InventoryLoan::query()->whereNull('returned_on')->whereDate('due_on', '<', today())->count(),
+            'dueInspections' => InventoryItem::query()->inspectionDue()->orderBy('next_inspection_on')->limit(5)->get(),
         ];
     }
 

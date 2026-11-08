@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Users;
 
+use App\Enums\Feature;
 use App\Mail\StaffPasswordResetMail;
 use App\Models\Member;
 use App\Models\User;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Livewire\Component;
+use Spatie\Permission\Models\Role;
 
 class Index extends Component
 {
@@ -255,6 +257,31 @@ class Index extends Component
         }
     }
 
+    public function toggleZeugwart(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+
+        if ($user->hasRole('zeugwart')) {
+            $user->removeRole('zeugwart');
+
+            ActivityLogger::log(
+                'user.zeugwart_revoked',
+                'Benutzer "'.$user->username.'" wurde das Recht zur Materialverwaltung entzogen.',
+                'User',
+                $user->id
+            );
+        } else {
+            $user->assignRole(Role::findOrCreate('zeugwart', 'web'));
+
+            ActivityLogger::log(
+                'user.zeugwart_granted',
+                'Benutzer "'.$user->username.'" darf das Material verwalten (Zeugwart).',
+                'User',
+                $user->id
+            );
+        }
+    }
+
     public function resendInvite(int $userId): void
     {
         $user = User::findOrFail($userId);
@@ -328,6 +355,7 @@ class Index extends Component
         return view('livewire.admin.users.index', [
             'users' => $users,
             'availableMembers' => $availableMembers,
+            'inventoryEnabled' => app(PlanEntitlements::class)->allows(Feature::Inventory),
         ])->layout('layouts.app', [
             'title' => 'Benutzerverwaltung | VEMA',
             'heading' => 'Benutzerverwaltung',

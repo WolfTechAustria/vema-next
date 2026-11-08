@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\Feature;
+use App\Models\InventoryLoan;
 use App\Models\Member;
 use App\Models\MemberBoardFunctionAssignment;
 use App\Models\MemberField;
@@ -57,9 +59,20 @@ class MemberColumns
      */
     public function catalog(): array
     {
-        return self::BASE + $this->fields()
+        $inventory = $this->showsInventory() ? ['inventory' => 'Material'] : [];
+
+        return self::BASE + $inventory + $this->fields()
             ->mapWithKeys(fn (MemberField $field) => ['field_'.$field->fieldID => $field->name])
             ->all();
+    }
+
+    /**
+     * Spalte „Material“ nur mit Materialverwaltung und für Admins/Zeugwarte.
+     */
+    private function showsInventory(): bool
+    {
+        return app(PlanEntitlements::class)->allows(Feature::Inventory)
+            && (bool) auth()->guard('web')->user()?->hasAnyRole(['admin', 'zeugwart']);
     }
 
     /**
@@ -116,6 +129,7 @@ class MemberColumns
             'phone' => 'phones',
             'board_functions' => 'currentBoardFunctionAssignments.boardFunction',
             'honors' => 'honors.honor',
+            'inventory' => 'openInventoryLoans.item',
         ];
 
         $needed = array_values(array_intersect_key($relations, array_flip($keys)));
@@ -163,6 +177,7 @@ class MemberColumns
                 ->filter()
                 ->join(', ') ?: null,
             'honors' => $member->honors->map(fn (MemberHonor $honor) => $honor->label())->join(', ') ?: null,
+            'inventory' => $member->openInventoryLoans->map(fn (InventoryLoan $loan) => $loan->item->label())->join(', ') ?: null,
             default => null,
         };
     }

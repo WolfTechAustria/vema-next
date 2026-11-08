@@ -41,7 +41,7 @@ test('new users see the built-in default modules in order', function () {
 test('modules follow the access rules of their pages', function (array $roles, array $expected) {
     $user = dashboardUser($roles);
 
-    $available = collect([DashboardModule::CashBook, DashboardModule::OpenInvoices, DashboardModule::RecentActivity, DashboardModule::HomepagePosts])
+    $available = collect([DashboardModule::CashBook, DashboardModule::OpenInvoices, DashboardModule::RecentActivity, DashboardModule::HomepagePosts, DashboardModule::Inventory])
         ->filter(fn (DashboardModule $module) => $module->isAvailableFor($user))
         ->map(fn (DashboardModule $module) => $module->value)
         ->values()
@@ -52,7 +52,8 @@ test('modules follow the access rules of their pages', function (array $roles, a
     'no role' => [[], []],
     'kassier' => [['kassier'], ['cash_book', 'open_invoices']],
     'homepage' => [['homepage'], ['homepage_posts']],
-    'admin' => [['admin'], ['cash_book', 'open_invoices', 'recent_activity', 'homepage_posts']],
+    'zeugwart' => [['zeugwart'], ['inventory']],
+    'admin' => [['admin'], ['cash_book', 'open_invoices', 'recent_activity', 'homepage_posts', 'inventory']],
 ]);
 
 test('a module without access is not shown even if it is in the layout', function () {

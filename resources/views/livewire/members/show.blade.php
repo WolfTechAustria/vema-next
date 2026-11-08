@@ -678,6 +678,112 @@
 
     </div>
 
+    @if($canManageInventory)
+        <!-- Material -->
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+
+            <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                <div>
+                    <h3 class="font-semibold text-slate-900">
+                        Material
+                    </h3>
+                    <p class="mt-1 text-xs text-slate-500">
+                        An dieses Mitglied ausgegebenes Material
+                    </p>
+                </div>
+
+                @unless($showInventoryForm)
+                    <button
+                        type="button"
+                        wire:click="openInventoryForm"
+                        class="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                    >
+                        + Material ausgeben
+                    </button>
+                @endunless
+            </div>
+
+            @if(! $member->active && $inventoryLoans->contains(fn ($loan) => $loan->isOpen()))
+                <div class="border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm text-amber-800">
+                    Ausgetretenes Mitglied hat noch Material des Vereins.
+                </div>
+            @endif
+
+            @if($showInventoryForm)
+                <div class="space-y-3 border-b border-slate-200 bg-slate-50 px-6 py-4">
+                    <div>
+                        <select wire:model="inventoryItemID" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                            <option value="">Verfügbares Material wählen …</option>
+                            @foreach($availableInventoryItems as $availableItem)
+                                <option value="{{ $availableItem->itemID }}">{{ $availableItem->label() }}</option>
+                            @endforeach
+                        </select>
+                        @error('inventoryItemID') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-slate-600">Ausgegeben am</label>
+                            <input type="date" wire:model="inventoryIssuedOn" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                            @error('inventoryIssuedOn') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-slate-600">Rückgabe bis (optional)</label>
+                            <input type="date" wire:model="inventoryDueOn" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                            @error('inventoryDueOn') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2">
+                        <button type="button" wire:click="$set('showInventoryForm', false)" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm">Abbrechen</button>
+                        <button type="button" wire:click="issueInventory" class="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white">Ausgeben</button>
+                    </div>
+                </div>
+            @endif
+
+            @forelse($inventoryLoans as $loan)
+                <div wire:key="inventory-loan-{{ $loan->loanID }}" class="flex items-center justify-between gap-3 border-b border-slate-100 px-6 py-4 last:border-b-0">
+                    <div>
+                        <a href="{{ route('inventory.show', $loan->item) }}" wire:navigate class="font-medium text-slate-900 hover:underline">
+                            {{ $loan->item->label() }}
+                        </a>
+                        <div class="text-sm text-slate-500">
+                            {{ $loan->issued_on->format('d.m.Y') }}
+                            @if($loan->returned_on)
+                                – {{ $loan->returned_on->format('d.m.Y') }}
+                            @elseif($loan->due_on)
+                                · Rückgabe bis <span class="{{ $loan->isOverdue() ? 'font-semibold text-red-700' : '' }}">{{ $loan->due_on->format('d.m.Y') }}</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    @if($loan->isOpen())
+                        <div class="flex items-center gap-3">
+                            <span class="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800">Ausgegeben</span>
+                            <button
+                                type="button"
+                                wire:click="returnInventory({{ $loan->loanID }})"
+                                wire:confirm="Rückgabe von „{{ $loan->item->name }}“ mit heutigem Datum erfassen?"
+                                class="text-xs font-semibold text-slate-500 hover:text-slate-800"
+                            >
+                                Zurücknehmen
+                            </button>
+                        </div>
+                    @else
+                        <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">Zurückgegeben</span>
+                    @endif
+                </div>
+            @empty
+                @unless($showInventoryForm)
+                    <p class="px-6 py-4 text-sm text-slate-500">
+                        Diesem Mitglied wurde kein Material ausgegeben.
+                    </p>
+                @endunless
+            @endforelse
+
+        </div>
+    @endif
+
     <!-- Dateien -->
     <livewire:members.files :member="$member" :key="'member-files-'.$member->memberID" />
 

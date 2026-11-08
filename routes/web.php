@@ -11,6 +11,7 @@ use App\Http\Controllers\DemoModeController;
 use App\Http\Controllers\FederationFileController;
 use App\Http\Controllers\HomepagePreviewController;
 use App\Http\Controllers\HomepageSeoController;
+use App\Http\Controllers\InventoryPhotoController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MemberAuthController;
 use App\Http\Controllers\MemberCalendarController;
@@ -46,6 +47,9 @@ use App\Livewire\Homepage\Posts\Index as HomepagePostsIndex;
 use App\Livewire\Homepage\Sections as HomepageSections;
 use App\Livewire\Homepage\Seo as HomepageSeo;
 use App\Livewire\Homepage\Settings as HomepageSettings;
+use App\Livewire\Inventory\Form as InventoryForm;
+use App\Livewire\Inventory\Index as InventoryIndex;
+use App\Livewire\Inventory\Show as InventoryShow;
 use App\Livewire\Invoices\Articles\Index as InvoiceArticlesIndex;
 use App\Livewire\Invoices\Create as InvoicesCreate;
 use App\Livewire\Invoices\Index as InvoicesIndex;
@@ -57,6 +61,7 @@ use App\Livewire\MemberPortal\MyDocuments;
 use App\Livewire\MemberPortal\MyDuties as MemberPortalMyDuties;
 use App\Livewire\MemberPortal\MyEvents;
 use App\Livewire\MemberPortal\MyFees;
+use App\Livewire\MemberPortal\MyInventory;
 use App\Livewire\MemberPortal\Profile;
 use App\Livewire\MemberPortal\SelectProfile;
 use App\Livewire\Members\Birthdays as MembersBirthdays;
@@ -233,6 +238,26 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/skills', App\Livewire\Skills\Index::class)
         ->middleware('feature:duty_plan')
         ->name('skills.index');
+
+    Route::middleware(['feature:inventory', 'inventory'])
+        ->prefix('material')
+        ->name('inventory.')
+        ->group(function () {
+            Route::livewire('/', InventoryIndex::class)
+                ->name('index');
+
+            Route::livewire('/neu', InventoryForm::class)
+                ->name('create');
+
+            Route::livewire('/{item}', InventoryShow::class)
+                ->name('show');
+
+            Route::livewire('/{item}/bearbeiten', InventoryForm::class)
+                ->name('edit');
+
+            Route::get('/{item}/foto', [InventoryPhotoController::class, 'show'])
+                ->name('photo');
+        });
 
     Route::middleware(['homepage.manage', 'feature:homepage'])
         ->prefix('homepage')
@@ -435,6 +460,14 @@ Route::middleware(['auth:member', 'feature:member_portal'])->group(function () {
 
     Route::get('/member/photo', [MemberPhotoController::class, 'own'])
         ->name('member.photo');
+
+    Route::livewire('/member/material', MyInventory::class)
+        ->middleware('feature:inventory')
+        ->name('member.inventory');
+
+    Route::get('/member/material/{item}/foto', [InventoryPhotoController::class, 'own'])
+        ->middleware('feature:inventory')
+        ->name('member.inventory.photo');
 });
 
 // Pfad bleibt aus Kompatibilität ".../duty/...", damit bestehende Abos weiterlaufen.

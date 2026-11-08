@@ -23,6 +23,7 @@ enum DashboardModule: string
     case OpenInvoices = 'open_invoices';
     case RecentActivity = 'recent_activity';
     case HomepagePosts = 'homepage_posts';
+    case Inventory = 'inventory';
     case FederationClubs = 'federation_clubs';
     case FederationNews = 'federation_news';
 
@@ -39,6 +40,7 @@ enum DashboardModule: string
             self::OpenInvoices => 'Offene Rechnungen',
             self::RecentActivity => 'Letzte Aktivitäten',
             self::HomepagePosts => 'Homepage-Beiträge',
+            self::Inventory => 'Material',
             self::FederationClubs => 'Mitgliedsvereine',
             self::FederationNews => 'Neues vom Verband',
         };
@@ -57,6 +59,7 @@ enum DashboardModule: string
             self::OpenInvoices => 'Versendete, noch nicht bezahlte Rechnungen.',
             self::RecentActivity => 'Die letzten Einträge im Aktivitätsprotokoll.',
             self::HomepagePosts => 'Entwürfe und zuletzt veröffentlichte Beiträge.',
+            self::Inventory => 'Ausgegebenes Material, fällige Prüfungen und überfällige Rückgaben.',
             self::FederationClubs => 'Mitgliedsvereine des Verbands mit ihren Mitgliedern (Verbandszentrale).',
             self::FederationNews => 'Die letzten Mitteilungen der Verbände, denen der Verein angehört.',
         };
@@ -79,6 +82,7 @@ enum DashboardModule: string
             self::OpenInvoices => $user->hasAnyRole(['admin', 'kassier']) && $entitlements->allows(Feature::Invoices),
             self::RecentActivity => $user->hasRole('admin') && $entitlements->allows(Feature::ActivityLog),
             self::HomepagePosts => $user->hasAnyRole(['admin', 'homepage']) && $entitlements->allows(Feature::Homepage),
+            self::Inventory => $user->hasAnyRole(['admin', 'zeugwart']) && $entitlements->allows(Feature::Inventory),
             self::FederationClubs => app(TenantManager::class)->current()?->isFederation() ?? false,
             self::FederationNews => app(TenantManager::class)->current()?->activeFederationIds()->isNotEmpty() ?? false,
         };

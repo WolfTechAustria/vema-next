@@ -283,6 +283,21 @@
                 @endif
 
 
+                @if($webUser?->hasAnyRole(['admin', 'zeugwart']) && app(\App\Services\PlanEntitlements::class)->allows(\App\Enums\Feature::Inventory))
+                    <a
+                        href="{{ route('inventory.index') }}"
+                        wire:navigate
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                        {{ request()->routeIs('inventory.*')
+                            ? 'bg-slate-900 text-white'
+                            : 'text-slate-700 hover:bg-slate-100' }}"
+                    >
+                        <span>▣</span>
+                        Material
+                    </a>
+                @endif
+
+
                 <div
                     x-data="{
         open: {{ request()->routeIs('circulars.*', 'recipient-groups.*', 'templates.*', 'external-contacts.*', 'skills.*') ? 'true' : 'false' }}
@@ -611,6 +626,22 @@
                     Mein Dienstplan
                 </a>
 
+
+                @feature('inventory')
+                    @if($portalMember?->inventoryLoans()->exists())
+                        <a
+                            href="{{ route('member.inventory') }}"
+                            wire:navigate
+                            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                            {{ request()->routeIs('member.inventory')
+                                ? 'bg-slate-900 text-white'
+                                : 'text-slate-700 hover:bg-slate-100' }}"
+                        >
+                            <span>▣</span>
+                            Mein Material
+                        </a>
+                    @endif
+                @endfeature
 
                 @feature('events')
                     <a

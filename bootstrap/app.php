@@ -6,6 +6,7 @@ use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureHomepageIsPublished;
 use App\Http\Middleware\EnsureStaffAccountIsActive;
 use App\Http\Middleware\EnsureUserCanManageHomepage;
+use App\Http\Middleware\EnsureUserCanManageInventory;
 use App\Http\Middleware\EnsureUserCanManageInvoices;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\IdentifyTenant;
@@ -40,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'invoices' => EnsureUserCanManageInvoices::class,
             'feature' => EnsureFeatureEnabled::class,
             'homepage.manage' => EnsureUserCanManageHomepage::class,
+            'inventory' => EnsureUserCanManageInventory::class,
             'homepage.published' => EnsureHomepageIsPublished::class,
         ]);
 

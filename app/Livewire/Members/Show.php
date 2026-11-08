@@ -2,16 +2,20 @@
 
 namespace App\Livewire\Members;
 
+use App\Enums\Feature;
 use App\Models\BoardFunction;
 use App\Models\Honor;
+use App\Models\InventoryItem;
 use App\Models\Member;
 use App\Models\MemberBoardFunctionAssignment;
 use App\Services\ActivityLogger;
 use App\Services\BoardFunctionService;
+use App\Services\InventoryLoans;
 use App\Services\MemberFields;
 use App\Services\MemberHonors;
 use App\Services\MembershipFeeEntryService;
 use App\Services\MembershipPeriodService;
+use App\Services\PlanEntitlements;
 use App\Services\WelcomeMailService;
 use Carbon\Carbon;
 use Livewire\Component;
@@ -58,6 +62,14 @@ class Show extends Component
 
     public string $honorNote = '';
 
+    public bool $showInventoryForm = false;
+
+    public ?int $inventoryItemID = null;
+
+    public string $inventoryIssuedOn = '';
+
+    public string $inventoryDueOn = '';
+
     public function mount(Member $member): void
     {
         $this->member = $member->load([
@@ -82,9 +94,65 @@ class Show extends Component
         ]);
     }
 
+    public function openInventoryForm(): void
+    {
+        abort_unless($this->canManageInventory(), 403);
+
+        $this->resetValidation();
+        $this->inventoryItemID = null;
+        $this->inventoryIssuedOn = now(config('app.club_timezone'))->toDateString();
+        $this->inventoryDueOn = '';
+        $this->showInventoryForm = true;
+    }
+
+    public function issueInventory(InventoryLoans $loans): void
+    {
+        abort_unless($this->canManageInventory(), 403);
+
+        $this->validate([
+            'inventoryItemID' => ['required', 'integer', 'exists:tb_inventory_items,itemID'],
+            'inventoryIssuedOn' => ['required', 'date'],
+            'inventoryDueOn' => ['nullable', 'date', 'after_or_equal:inventoryIssuedOn'],
+        ], [
+            'inventoryItemID.required' => 'Bitte ein Material auswählen.',
+        ], [
+            'inventoryIssuedOn' => 'Ausgegeben am',
+            'inventoryDueOn' => 'Rückgabe bis',
+        ]);
+
+        $loans->issue(InventoryItem::findOrFail($this->inventoryItemID), $this->member, $this->inventoryIssuedOn, $this->inventoryDueOn, null, 'inventoryItemID');
+
+        $this->showInventoryForm = false;
+        session()->flash('success', 'Material wurde ausgegeben.');
+    }
+
+    public function returnInventory(int $loanID, InventoryLoans $loans): void
+    {
+        abort_unless($this->canManageInventory(), 403);
+
+        $loan = $this->member->openInventoryLoans()->whereKey($loanID)->firstOrFail();
+
+        $loans->return($loan, now(config('app.club_timezone'))->toDateString());
+
+        session()->flash('success', 'Rückgabe wurde erfasst.');
+    }
+
+    private function canManageInventory(): bool
+    {
+        return (bool) auth()->guard('web')->user()?->hasAnyRole(['admin', 'zeugwart'])
+            && app(PlanEntitlements::class)->allows(Feature::Inventory);
+    }
+
     public function render()
     {
+        $canManageInventory = $this->canManageInventory();
+
         return view('livewire.members.show', [
+            'canManageInventory' => $canManageInventory,
+            'inventoryLoans' => $canManageInventory ? $this->member->inventoryLoans()->with('item')->get() : collect(),
+            'availableInventoryItems' => $canManageInventory && $this->showInventoryForm
+                ? InventoryItem::query()->inService()->whereDoesntHave('currentLoan')->orderBy('name')->get()
+                : collect(),
             'boardFunctions' => BoardFunction::active()->orderBy('sort_order')->get(),
             'currentFunctions' => app(BoardFunctionService::class)->currentFunctionsFor($this->member),
             'formerFunctions' => app(BoardFunctionService::class)->formerFunctionsFor($this->member),
