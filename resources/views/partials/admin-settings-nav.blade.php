@@ -35,6 +35,19 @@
         Vorstandsfunktionen
     </a>
 
+    @feature('member_fields')
+        <a
+            href="{{ route('admin.settings.member-fields') }}"
+            wire:navigate
+            class="whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition
+            {{ request()->routeIs('admin.settings.member-fields')
+                ? 'border-slate-900 text-slate-900'
+                : 'border-transparent text-slate-500 hover:text-slate-800' }}"
+        >
+            Mitgliederfelder
+        </a>
+    @endfeature
+
     @if(app(\App\Services\TenantManager::class)->current())
         <a
             href="{{ route('admin.settings.federations') }}"

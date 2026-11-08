@@ -5,6 +5,7 @@ namespace App\Livewire\MemberPortal;
 use App\Models\Member;
 use App\Models\MemberPhone;
 use App\Services\ActivityLogger;
+use App\Services\MemberFields;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -20,6 +21,9 @@ class Profile extends Component
 
     public array $phones = [];
 
+    /** @var array<int, string|bool> Im Portal bearbeitbare eigene Felder: fieldID => Wert */
+    public array $customFields = [];
+
     public function mount(): void
     {
         $member = $this->activeMember();
@@ -30,6 +34,8 @@ class Profile extends Component
         $this->surname = $member->surname ?? '';
         $this->street = $member->street ?? '';
         $this->zip = $member->zip ?? '';
+
+        $this->customFields = app(MemberFields::class)->formValues($member, app(MemberFields::class)->portalFields(editableOnly: true));
 
         $this->phones = $member->phones
             ->map(fn ($phone) => [
@@ -119,7 +125,9 @@ class Profile extends Component
                 'string',
                 'max:100',
             ],
-        ]);
+
+            ...app(MemberFields::class)->rules(fields: app(MemberFields::class)->portalFields(editableOnly: true)),
+        ], [], app(MemberFields::class)->attributes());
 
         $member = $this->activeMember();
 
@@ -181,7 +189,10 @@ class Profile extends Component
             $this->phones[$index]['phoneNumber'] = $phoneNumber;
         }
 
-        $changes = ActivityLogger::changes($before, $member->fresh()->activitySnapshot(), Member::ACTIVITY_LABELS);
+        // Nur Felder, die Mitglieder im Portal bearbeiten dürfen.
+        app(MemberFields::class)->save($member, $this->customFields, app(MemberFields::class)->portalFields(editableOnly: true));
+
+        $changes = ActivityLogger::changes($before, $member->fresh()->activitySnapshot(), Member::activityLabels());
 
         if ($changes !== []) {
             ActivityLogger::log(
@@ -256,6 +267,8 @@ class Profile extends Component
             [
                 'account' => $account,
                 'member' => $member,
+                'portalFields' => app(MemberFields::class)->portalFields(),
+                'portalFieldValues' => app(MemberFields::class)->displayValues($member, app(MemberFields::class)->portalFields()),
             ]
         )->layout('layouts.app', [
             'title' => 'Mein Profil | VEMA',

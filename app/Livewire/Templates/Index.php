@@ -4,6 +4,7 @@ namespace App\Livewire\Templates;
 
 use App\Models\Template;
 use App\Services\ActivityLogger;
+use App\Services\MemberFields;
 use App\Services\WelcomeMailService;
 use Livewire\Component;
 
@@ -147,7 +148,12 @@ class Index extends Component
     {
         $key = $this->selectedTemplate()?->key;
 
-        return array_keys(WelcomeMailService::PLACEHOLDERS[$key] ?? $this->placeholders);
+        // Eigene Mitgliederfelder überall dort, wo es um ein Mitglied geht.
+        $customFields = $key === Template::STAFF_WELCOME
+            ? []
+            : array_keys(app(MemberFields::class)->placeholders(null));
+
+        return [...array_keys(WelcomeMailService::PLACEHOLDERS[$key] ?? $this->placeholders), ...$customFields];
     }
 
     public function selectedTemplate(): ?Template

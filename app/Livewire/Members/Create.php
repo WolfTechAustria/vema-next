@@ -7,6 +7,7 @@ use App\Models\MemberEmail;
 use App\Models\MemberPhone;
 use App\Models\Skill;
 use App\Services\ActivityLogger;
+use App\Services\MemberFields;
 use App\Services\MembershipFeeEntryService;
 use App\Services\MembershipPeriodService;
 use App\Services\PlanEntitlements;
@@ -41,6 +42,9 @@ class Create extends Component
 
     public array $selectedSkills = [];
 
+    /** @var array<int, string|bool> Eigene Mitgliederfelder: fieldID => Wert */
+    public array $customFields = [];
+
     public bool $sendWelcomeMail = true;
 
     public $possibleDuplicates = [];
@@ -53,6 +57,7 @@ class Create extends Component
     public function mount(): void
     {
         $this->dateOfJoin = now(config('app.club_timezone'))->toDateString();
+        $this->customFields = app(MemberFields::class)->formValues();
     }
 
     protected function rules(): array
@@ -77,7 +82,17 @@ class Create extends Component
 
             'selectedSkills' => ['array'],
             'selectedSkills.*' => ['integer'],
+
+            ...app(MemberFields::class)->rules(),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function validationAttributes(): array
+    {
+        return app(MemberFields::class)->attributes();
     }
 
     public function updatedName(): void
@@ -187,6 +202,8 @@ class Create extends Component
                 array_map('intval', $this->selectedSkills)
             );
 
+            app(MemberFields::class)->save($member, $this->customFields);
+
             return $member;
         });
 
@@ -195,7 +212,7 @@ class Create extends Component
             'Mitglied "'.$member->full_name.'" (#'.$member->memberID.') wurde angelegt.',
             'Member',
             $member->memberID,
-            ActivityLogger::created($member->activitySnapshot(), Member::ACTIVITY_LABELS)
+            ActivityLogger::created($member->activitySnapshot(), Member::activityLabels())
         );
 
         $welcomeMailSent = false;
@@ -242,6 +259,7 @@ class Create extends Component
     {
         return view('livewire.members.create', [
             'skills' => Skill::where('active', true)->orderBy('name')->get(),
+            'customFieldDefinitions' => app(MemberFields::class)->fields(),
         ])
             ->layout('layouts.app', [
                 'title' => 'Mitglied hinzufügen | VEMA',

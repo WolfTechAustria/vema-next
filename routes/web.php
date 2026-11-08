@@ -23,6 +23,7 @@ use App\Http\Controllers\UserManualController;
 use App\Livewire\Admin\Settings\BoardFunctions;
 use App\Livewire\Admin\Settings\Documents;
 use App\Livewire\Admin\Settings\Federations;
+use App\Livewire\Admin\Settings\MemberFields as MemberFieldSettings;
 use App\Livewire\CashBook\Index as CashBookIndex;
 use App\Livewire\CashBook\Years as CashBookYears;
 use App\Livewire\Dashboard\Index as DashboardIndex;
@@ -289,6 +290,11 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/settings/board-functions', BoardFunctions::class)
         ->middleware('admin')
         ->name('admin.settings.board-functions');
+
+    Route::livewire('/settings/member-fields', MemberFieldSettings::class)
+        ->middleware('admin')
+        ->middleware('feature:member_fields')
+        ->name('admin.settings.member-fields');
 
     Route::livewire('/settings/federations', Federations::class)
         ->middleware('admin')

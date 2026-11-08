@@ -144,6 +144,8 @@ class WelcomeMailService
             '{{full_name}}' => $member->full_name,
             '{{salutation}}' => $isMale ? 'lieber' : 'liebe',
             '{{club_name}}' => $this->clubName(),
+
+            ...app(MemberFields::class)->placeholders($member),
         ];
     }
 

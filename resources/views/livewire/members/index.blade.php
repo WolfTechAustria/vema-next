@@ -65,6 +65,46 @@
                 </select>
             </div>
 
+            @if($filterableFields->isNotEmpty())
+                <div class="flex gap-2">
+                    <select
+                        wire:model.live="fieldFilter"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:border-slate-500 focus:outline-none sm:w-auto sm:py-2 sm:text-sm"
+                    >
+                        <option value="">Filter: Feld …</option>
+                        @foreach($filterableFields as $filterableField)
+                            <option value="{{ $filterableField->fieldID }}">{{ $filterableField->name }}</option>
+                        @endforeach
+                    </select>
+
+                    @if($filterField)
+                        @if($filterField->type === \App\Enums\MemberFieldType::Select || $filterField->type === \App\Enums\MemberFieldType::Boolean)
+                            <select
+                                wire:model.live="fieldFilterValue"
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:border-slate-500 focus:outline-none sm:w-auto sm:py-2 sm:text-sm"
+                            >
+                                <option value="">alle</option>
+                                @if($filterField->type === \App\Enums\MemberFieldType::Boolean)
+                                    <option value="1">Ja</option>
+                                    <option value="0">Nein</option>
+                                @else
+                                    @foreach($filterField->options ?? [] as $option)
+                                        <option value="{{ $option }}">{{ $option }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        @else
+                            <input
+                                type="search"
+                                wire:model.live.debounce.300ms="fieldFilterValue"
+                                placeholder="enthält …"
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:border-slate-500 focus:outline-none sm:w-40 sm:py-2 sm:text-sm"
+                            >
+                        @endif
+                    @endif
+                </div>
+            @endif
+
         </div>
 
         <div class="overflow-x-auto">

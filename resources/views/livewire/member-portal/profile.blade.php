@@ -224,6 +224,32 @@
 
             </div>
 
+            @if($portalFields->isNotEmpty())
+                <div>
+                    <div class="text-sm font-medium text-slate-900">
+                        Weitere Angaben
+                    </div>
+
+                    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                        @foreach($portalFields as $field)
+                            @if($field->portal === \App\Enums\MemberFieldPortal::Editable)
+                                @include('livewire.members.partials.custom-field-input', ['field' => $field])
+                            @else
+                                <div wire:key="custom-field-{{ $field->fieldID }}">
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                        {{ $field->name }}
+                                    </div>
+
+                                    <div class="mt-1 text-sm font-medium text-slate-700">
+                                        {{ $portalFieldValues[$field->name] ?? '–' }}
+                                    </div>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
             <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
 
                 <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">

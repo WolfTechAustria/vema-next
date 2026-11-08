@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\MemberFields;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -226,6 +227,11 @@ class Member extends Model
         return $this->isRoundBirthday($age) || $this->isHalfRoundBirthday($age);
     }
 
+    public function fieldValues(): HasMany
+    {
+        return $this->hasMany(MemberFieldValue::class, 'memberID', 'memberID');
+    }
+
     public function skills(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -345,6 +351,16 @@ class Member extends Model
     ];
 
     /**
+     * ACTIVITY_LABELS plus die eigenen Mitgliederfelder des Vereins.
+     *
+     * @return array<string, string>
+     */
+    public static function activityLabels(): array
+    {
+        return self::ACTIVITY_LABELS + app(MemberFields::class)->activityLabels();
+    }
+
+    /**
      * Momentaufnahme der Stammdaten für das Aktivitätsprotokoll
      * (vor und nach einer Änderung, siehe ActivityLogger::changes()).
      *
@@ -373,6 +389,7 @@ class Member extends Model
                 ->map(fn ($phone) => $phone->phoneNumber.' ('.$phone->category_name.')')
                 ->all(),
             'skills' => $this->skills->pluck('name')->all(),
+            ...app(MemberFields::class)->snapshot($this),
         ];
     }
 }

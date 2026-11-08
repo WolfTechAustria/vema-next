@@ -66,6 +66,8 @@ class TemplateRendererService
                 : '',
 
             '{{salutation}}' => $salutation,
+
+            ...app(MemberFields::class)->placeholders($member),
         ];
 
         return str_replace(
@@ -125,6 +127,8 @@ class TemplateRendererService
             '{{salutation}}' => $salutation,
 
             '{{reminder_level}}' => (string) $reminderLevel,
+
+            ...app(MemberFields::class)->placeholders($member),
         ];
 
         return str_replace(
@@ -155,6 +159,8 @@ class TemplateRendererService
                 '{{zip}}' => $recipient->zip ?? '',
                 '{{city}}' => $recipient->city?->city ?? '',
                 '{{salutation}}' => $salutation,
+
+                ...app(MemberFields::class)->placeholders($recipient),
             ];
 
         } else {
@@ -173,6 +179,9 @@ class TemplateRendererService
                 '{{zip}}' => '',
                 '{{city}}' => '',
                 '{{salutation}}' => 'Guten Tag',
+
+                // Eigene Mitgliederfelder gibt es bei externen Kontakten nicht.
+                ...app(MemberFields::class)->placeholders(null),
             ];
         }
 
@@ -215,6 +224,10 @@ class TemplateRendererService
 
         $firstMember = $recipients->first(fn ($recipient) => $recipient instanceof Member);
         $firstMember?->loadMissing('city');
+
+        // Eigene Mitgliederfelder: Werte des ersten Mitglieds.
+        $customPlaceholders = app(MemberFields::class)->placeholders($firstMember);
+        $bodyHtml = str_replace(array_keys($customPlaceholders), array_values($customPlaceholders), $bodyHtml);
 
         return str_replace(
             ['{{first_name}}', '{{last_name}}', '{{full_name}}', '{{street}}', '{{zip}}', '{{city}}', '{{salutation}}'],

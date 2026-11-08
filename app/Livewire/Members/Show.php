@@ -7,6 +7,7 @@ use App\Models\Member;
 use App\Models\MemberBoardFunctionAssignment;
 use App\Services\ActivityLogger;
 use App\Services\BoardFunctionService;
+use App\Services\MemberFields;
 use App\Services\MembershipFeeEntryService;
 use App\Services\MembershipPeriodService;
 use App\Services\WelcomeMailService;
@@ -75,6 +76,7 @@ class Show extends Component
             'boardFunctions' => BoardFunction::active()->orderBy('sort_order')->get(),
             'currentFunctions' => app(BoardFunctionService::class)->currentFunctionsFor($this->member),
             'formerFunctions' => app(BoardFunctionService::class)->formerFunctionsFor($this->member),
+            'customFieldValues' => app(MemberFields::class)->displayValues($this->member),
         ])
             ->layout('layouts.app', [
                 'title' => $this->member->full_name.' | VEMA',

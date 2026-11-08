@@ -15,6 +15,7 @@ enum Feature: string
     case RecipientGroups = 'recipient_groups';
     case Events = 'events';
     case Homepage = 'homepage';
+    case MemberFields = 'member_fields';
     case MemberPortal = 'member_portal';
     case ActivityLog = 'activity_log';
     case TestMode = 'test_mode';
@@ -30,6 +31,7 @@ enum Feature: string
             self::RecipientGroups => 'Empfängergruppen & externe Kontakte',
             self::Events => 'Vereinstermine',
             self::Homepage => 'Vereinshomepage mit News',
+            self::MemberFields => 'Eigene Mitgliederfelder',
             self::MemberPortal => 'Mitgliederportal',
             self::ActivityLog => 'Aktivitätsprotokoll',
             self::TestMode => 'Testmodus',

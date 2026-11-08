@@ -6,8 +6,10 @@ use App\Http\Middleware\IdentifyTenant;
 use App\Livewire\Admin\Users\Index as UsersIndex;
 use App\Livewire\Members\Create as MembersCreate;
 use App\Models\Member;
+use App\Models\MemberField;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\MemberFields;
 use App\Services\MembershipPeriodService;
 use App\Services\PlanEntitlements;
 use App\Services\TenantManager;
@@ -129,6 +131,17 @@ describe('feature gates on the platform', function () {
             ->assertOk()
             ->assertDontSee('starter-verein.vemat.test/duty-plan', false)
             ->assertDontSee('starter-verein.vemat.test/invoices', false);
+    });
+
+    it('offers custom member fields from package Verein on', function () {
+        foreach ([$this->starter, $this->verein] as $tenant) {
+            app(TenantManager::class)->runFor($tenant, fn () => MemberField::create([
+                'name' => 'Instrument', 'key' => 'instrument', 'type' => 'text', 'portal' => 'hidden', 'sort_order' => 1, 'active' => true,
+            ]));
+        }
+
+        expect(app(TenantManager::class)->runFor($this->starter, fn () => app(MemberFields::class)->fields()->count()))->toBe(0)
+            ->and(app(TenantManager::class)->runFor($this->verein, fn () => app(MemberFields::class)->fields()->count()))->toBe(1);
     });
 
     it('allows modules included in the package or the trial', function () {

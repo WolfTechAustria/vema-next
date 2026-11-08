@@ -7,6 +7,7 @@ use App\Models\MemberEmail;
 use App\Models\MemberPhone;
 use App\Models\Skill;
 use App\Services\ActivityLogger;
+use App\Services\MemberFields;
 use Livewire\Component;
 
 class Edit extends Component
@@ -34,6 +35,9 @@ class Edit extends Component
     public array $phones = [];
 
     public array $selectedSkills = [];
+
+    /** @var array<int, string|bool> Eigene Mitgliederfelder: fieldID => Wert */
+    public array $customFields = [];
 
     public function mount(Member $member): void
     {
@@ -65,6 +69,8 @@ class Edit extends Component
             ->values()
             ->toArray();
 
+        $this->customFields = app(MemberFields::class)->formValues($member);
+
         $this->selectedSkills = $member->skills
             ->pluck('skillID')
             ->map(fn ($skillID) => (string) $skillID)
@@ -93,7 +99,17 @@ class Edit extends Component
 
             'selectedSkills' => ['array'],
             'selectedSkills.*' => ['integer'],
+
+            ...app(MemberFields::class)->rules(),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function validationAttributes(): array
+    {
+        return app(MemberFields::class)->attributes();
     }
 
     protected function messages(): array
@@ -176,12 +192,14 @@ class Edit extends Component
             array_map('intval', $this->selectedSkills)
         );
 
+        app(MemberFields::class)->save($this->member, $this->customFields);
+
         ActivityLogger::log(
             'member.updated',
             'Mitglied "'.$this->member->full_name.'" (#'.$this->member->memberID.') wurde geändert.',
             'Member',
             $this->member->memberID,
-            ActivityLogger::changes($before, $this->member->activitySnapshot(), Member::ACTIVITY_LABELS)
+            ActivityLogger::changes($before, $this->member->activitySnapshot(), Member::activityLabels())
         );
 
         session()->flash('success', 'Mitglied wurde gespeichert.');
@@ -282,6 +300,7 @@ class Edit extends Component
     {
         return view('livewire.members.edit', [
             'skills' => Skill::where('active', true)->orderBy('name')->get(),
+            'customFieldDefinitions' => app(MemberFields::class)->fields(),
         ])
             ->layout('layouts.app', [
                 'title' => 'Mitglied bearbeiten | VEMA',

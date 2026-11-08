@@ -188,6 +188,32 @@
             </section>
 
 
+            @if($customFieldValues !== [])
+                <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+                    <div class="border-b border-slate-200 px-6 py-4">
+                        <h3 class="font-semibold text-slate-900">
+                            Weitere Angaben
+                        </h3>
+                    </div>
+
+                    <div class="grid gap-6 p-6 sm:grid-cols-2">
+                        @foreach($customFieldValues as $fieldName => $fieldValue)
+                            <div>
+                                <div class="text-xs font-medium uppercase tracking-wide text-slate-400">
+                                    {{ $fieldName }}
+                                </div>
+
+                                <div class="mt-1 text-sm font-medium text-slate-900">
+                                    {{ $fieldValue }}
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                </section>
+            @endif
+
             {{-- Vereinszugehörigkeit --}}
             <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
 

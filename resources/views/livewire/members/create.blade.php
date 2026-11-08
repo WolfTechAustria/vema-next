@@ -262,6 +262,8 @@
 
         </section>
 
+        @include('livewire.members.partials.custom-fields')
+
         {{-- Fähigkeiten gehören zum Dienstplan --}}
         @feature('duty_plan')
             <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
