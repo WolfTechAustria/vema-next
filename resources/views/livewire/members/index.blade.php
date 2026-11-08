@@ -1,5 +1,7 @@
 <div>
 
+    @include('partials.flash-messages')
+
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
         <div>
@@ -29,6 +31,22 @@
             Geburtstagsliste
         </a>
 
+        <button
+            type="button"
+            wire:click="export"
+            class="inline-flex justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+            Excel
+        </button>
+
+        <button
+            type="button"
+            wire:click="$toggle('showColumnSettings')"
+            class="inline-flex justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+            Spalten anpassen
+        </button>
+
         <a
             href="{{ route('members.create') }}"
             wire:navigate
@@ -40,6 +58,65 @@
         </div>
 
     </div>
+
+    @if($showColumnSettings)
+        <section class="mb-6 max-w-2xl rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h3 class="font-semibold text-slate-900">Spalten</h3>
+                    <p class="text-xs text-slate-500">
+                        Der Name steht immer vorne. Deine Auswahl gilt nur für dich{{ $hasPersonalColumns ? '' : ' – derzeit siehst du den Vereinsstandard' }}.
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    @if($hasPersonalColumns)
+                        <button type="button" wire:click="resetColumns" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                            Zurücksetzen
+                        </button>
+                    @endif
+
+                    @if($isAdmin)
+                        <button
+                            type="button"
+                            wire:click="saveColumnsAsClubDefault"
+                            wire:confirm="Diese Spalten als Standard für alle Benutzer ohne eigene Auswahl speichern?"
+                            class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                            Als Vereinsstandard speichern
+                        </button>
+                    @endif
+                </div>
+            </div>
+
+            <ul class="divide-y divide-slate-100">
+                @foreach($columnChoices as $columnKey)
+                    @php($isVisible = in_array($columnKey, $visibleColumns, true))
+
+                    <li wire:key="column-{{ $columnKey }}" class="flex items-center justify-between gap-3 py-2">
+                        <label class="flex items-center gap-3 text-sm {{ $isVisible ? 'text-slate-900' : 'text-slate-500' }}">
+                            <input
+                                type="checkbox"
+                                @checked($isVisible)
+                                wire:click="toggleColumn('{{ $columnKey }}')"
+                                class="rounded border-slate-300"
+                            >
+                            {{ $columnLabels[$columnKey] }}
+                        </label>
+
+                        @if($isVisible)
+                            <div class="flex gap-2">
+                                <button type="button" wire:click="moveColumn('{{ $columnKey }}', -1)" class="px-1 text-slate-400 hover:text-slate-700" title="Nach links">↑</button>
+                                <button type="button" wire:click="moveColumn('{{ $columnKey }}', 1)" class="px-1 text-slate-400 hover:text-slate-700" title="Nach rechts">↓</button>
+                            </div>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+
+        </section>
+    @endif
 
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
 
@@ -131,13 +208,11 @@
                         Mitglied
                     </th>
 
-                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Status
-                    </th>
-
-                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Eintritt
-                    </th>
+                    @foreach($visibleColumns as $columnKey)
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            {{ $columnLabels[$columnKey] }}
+                        </th>
+                    @endforeach
 
                     <th class="px-6 py-3"></th>
                 </tr>
@@ -170,23 +245,27 @@
                             </div>
                         </td>
 
-                        <td class="order-2 md:order-none md:table-cell md:whitespace-nowrap md:px-6 md:py-4">
+                        @foreach($visibleColumns as $columnKey)
+                            @if($columnKey === 'status')
+                                <td class="order-2 md:order-none md:table-cell md:whitespace-nowrap md:px-6 md:py-4">
 
-                            @if($member->active)
-                                <span class="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
-                                        Aktiv
-                                    </span>
+                                    @if($member->active)
+                                        <span class="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+                                            Aktiv
+                                        </span>
+                                    @else
+                                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                                            Inaktiv
+                                        </span>
+                                    @endif
+
+                                </td>
                             @else
-                                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                                        Inaktiv
-                                    </span>
+                                <td class="hidden px-6 py-4 text-sm text-slate-600 md:table-cell">
+                                    {{ $columns->value($member, $columnKey) ?? '–' }}
+                                </td>
                             @endif
-
-                        </td>
-
-                        <td class="hidden whitespace-nowrap px-6 py-4 text-sm text-slate-600 md:table-cell">
-                            {{ $member->dateOfJoin?->format('d.m.Y') ?? '–' }}
-                        </td>
+                        @endforeach
 
                         <td class="order-3 text-lg text-slate-400 md:hidden" aria-hidden="true">
                             ›
@@ -210,7 +289,7 @@
 
                     <tr class="block md:table-row">
                         <td
-                            colspan="4"
+                            colspan="{{ count($visibleColumns) + 2 }}"
                             class="block px-6 py-12 text-center text-sm text-slate-500 md:table-cell"
                         >
                             Keine Mitglieder gefunden.

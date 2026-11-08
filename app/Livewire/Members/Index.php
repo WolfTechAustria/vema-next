@@ -3,14 +3,19 @@
 namespace App\Livewire\Members;
 
 use App\Enums\MemberFieldType;
+use App\Exports\MembersExport;
 use App\Models\Honor;
 use App\Models\Member;
 use App\Models\MemberField;
+use App\Services\ActivityLogger;
+use App\Services\MemberColumns;
 use App\Services\MemberFields;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class Index extends Component
 {
@@ -30,6 +35,8 @@ class Index extends Component
     /** Filter nach einer Ehrung (honorID) */
     #[Url(as: 'ehrung')]
     public string $honorFilter = '';
+
+    public bool $showColumnSettings = false;
 
     public function updatingSearch(): void
     {
@@ -55,6 +62,68 @@ class Index extends Component
     public function updatingHonorFilter(): void
     {
         $this->resetPage();
+    }
+
+    /**
+     * Spalte ein- oder ausblenden (gespeichert für den Benutzer).
+     */
+    public function toggleColumn(string $key, MemberColumns $columns): void
+    {
+        $visible = $columns->columnsFor(auth()->user());
+
+        $columns->save(auth()->user(), in_array($key, $visible, true)
+            ? array_values(array_diff($visible, [$key]))
+            : [...$visible, $key]);
+    }
+
+    public function moveColumn(string $key, int $direction, MemberColumns $columns): void
+    {
+        $visible = $columns->columnsFor(auth()->user());
+        $index = array_search($key, $visible, true);
+        $target = $index === false ? null : $index + ($direction < 0 ? -1 : 1);
+
+        if ($target === null || ! isset($visible[$target])) {
+            return;
+        }
+
+        [$visible[$index], $visible[$target]] = [$visible[$target], $visible[$index]];
+
+        $columns->save(auth()->user(), $visible);
+    }
+
+    public function resetColumns(MemberColumns $columns): void
+    {
+        $columns->reset(auth()->user());
+    }
+
+    /**
+     * Eigene Auswahl als Standard für alle ohne eigene Auswahl (nur Admin).
+     */
+    public function saveColumnsAsClubDefault(MemberColumns $columns): void
+    {
+        abort_unless(auth()->user()?->hasRole('admin'), 403);
+
+        $columns->saveClubDefault($columns->columnsFor(auth()->user()));
+
+        ActivityLogger::log(
+            'member.columns_default_saved',
+            'Spalten der Mitgliederübersicht wurden als Vereinsstandard gespeichert: '
+                .collect($columns->columnsFor(auth()->user()))->map(fn (string $key) => $columns->catalog()[$key])->join(', ').'.',
+        );
+
+        session()->flash('success', 'Spaltenauswahl als Vereinsstandard gespeichert.');
+    }
+
+    /**
+     * Gefilterte Mitglieder mit allen Spalten als Excel-Datei.
+     */
+    public function export(MemberColumns $columns): BinaryFileResponse
+    {
+        $members = $this->filteredQuery()
+            ->with(['city', ...$columns->relationsFor(array_keys($columns->catalog()))])
+            ->get();
+
+        return Excel::download(new MembersExport($members), 'mitglieder-'.now()->format('Y-m-d').'.xlsx');
     }
 
     /**
@@ -125,10 +194,20 @@ class Index extends Component
         return app(MemberFields::class)->fields()->firstWhere('fieldID', (int) $this->fieldFilter);
     }
 
-    public function render()
+    public function render(MemberColumns $columns)
     {
+        $visibleColumns = $columns->columnsFor(auth()->user());
+        $catalog = $columns->catalog();
+
         return view('livewire.members.index', [
-            'members' => $this->filteredQuery()->paginate(25),
+            'members' => $this->filteredQuery()->with($columns->relationsFor($visibleColumns))->paginate(25),
+            'columns' => $columns,
+            'visibleColumns' => $visibleColumns,
+            'columnLabels' => $catalog,
+            // Erst die sichtbaren in ihrer Reihenfolge, dann die übrigen.
+            'columnChoices' => [...$visibleColumns, ...array_values(array_diff(array_keys($catalog), $visibleColumns))],
+            'hasPersonalColumns' => $columns->hasPersonalColumns(auth()->user()),
+            'isAdmin' => (bool) auth()->user()?->hasRole('admin'),
             'filterableFields' => app(MemberFields::class)->fields(),
             'filterField' => $this->filterField(),
             'honorOptions' => Honor::query()->orderBy('name')->get(['honorID', 'name']),

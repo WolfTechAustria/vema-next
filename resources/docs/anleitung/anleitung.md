@@ -178,6 +178,9 @@ Menü **Mitglieder** öffnet die Liste aller Mitglieder.
 - **Öffnen →** zeigt die Detailseite eines Mitglieds.
 - **PDF Mitgliederliste** erstellt eine druckbare Übersicht.
 - **Geburtstagsliste** öffnet die Geburtstagsübersicht (Kapitel 5.7).
+- **Excel** lädt die aktuell gefilterte Liste mit allen Angaben herunter – auch Ehrungen, Vorstandsfunktionen und eigene Mitgliederfelder.
+- **Spalten anpassen** blendet Spalten ein oder aus (z. B. Ort, E-Mail, Ehrungen, eigene Felder) und ändert mit ↑/↓ ihre Reihenfolge. Die Auswahl gilt nur für Sie; Admins können sie mit **Als Vereinsstandard speichern** für alle übernehmen, die keine eigene Auswahl haben. **Zurücksetzen** kehrt zum Vereinsstandard zurück.
+- **Filter:** Neben dem Status lässt sich die Liste nach einer **Ehrung** oder nach einem **eigenen Mitgliederfeld** filtern (z. B. Register = Trompete).
 - **+ Mitglied hinzufügen** legt ein neues Mitglied an.
 
 ### 5.2 Neues Mitglied anlegen
@@ -254,9 +257,13 @@ Zum Beenden einer Funktion auf **Beenden** klicken, das Enddatum eintragen und *
 
 Welche Funktionen es gibt, wie sie heißen und welche davon die Automatik auslösen, legt der Admin unter **Einstellungen → Vorstandsfunktionen** fest (Kapitel 12.6).
 
+**Ehrungen:** Im Abschnitt **Ehrungen** auf der Mitgliederseite trägt **+ Ehrung hinzufügen** eine Ehrung mit Datum und Notiz ein. Die Bezeichnung tippen Sie einfach ein; einmal verwendete Ehrungen werden bei allen Mitgliedern als Vorschlag angeboten. **Bearbeiten** und **Entfernen** ändern einen Eintrag; jede Änderung steht im Aktivitätsprotokoll.
+
 ### 5.6 Mitglied bearbeiten
 
 Über **Bearbeiten** öffnet sich dasselbe Formular wie beim Anlegen (ohne Anrede). Entfernte E-Mail-Adressen oder Telefonnummern werden beim **Speichern** gelöscht.
+
+Hat der Verein eigene Mitgliederfelder angelegt (Kapitel 12.7), stehen sie im Abschnitt **Weitere Angaben**. Jede Änderung eines Felds erscheint im Aktivitätsprotokoll mit altem und neuem Wert.
 
 ### 5.7 Geburtstage
 
@@ -922,6 +929,17 @@ Beim Bearbeiten legen Sie außerdem fest:
 - **Spitzenfunktion** – z. B. Obmann und Stellvertreter. Wer eine Spitzenfunktion hat, erhält keine automatische Rats-Funktion.
 - **Erhält automatisch …** – wer diese Funktion übernimmt, wird zusätzlich der Rats-Funktion zugewiesen (z. B. Schriftführer, Kassier).
 - **Ist die Rats-Funktion** – z. B. Schützenrat, Ausschuss oder Beirat. Es kann nur eine geben; wird sie einer anderen Funktion gegeben, verliert die bisherige das Kennzeichen.
+
+### 12.7 Mitgliederfelder
+
+Unter **Einstellungen → Mitgliederfelder** legen Admins eigene Angaben zu den Mitgliedern an, z. B. *Instrument*, *Verbandsnummer* oder *Trachtenträger* (ab Paket „Verein“).
+
+- **Art:** Text, Zahl, Datum, Ja/Nein oder Auswahlliste (Auswahlmöglichkeiten eine pro Zeile). Sobald Werte erfasst sind, lässt sich die Art nicht mehr ändern und verwendete Auswahlmöglichkeiten nicht mehr entfernen.
+- **Mitgliederportal:** *Nicht im Portal*, *Im Portal sichtbar* oder *Im Portal bearbeitbar* – dann können Mitglieder den Wert in ihrem Profil selbst pflegen.
+- **↑ / ↓** bestimmen die Reihenfolge, **Deaktivieren** blendet ein Feld aus, ohne die Werte zu verlieren. **Löschen** entfernt das Feld samt aller Werte.
+- **Platzhalter:** Jedes Feld hat einen Platzhalter wie `{{feld_instrument}}`, der in Rundschreiben, Beitragsvorschreibungen, Erinnerungen und der Willkommens-E-Mail durch den Wert des Mitglieds ersetzt wird.
+
+Die Felder erscheinen beim Mitglied unter **Weitere Angaben**, als Spalte und Filter in der Mitgliederliste und im Excel-Export.
 
 ---
 

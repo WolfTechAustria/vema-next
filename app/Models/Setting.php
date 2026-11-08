@@ -21,6 +21,7 @@ class Setting extends Model
         return [
             'demo_enabled' => 'boolean',
             'dashboard_modules' => 'array',
+            'member_columns' => 'array',
             'demo_reset_mode' => DemoResetMode::class,
             'demo_last_reset_at' => 'datetime',
             'imap_port' => 'integer',
