@@ -492,6 +492,136 @@
 
             </section>
 
+            {{-- Ehrungen --}}
+            <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+                <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                    <h3 class="font-semibold text-slate-900">
+                        Ehrungen
+                    </h3>
+
+                    @unless($showHonorForm)
+                        <button
+                            type="button"
+                            wire:click="openHonorForm"
+                            class="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                        >
+                            + Ehrung hinzufügen
+                        </button>
+                    @endunless
+                </div>
+
+                @if($showHonorForm)
+                    <div class="space-y-3 border-b border-slate-200 bg-slate-50 px-6 py-4">
+
+                        <div>
+                            <input
+                                type="text"
+                                wire:model="honorName"
+                                list="honor-suggestions"
+                                placeholder="z. B. Ehrennadel in Gold"
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            >
+
+                            <datalist id="honor-suggestions">
+                                @foreach($honorSuggestions as $suggestion)
+                                    <option value="{{ $suggestion }}"></option>
+                                @endforeach
+                            </datalist>
+
+                            @error('honorName')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <input
+                                type="date"
+                                wire:model="honorDate"
+                                class="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            >
+
+                            <input
+                                type="text"
+                                wire:model="honorNote"
+                                placeholder="Notiz, z. B. verliehen vom Landesverband"
+                                class="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            >
+                        </div>
+
+                        <div class="flex justify-end gap-2">
+                            <button
+                                type="button"
+                                wire:click="$set('showHonorForm', false)"
+                                class="rounded-lg px-3 py-1.5 text-sm text-slate-500 hover:text-slate-800"
+                            >
+                                Abbrechen
+                            </button>
+
+                            <button
+                                type="button"
+                                wire:click="saveHonor"
+                                class="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white"
+                            >
+                                {{ $editingHonorID ? 'Speichern' : 'Eintragen' }}
+                            </button>
+                        </div>
+
+                    </div>
+                @endif
+
+                <div class="divide-y divide-slate-100">
+
+                    @forelse($honors as $memberHonor)
+
+                        <div wire:key="honor-{{ $memberHonor->memberHonorID }}" class="flex items-center justify-between gap-4 px-6 py-3">
+
+                            <div>
+                                <div class="text-sm font-medium text-slate-900">
+                                    {{ $memberHonor->honor->name }}
+                                </div>
+
+                                <div class="text-xs text-slate-400">
+                                    {{ $memberHonor->awarded_on?->format('d.m.Y') ?? 'ohne Datum' }}
+                                    @if($memberHonor->note)
+                                        · {{ $memberHonor->note }}
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="flex shrink-0 items-center gap-3">
+                                <button
+                                    type="button"
+                                    wire:click="openHonorForm({{ $memberHonor->memberHonorID }})"
+                                    class="text-xs font-semibold text-slate-500 hover:text-slate-800"
+                                >
+                                    Bearbeiten
+                                </button>
+
+                                <button
+                                    type="button"
+                                    wire:click="removeHonor({{ $memberHonor->memberHonorID }})"
+                                    wire:confirm="Ehrung „{{ $memberHonor->honor->name }}“ entfernen?"
+                                    class="text-xs font-semibold text-slate-500 hover:text-red-700"
+                                >
+                                    Entfernen
+                                </button>
+                            </div>
+
+                        </div>
+
+                    @empty
+
+                        <div class="px-6 py-4 text-sm text-slate-500">
+                            Keine Ehrung.
+                        </div>
+
+                    @endforelse
+
+                </div>
+
+            </section>
+
         </div>
     </div>
 

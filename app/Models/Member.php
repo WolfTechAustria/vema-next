@@ -227,6 +227,17 @@ class Member extends Model
         return $this->isRoundBirthday($age) || $this->isHalfRoundBirthday($age);
     }
 
+    /**
+     * Ehrungen, neueste zuerst (ohne Datum zuletzt).
+     */
+    public function honors(): HasMany
+    {
+        return $this->hasMany(MemberHonor::class, 'memberID', 'memberID')
+            ->orderByRaw('awarded_on IS NULL')
+            ->orderByDesc('awarded_on')
+            ->orderByDesc('memberHonorID');
+    }
+
     public function fieldValues(): HasMany
     {
         return $this->hasMany(MemberFieldValue::class, 'memberID', 'memberID');

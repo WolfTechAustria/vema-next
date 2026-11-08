@@ -65,6 +65,20 @@
                 </select>
             </div>
 
+            @if($honorOptions->isNotEmpty())
+                <div>
+                    <select
+                        wire:model.live="honorFilter"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:border-slate-500 focus:outline-none sm:w-auto sm:py-2 sm:text-sm"
+                    >
+                        <option value="">Alle Ehrungen</option>
+                        @foreach($honorOptions as $honorOption)
+                            <option value="{{ $honorOption->honorID }}">{{ $honorOption->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+
             @if($filterableFields->isNotEmpty())
                 <div class="flex gap-2">
                     <select

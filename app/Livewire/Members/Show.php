@@ -3,11 +3,13 @@
 namespace App\Livewire\Members;
 
 use App\Models\BoardFunction;
+use App\Models\Honor;
 use App\Models\Member;
 use App\Models\MemberBoardFunctionAssignment;
 use App\Services\ActivityLogger;
 use App\Services\BoardFunctionService;
 use App\Services\MemberFields;
+use App\Services\MemberHonors;
 use App\Services\MembershipFeeEntryService;
 use App\Services\MembershipPeriodService;
 use App\Services\WelcomeMailService;
@@ -46,6 +48,16 @@ class Show extends Component
 
     public ?string $endFunctionDate = null;
 
+    public bool $showHonorForm = false;
+
+    public ?int $editingHonorID = null;
+
+    public string $honorName = '';
+
+    public ?string $honorDate = null;
+
+    public string $honorNote = '';
+
     public function mount(Member $member): void
     {
         $this->member = $member->load([
@@ -77,6 +89,8 @@ class Show extends Component
             'currentFunctions' => app(BoardFunctionService::class)->currentFunctionsFor($this->member),
             'formerFunctions' => app(BoardFunctionService::class)->formerFunctionsFor($this->member),
             'customFieldValues' => app(MemberFields::class)->displayValues($this->member),
+            'honors' => $this->member->honors()->with('honor')->get(),
+            'honorSuggestions' => Honor::query()->orderBy('name')->pluck('name'),
         ])
             ->layout('layouts.app', [
                 'title' => $this->member->full_name.' | VEMA',
@@ -267,5 +281,50 @@ class Show extends Component
         $this->endingAssignmentID = null;
 
         session()->flash('success', 'Funktion wurde beendet.');
+    }
+
+    public function openHonorForm(?int $memberHonorID = null): void
+    {
+        $memberHonor = $memberHonorID ? $this->member->honors()->with('honor')->findOrFail($memberHonorID) : null;
+
+        $this->editingHonorID = $memberHonor?->memberHonorID;
+        $this->honorName = $memberHonor?->honor->name ?? '';
+        $this->honorDate = $memberHonor ? $memberHonor->awarded_on?->format('Y-m-d') : now()->format('Y-m-d');
+        $this->honorNote = $memberHonor?->note ?? '';
+        $this->showHonorForm = true;
+
+        $this->resetValidation();
+    }
+
+    public function saveHonor(MemberHonors $honors): void
+    {
+        $this->validate([
+            'honorName' => ['required', 'string', 'max:150'],
+            'honorDate' => ['nullable', 'date'],
+            'honorNote' => ['nullable', 'string', 'max:255'],
+        ], [
+            'honorName.required' => 'Bitte die Ehrung eingeben.',
+        ]);
+
+        if ($this->editingHonorID) {
+            $honors->update($this->member->honors()->findOrFail($this->editingHonorID), $this->honorName, $this->honorDate, $this->honorNote);
+            session()->flash('success', 'Ehrung wurde gespeichert.');
+        } else {
+            $honors->add($this->member, $this->honorName, $this->honorDate, $this->honorNote);
+            session()->flash('success', 'Ehrung wurde eingetragen.');
+        }
+
+        $this->reset(['showHonorForm', 'editingHonorID', 'honorName', 'honorDate', 'honorNote']);
+    }
+
+    public function removeHonor(int $memberHonorID, MemberHonors $honors): void
+    {
+        $honors->remove($this->member->honors()->with('honor')->findOrFail($memberHonorID));
+
+        if ($this->editingHonorID === $memberHonorID) {
+            $this->reset(['showHonorForm', 'editingHonorID', 'honorName', 'honorDate', 'honorNote']);
+        }
+
+        session()->flash('success', 'Ehrung wurde entfernt.');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Livewire\Members;
 
 use App\Enums\MemberFieldType;
+use App\Models\Honor;
 use App\Models\Member;
 use App\Models\MemberField;
 use App\Services\MemberFields;
@@ -26,6 +27,10 @@ class Index extends Component
     #[Url(as: 'wert')]
     public string $fieldFilterValue = '';
 
+    /** Filter nach einer Ehrung (honorID) */
+    #[Url(as: 'ehrung')]
+    public string $honorFilter = '';
+
     public function updatingSearch(): void
     {
         $this->resetPage();
@@ -43,6 +48,11 @@ class Index extends Component
     }
 
     public function updatingFieldFilterValue(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingHonorFilter(): void
     {
         $this->resetPage();
     }
@@ -74,6 +84,10 @@ class Index extends Component
                 fn ($query) => $query->where('active', 0)
             )
             ->tap(fn (Builder $query) => $this->applyFieldFilter($query))
+            ->when(
+                $this->honorFilter !== '',
+                fn ($query) => $query->whereHas('honors', fn ($honors) => $honors->where('honorID', (int) $this->honorFilter))
+            )
             ->orderBy('surname')
             ->orderBy('name');
     }
@@ -117,6 +131,7 @@ class Index extends Component
             'members' => $this->filteredQuery()->paginate(25),
             'filterableFields' => app(MemberFields::class)->fields(),
             'filterField' => $this->filterField(),
+            'honorOptions' => Honor::query()->orderBy('name')->get(['honorID', 'name']),
         ])->layout('layouts.app', [
             'title' => 'Mitglieder | VEMA',
             'heading' => 'Mitglieder',
