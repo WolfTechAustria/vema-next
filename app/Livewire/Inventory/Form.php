@@ -29,6 +29,8 @@ class Form extends Component
 
     public string $inventoryNumber = '';
 
+    public string $code = '';
+
     public string $location = '';
 
     public string $condition = 'good';
@@ -49,6 +51,7 @@ class Form extends Component
     {
         if ($item === null || ! $item->exists) {
             $this->item = null;
+            $this->code = mb_substr(trim((string) request()->query('code', '')), 0, 100);
 
             return;
         }
@@ -57,6 +60,7 @@ class Form extends Component
         $this->name = $item->name;
         $this->category = $item->category?->name ?? '';
         $this->inventoryNumber = $item->inventory_number ?? '';
+        $this->code = $item->code ?? '';
         $this->location = $item->location ?? '';
         $this->condition = $item->condition->value;
         $this->purchasedOn = $item->purchased_on?->toDateString() ?? '';
@@ -74,6 +78,7 @@ class Form extends Component
             'name' => ['required', 'string', 'max:150'],
             'category' => ['nullable', 'string', 'max:100'],
             'inventoryNumber' => ['nullable', 'string', 'max:50', Rule::unique('tb_inventory_items', 'inventory_number')->ignore($this->item?->itemID, 'itemID')],
+            'code' => ['nullable', 'string', 'max:100', Rule::unique('tb_inventory_items', 'code')->ignore($this->item?->itemID, 'itemID')],
             'location' => ['nullable', 'string', 'max:150'],
             'condition' => ['required', Rule::enum(InventoryCondition::class)],
             'purchasedOn' => ['nullable', 'date'],
@@ -86,6 +91,7 @@ class Form extends Component
             'name' => 'Bezeichnung',
             'category' => 'Kategorie',
             'inventoryNumber' => 'Inventarnummer',
+            'code' => 'Barcode/NFC',
             'location' => 'Lagerort',
             'condition' => 'Zustand',
             'purchasedOn' => 'Anschaffung',
@@ -102,6 +108,7 @@ class Form extends Component
             'name' => $validated['name'],
             'category' => $validated['category'],
             'inventory_number' => $validated['inventoryNumber'],
+            'code' => $validated['code'],
             'location' => $validated['location'],
             'condition' => $validated['condition'],
             'purchased_on' => $validated['purchasedOn'],

@@ -253,6 +253,12 @@
             @endif
 
             <dl class="space-y-3 text-sm">
+                @if($item->code)
+                    <div>
+                        <dt class="text-slate-500">Barcode / NFC</dt>
+                        <dd class="font-mono font-medium text-slate-900">{{ $item->code }}</dd>
+                    </div>
+                @endif
                 <div>
                     <dt class="text-slate-500">Lagerort</dt>
                     <dd class="font-medium text-slate-900">{{ $item->location ?? '–' }}</dd>

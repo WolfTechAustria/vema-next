@@ -693,13 +693,23 @@
                 </div>
 
                 @unless($showInventoryForm)
-                    <button
-                        type="button"
-                        wire:click="openInventoryForm"
-                        class="text-xs font-semibold text-blue-600 hover:text-blue-800"
-                    >
-                        + Material ausgeben
-                    </button>
+                    <div class="flex flex-wrap items-center gap-4">
+                        <a
+                            href="{{ route('inventory.scan', ['member' => $member->memberID]) }}"
+                            wire:navigate
+                            class="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                        >
+                            Schnellausgabe (Scan)
+                        </a>
+
+                        <button
+                            type="button"
+                            wire:click="openInventoryForm"
+                            class="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                        >
+                            + Material ausgeben
+                        </button>
+                    </div>
                 @endunless
             </div>
 

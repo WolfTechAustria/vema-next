@@ -54,6 +54,7 @@ class Index extends Component
                 $query->where(function (Builder $query) use ($like) {
                     $query->where('name', 'like', $like)
                         ->orWhere('inventory_number', 'like', $like)
+                        ->orWhere('code', 'like', $like)
                         ->orWhere('location', 'like', $like)
                         ->orWhereHas('currentLoan.member', fn (Builder $query) => $query->where(fn (Builder $query) => $query->where('name', 'like', $like)->orWhere('surname', 'like', $like)));
                 });

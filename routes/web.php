@@ -49,6 +49,7 @@ use App\Livewire\Homepage\Seo as HomepageSeo;
 use App\Livewire\Homepage\Settings as HomepageSettings;
 use App\Livewire\Inventory\Form as InventoryForm;
 use App\Livewire\Inventory\Index as InventoryIndex;
+use App\Livewire\Inventory\Scan as InventoryScan;
 use App\Livewire\Inventory\Show as InventoryShow;
 use App\Livewire\Invoices\Articles\Index as InvoiceArticlesIndex;
 use App\Livewire\Invoices\Create as InvoicesCreate;
@@ -248,6 +249,9 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
 
             Route::livewire('/neu', InventoryForm::class)
                 ->name('create');
+
+            Route::livewire('/scannen', InventoryScan::class)
+                ->name('scan');
 
             Route::livewire('/{item}', InventoryShow::class)
                 ->name('show');

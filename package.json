@@ -8,6 +8,7 @@
     },
     "dependencies": {
         "@tailwindcss/vite": "^4.1.11",
+        "barcode-detector": "^3.2.3",
         "concurrently": "^10.0.3",
         "cropperjs": "^1.6.2",
         "laravel-vite-plugin": "^3.1",

@@ -23,7 +23,7 @@ class InventoryExport implements FromArray, ShouldAutoSize, WithHeadings
      */
     public function headings(): array
     {
-        return ['Inventarnummer', 'Bezeichnung', 'Kategorie', 'Lagerort', 'Zustand', 'Ausgegeben an', 'Ausgegeben seit', 'Rückgabe bis', 'Anschaffung', 'Anschaffungspreis', 'Prüfintervall (Monate)', 'Nächste Prüfung', 'Notiz'];
+        return ['Inventarnummer', 'Barcode/NFC', 'Bezeichnung', 'Kategorie', 'Lagerort', 'Zustand', 'Ausgegeben an', 'Ausgegeben seit', 'Rückgabe bis', 'Anschaffung', 'Anschaffungspreis', 'Prüfintervall (Monate)', 'Nächste Prüfung', 'Notiz'];
     }
 
     /**
@@ -34,6 +34,7 @@ class InventoryExport implements FromArray, ShouldAutoSize, WithHeadings
         return $this->items
             ->map(fn (InventoryItem $item) => [
                 $item->inventory_number,
+                $item->code,
                 $item->name,
                 $item->category?->name,
                 $item->location,

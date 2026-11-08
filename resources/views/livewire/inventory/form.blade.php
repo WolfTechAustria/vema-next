@@ -44,6 +44,29 @@
                     @error('inventoryNumber') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
 
+                <div class="sm:col-span-2">
+                    <label class="mb-1 block text-sm font-medium">
+                        Barcode / NFC
+                        <span class="font-normal text-slate-400">(optional, für die Schnellausgabe per Scan)</span>
+                    </label>
+                    <input
+                        type="text"
+                        wire:model="code"
+                        x-on:keydown.enter.prevent
+                        placeholder="Mit Leser scannen oder eintippen"
+                        autocomplete="off"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono"
+                    >
+                    @error('code') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+
+                    @include('livewire.inventory.partials.camera-scanner', [
+                        'onCode' => "\$wire.set('code', code)",
+                        'once' => true,
+                        'label' => 'Mit Kamera scannen',
+                        'class' => 'mt-2',
+                    ])
+                </div>
+
                 <div>
                     <label class="mb-1 block text-sm font-medium">Lagerort</label>
                     <input type="text" wire:model="location" list="inventory-locations" class="w-full rounded-lg border border-slate-300 px-3 py-2">
