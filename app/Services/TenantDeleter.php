@@ -42,6 +42,7 @@ class TenantDeleter
         $tenant->clubMemberships()->delete();
         $tenant->federationMemberships()->delete();
         ClubStatistic::query()->where('tenant_id', $tenant->id)->delete();
+        DB::connection('landlord')->table('platform_news_seen')->where('tenant_id', $tenant->id)->delete();
         DB::connection('landlord')->table('federation_message_reads')
             ->where('club_id', $tenant->id)
             ->orWhereIn('federation_message_id', $tenant->federationMessages()->select('id'))

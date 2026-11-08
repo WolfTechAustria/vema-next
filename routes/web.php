@@ -65,6 +65,7 @@ use App\Livewire\Members\Edit as MembersEdit;
 use App\Livewire\Members\Index as MembersIndex;
 use App\Livewire\Members\Show as MembersShow;
 use App\Livewire\MembershipFees\Index as MembershipFeesIndex;
+use App\Livewire\News\Index as NewsIndex;
 use App\Livewire\Templates\Index as TemplatesIndex;
 use App\Livewire\UserManual\Index as UserManualIndex;
 use Illuminate\Support\Facades\Route;
@@ -290,6 +291,11 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/settings/board-functions', BoardFunctions::class)
         ->middleware('admin')
         ->name('admin.settings.board-functions');
+
+    // Neuigkeiten zu VEMA (nur Plattformbetrieb).
+    Route::livewire('/neuigkeiten', NewsIndex::class)
+        ->middleware('admin')
+        ->name('news.index');
 
     Route::livewire('/settings/member-fields', MemberFieldSettings::class)
         ->middleware('admin')

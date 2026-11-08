@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\DashboardLayout;
 use App\Services\MemberHistory;
+use App\Services\PlatformNewsFeed;
 use App\Services\TenantManager;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
@@ -125,6 +126,7 @@ class Index extends Component
                 ))
                 : [],
             'isAdmin' => $user->hasRole('admin'),
+            'unreadNews' => app(PlatformNewsFeed::class)->unreadCount($user),
             'federationInvitations' => $user->hasRole('admin')
                 ? app(TenantManager::class)->current()?->federationMemberships()->invited()->with('federation')->get()
                 : null,

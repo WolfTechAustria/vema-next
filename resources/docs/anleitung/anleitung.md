@@ -1084,6 +1084,10 @@ Welches Paket gebucht ist, was enthalten ist und wie viel davon genutzt wird, se
 - Bei gebuchten Paketen kommt 30 und 7 Tage vor Ablauf der Lizenz eine Erinnerung. Zum Verlängern einfach auf diese E-Mail antworten.
 - Ist die Lizenz abgelaufen oder der Zugang gesperrt, zeigt die Adresse des Vereins nur noch einen entsprechenden Hinweis. Die Lizenz gilt bis einschließlich zum Ablaufdatum.
 
+### 15.4 Neuigkeiten
+
+Über neue Funktionen informiert VEMA die Administratoren des Vereins direkt in der App: Im Menü unten steht **Neuigkeiten** mit der Anzahl ungelesener Beiträge, das Dashboard zeigt einen Hinweis. Beim Öffnen der Seite gelten alle Neuigkeiten als gelesen; neue sind bis zum nächsten Besuch mit **neu** markiert. Wichtige Neuigkeiten kommen zusätzlich per E-Mail an die Kontaktadresse des Vereins.
+
 ---
 
 ## 16. Vereinshomepage

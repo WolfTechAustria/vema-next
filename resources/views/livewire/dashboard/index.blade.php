@@ -2,6 +2,12 @@
 
     @include('partials.flash-messages')
 
+    @if($unreadNews > 0)
+        <a href="{{ route('news.index') }}" wire:navigate class="block rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 hover:bg-sky-100">
+            <strong>{{ $unreadNews === 1 ? 'Eine Neuigkeit' : $unreadNews.' Neuigkeiten' }}</strong> zu VEMA – neue Funktionen ansehen →
+        </a>
+    @endif
+
     @if($federationInvitations?->isNotEmpty())
         <a href="{{ route('admin.settings.federations') }}" wire:navigate class="block rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 hover:bg-amber-100">
             <strong>{{ $federationInvitations->pluck('federation.name')->join(', ', ' und ') }}</strong>

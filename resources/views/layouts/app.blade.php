@@ -761,6 +761,28 @@
                     Anleitung
                 </a>
 
+                @if(app(\App\Services\PlatformNewsFeed::class)->isAvailableFor($webUser))
+                    @php
+                        $unreadNews = app(\App\Services\PlatformNewsFeed::class)->unreadCount($webUser);
+                    @endphp
+
+                    <a
+                        href="{{ route('news.index') }}"
+                        wire:navigate
+                        class="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition
+                        {{ request()->routeIs('news.*')
+                            ? 'bg-slate-100 text-slate-900'
+                            : 'text-slate-700 hover:bg-slate-100' }}"
+                    >
+                        <span>✦</span>
+                        Neuigkeiten
+
+                        @if($unreadNews > 0)
+                            <span class="ml-auto rounded-full bg-sky-600 px-2 py-0.5 text-xs font-semibold text-white">{{ $unreadNews }}</span>
+                        @endif
+                    </a>
+                @endif
+
                 @if($webUser?->hasRole('admin'))
 
                     <a

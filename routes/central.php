@@ -4,6 +4,7 @@ use App\Http\Controllers\Central\AdminLoginController;
 use App\Http\Controllers\Central\RegistrationController;
 use App\Http\Controllers\Central\SupportLoginController;
 use App\Livewire\Central\Admin\Account;
+use App\Livewire\Central\Admin\News;
 use App\Livewire\Central\Admin\Plans;
 use App\Livewire\Central\Admin\TenantDetail;
 use App\Livewire\Central\Admin\Tenants;
@@ -61,6 +62,8 @@ Route::domain(config('tenancy.platform_host'))->group(function () {
                 ->name('central.admin.tenants.support-login');
 
             Route::livewire('/pakete', Plans::class)->name('central.admin.plans');
+
+            Route::livewire('/neuigkeiten', News::class)->name('central.admin.news');
 
             Route::livewire('/konto', Account::class)->name('central.admin.account');
         });

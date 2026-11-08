@@ -31,6 +31,7 @@
             <nav class="flex gap-4 text-sm">
                 <a href="{{ route('central.admin.tenants') }}" wire:navigate @class(['hover:text-slate-900', 'font-semibold text-slate-900' => request()->routeIs('central.admin.tenants*'), 'text-slate-500' => ! request()->routeIs('central.admin.tenants*')])>Vereine</a>
                 <a href="{{ route('central.admin.plans') }}" wire:navigate @class(['hover:text-slate-900', 'font-semibold text-slate-900' => request()->routeIs('central.admin.plans'), 'text-slate-500' => ! request()->routeIs('central.admin.plans')])>Pakete</a>
+                <a href="{{ route('central.admin.news') }}" wire:navigate @class(['hover:text-slate-900', 'font-semibold text-slate-900' => request()->routeIs('central.admin.news'), 'text-slate-500' => ! request()->routeIs('central.admin.news')])>Neuigkeiten</a>
             </nav>
         </div>
 
