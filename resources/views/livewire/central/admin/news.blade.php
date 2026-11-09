@@ -16,6 +16,12 @@
         @endunless
     </div>
 
+    @if($importedDrafts > 0)
+        <div class="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+            {{ $importedDrafts }} {{ $importedDrafts === 1 ? 'neue Neuigkeit' : 'neue Neuigkeiten' }} aus dem letzten Update als Entwurf übernommen – bitte prüfen, veröffentlichen und bei Bedarf per E-Mail versenden.
+        </div>
+    @endif
+
     @if(session('success'))
         <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
     @endif
