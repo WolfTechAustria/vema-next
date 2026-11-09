@@ -2,6 +2,12 @@
 
 use App\Enums\DashboardModule;
 use App\Livewire\Dashboard\Index;
+use App\Models\DutyPlan;
+use App\Models\DutyPlanAssignment;
+use App\Models\DutyPlanEvent;
+use App\Models\DutyPlanRole;
+use App\Models\ExternalContact;
+use App\Models\Member;
 use App\Models\MemberMembershipPeriod;
 use App\Models\User;
 use App\Services\DashboardLayout;
@@ -158,4 +164,23 @@ test('member history counts stock at year end with joins and exits', function ()
         ['year' => 2025, 'stock' => 2, 'joined' => 0, 'left' => 0],
         ['year' => 2026, 'stock' => 2, 'joined' => 0, 'left' => 0],
     ]);
+});
+
+test('upcoming duties show who is assigned', function () {
+    $plan = DutyPlan::create(['name' => 'Saison', 'date_from' => today()->toDateString(), 'date_to' => today()->addYear()->toDateString()]);
+    $role = DutyPlanRole::create(['planID' => $plan->planID, 'name' => 'Bar', 'weekday_mask' => 127]);
+    $staffed = DutyPlanEvent::create(['planID' => $plan->planID, 'roleID' => $role->roleID, 'duty_date' => today()->addDays(2)->toDateString(), 'duty_name' => 'Bar', 'required_helpers' => 2]);
+    DutyPlanEvent::create(['planID' => $plan->planID, 'roleID' => $role->roleID, 'duty_date' => today()->addDays(9)->toDateString(), 'duty_name' => 'Bar', 'required_helpers' => 1]);
+
+    $max = Member::create(['gender' => 'm', 'name' => 'Max', 'surname' => 'Muster', 'active' => 1]);
+    $contact = ExternalContact::create(['name' => 'Anna', 'surname' => 'Extern', 'email' => 'anna@example.com', 'active' => true]);
+    DutyPlanAssignment::create(['eventID' => $staffed->eventID, 'slot_no' => 1, 'memberID' => $max->memberID]);
+    DutyPlanAssignment::create(['eventID' => $staffed->eventID, 'slot_no' => 2, 'externalContactID' => $contact->externalContactID]);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('2/2 besetzt')
+        ->assertSee('Max Muster, '.$contact->full_name.' (extern)')
+        ->assertSee('noch niemand eingeteilt');
 });

@@ -151,7 +151,7 @@ class Index extends Component
             DashboardModule::MembershipFees => ['stats' => $this->membershipFeeStats(), 'actions' => $this->membershipFeeActions()],
             DashboardModule::UpcomingEvents => ['events' => ClubEvent::query()->upcoming()->orderBy('starts_at')->limit(5)->get()],
             DashboardModule::UpcomingDuties => ['duties' => DutyPlanEvent::query()
-                ->with('role')
+                ->with(['role', 'assignments' => fn ($query) => $query->orderBy('slot_no'), 'assignments.member', 'assignments.externalContact'])
                 ->withCount('assignments')
                 ->where('duty_date', '>=', today())
                 ->orderBy('duty_date')

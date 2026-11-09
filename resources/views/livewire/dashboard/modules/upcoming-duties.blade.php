@@ -2,17 +2,32 @@
     @forelse($data['duties'] as $duty)
         @php
             $isUnderstaffed = $duty->assignments_count < $duty->required_helpers;
+            $helperNames = $duty->assignments
+                ->map(fn ($assignment) => $assignment->member?->full_name
+                    ?? ($assignment->externalContact ? $assignment->externalContact->full_name.' (extern)' : null))
+                ->filter()
+                ->values();
         @endphp
 
-        <div wire:key="dashboard-duty-{{ $duty->eventID }}" class="flex items-center justify-between gap-3 text-sm">
-            <div class="min-w-0">
-                <div class="truncate font-medium text-slate-900">{{ $duty->role?->name ?? $duty->duty_name }}</div>
-                <div class="text-slate-500">{{ $duty->duty_date->format('d.m.Y') }}</div>
+        <div wire:key="dashboard-duty-{{ $duty->eventID }}" class="text-sm">
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <div class="truncate font-medium text-slate-900">{{ $duty->role?->name ?? $duty->duty_name }}</div>
+                    <div class="text-slate-500">{{ $duty->duty_date->format('d.m.Y') }}</div>
+                </div>
+
+                <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium {{ $isUnderstaffed ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700' }}">
+                    {{ $duty->assignments_count }}/{{ $duty->required_helpers }} besetzt
+                </span>
             </div>
 
-            <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium {{ $isUnderstaffed ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700' }}">
-                {{ $duty->assignments_count }}/{{ $duty->required_helpers }} besetzt
-            </span>
+            <div class="mt-0.5 text-slate-600">
+                @if($helperNames->isNotEmpty())
+                    {{ $helperNames->implode(', ') }}
+                @else
+                    <span class="text-slate-400">noch niemand eingeteilt</span>
+                @endif
+            </div>
         </div>
     @empty
         <p class="text-sm text-slate-500">Keine bevorstehenden Dienste.</p>
