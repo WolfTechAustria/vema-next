@@ -7,6 +7,7 @@ use App\Enums\TenantStatus;
 use App\Mail\Central\PlatformNewsMail;
 use App\Models\PlatformNews;
 use App\Models\Tenant;
+use App\Services\PlatformNewsDrafts;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
@@ -32,6 +33,21 @@ class News extends Component
     public string $minPlan = '';
 
     public bool $sendEmail = false;
+
+    /** Beim Öffnen aus einem Update übernommene Entwürfe */
+    public int $importedDrafts = 0;
+
+    /**
+     * Mit einem Update ausgelieferte Neuigkeiten als Entwürfe übernehmen.
+     */
+    public function mount(PlatformNewsDrafts $drafts): void
+    {
+        try {
+            $this->importedDrafts = $drafts->sync();
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+    }
 
     /**
      * @return array<string, list<mixed>>

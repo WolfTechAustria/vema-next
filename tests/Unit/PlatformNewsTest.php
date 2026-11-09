@@ -8,8 +8,10 @@ use App\Mail\Central\PlatformNewsMail;
 use App\Models\PlatformAdmin;
 use App\Models\PlatformNews;
 use App\Models\User;
+use App\Services\PlatformNewsDrafts;
 use App\Services\PlatformNewsFeed;
 use App\Services\TenantManager;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
@@ -25,6 +27,11 @@ beforeEach(function () {
 
     Mail::fake();
 
+    // Mitgelieferte Neuigkeiten aus resources/news gezielt testen (siehe unten).
+    $this->newsDirectory = storage_path('framework/testing/news-'.uniqid());
+    File::ensureDirectoryExists($this->newsDirectory);
+    app()->instance(PlatformNewsDrafts::class, new PlatformNewsDrafts($this->newsDirectory));
+
     $this->platformAdmin = PlatformAdmin::create([
         'name' => 'Betreiber',
         'email' => 'office@vemat.test',
@@ -36,6 +43,7 @@ beforeEach(function () {
 });
 
 afterEach(function () {
+    File::deleteDirectory($this->newsDirectory);
     shutdownMultiTenancyForTests();
 });
 
@@ -154,4 +162,44 @@ it('withdraws and deletes news', function () {
         ->call('deleteNews', $news->id);
 
     expect(PlatformNews::count())->toBe(0);
+});
+
+describe('news shipped with an update', function () {
+    it('imports each news file once as a draft', function () {
+        File::put($this->newsDirectory.'/2026-11-09-online-anmeldung.md', "---\ntitle: Neu: Online-Anmeldung\nmin_plan: verein\n---\nNeue Mitglieder melden sich **online** an.\n");
+        File::put($this->newsDirectory.'/kaputt.md', "Ohne Kopf\n");
+
+        Livewire::actingAs($this->platformAdmin, 'platform')
+            ->test(News::class)
+            ->assertSet('importedDrafts', 1)
+            ->assertSee('aus dem letzten Update als Entwurf übernommen')
+            ->assertSee('Neu: Online-Anmeldung');
+
+        $news = PlatformNews::sole();
+
+        expect($news->isPublished())->toBeFalse()
+            ->and($news->min_plan)->toBe(Plan::Verein)
+            ->and($news->body)->toBe('Neue Mitglieder melden sich **online** an.');
+
+        // Gelöschte Entwürfe kommen nicht wieder.
+        $news->delete();
+
+        expect(app(PlatformNewsDrafts::class)->sync())->toBe(0)
+            ->and(PlatformNews::count())->toBe(0);
+    });
+
+    it('can mail an imported draft to the clubs when publishing', function () {
+        File::put($this->newsDirectory.'/2026-11-09-neu.md', "---\ntitle: Etwas Neues\n---\nText\n");
+
+        $this->artisan('platform-news:sync')->assertSuccessful();
+
+        Livewire::actingAs($this->platformAdmin, 'platform')
+            ->test(News::class)
+            ->call('editNews', PlatformNews::sole()->id)
+            ->set('sendEmail', true)
+            ->call('publish');
+
+        Mail::assertSent(PlatformNewsMail::class, 2);
+        expect(PlatformNews::sole()->emailed_count)->toBe(2);
+    });
 });
