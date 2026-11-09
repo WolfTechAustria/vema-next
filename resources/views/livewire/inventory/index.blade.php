@@ -21,6 +21,14 @@
             </button>
 
             <a
+                href="{{ route('inventory.scan') }}"
+                wire:navigate
+                class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+                Schnellausgabe
+            </a>
+
+            <a
                 href="{{ route('inventory.create') }}"
                 wire:navigate
                 class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white"
@@ -94,8 +102,13 @@
 
                         <td class="px-4 py-3">
                             <a href="{{ route('inventory.show', $item) }}" wire:navigate class="font-medium text-slate-900 hover:underline">{{ $item->name }}</a>
-                            @if($item->category)
-                                <div class="text-xs text-slate-500">{{ $item->category->name }}</div>
+                            @if($item->category || $item->code)
+                                <div class="text-xs text-slate-500">
+                                    {{ $item->category?->name }}
+                                    @if($item->code)
+                                        <span class="font-mono text-slate-400">{{ $item->category ? '· ' : '' }}{{ $item->code }}</span>
+                                    @endif
+                                </div>
                             @endif
                         </td>
 

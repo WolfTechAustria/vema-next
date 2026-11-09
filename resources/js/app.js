@@ -2,11 +2,14 @@ import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.css';
+import { registerBarcodeScanner } from './barcode-scanner';
 
 window.Quill = Quill;
 window.Cropper = Cropper;
 
 document.addEventListener('alpine:init', () => {
+
+    registerBarcodeScanner(window.Alpine);
 
     /*
      * Profilbild zuschneiden: Bild wählen, quadratischen Ausschnitt per

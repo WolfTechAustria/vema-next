@@ -325,13 +325,22 @@ Hochladen, Ändern und Löschen werden im **Aktivitätsprotokoll** festgehalten 
 
 Unter **Material** verwalten Admins und Zeugwarte das Inventar des Vereins – etwa Trachten, Instrumente, Waffen, Schlüssel oder Zelte. Auf vemat.at ist die Materialverwaltung ab Paket „Verein“ enthalten.
 
-**Material erfassen:** **+ Material** öffnet das Formular mit Bezeichnung, Kategorie, Inventarnummer, Lagerort, Zustand, Anschaffung (Datum und Preis), Notiz und Foto. Kategorie und Lagerort tippen Sie einfach ein; bereits verwendete Einträge werden vorgeschlagen. Die Inventarnummer muss eindeutig sein.
+**Material erfassen:** **+ Material** öffnet das Formular mit Bezeichnung, Kategorie, Inventarnummer, Barcode / NFC, Lagerort, Zustand, Anschaffung (Datum und Preis), Notiz und Foto. Kategorie und Lagerort tippen Sie einfach ein; bereits verwendete Einträge werden vorgeschlagen. Die Inventarnummer muss eindeutig sein.
 
 **Liste:** Suche nach Bezeichnung, Nummer, Lagerort oder Mitglied sowie Filter nach Kategorie, Zustand und Status (*verfügbar*, *ausgegeben*, *Prüfung fällig*, *Rückgabe überfällig*). Ausgeschiedenes Material ist ausgeblendet, bis Sie beim Zustand „Ausgeschieden“ wählen. **Excel** lädt die gefilterte Liste herunter.
 
 **Ausgabe an Mitglieder:** Auf der Seite eines Materialstücks **+ An Mitglied ausgeben** klicken, Mitglied suchen, Ausgabedatum und optional „Rückgabe bis“ eintragen. Mit **Rückgabe erfassen** wird es zurückgenommen; dabei kann der Zustand angepasst werden. Ein Stück kann immer nur an ein Mitglied ausgegeben sein. Frühere Ausgaben bleiben als Verlauf sichtbar.
 
 Auch auf der **Mitgliederseite** gibt es für Admins und Zeugwarte den Abschnitt **Material**: Dort sehen Sie alles, was das Mitglied hat oder hatte, können mit **+ Material ausgeben** ein verfügbares Stück ausgeben und mit **Zurücknehmen** die Rückgabe mit heutigem Datum erfassen. Hat ein ausgetretenes Mitglied noch Material, weist VEMA darauf hin. In der Mitgliederliste lässt sich die Spalte **Material** einblenden. Jede Ausgabe und Rückgabe steht im Aktivitätsprotokoll – auch beim Mitglied.
+
+**Schnellausgabe per Scan:** Für viele Stücke auf einmal (z. B. Trachtenausgabe) gibt es unter **Material → Schnellausgabe** bzw. auf der Mitgliederseite unter **Schnellausgabe (Scan)** einen eigenen Ablauf:
+
+1. Mitglied wählen und bei Bedarf „Ausgegeben am“ und „Rückgabe bis“ anpassen.
+2. Material scannen – jedes erkannte Stück wird sofort an das Mitglied ausgegeben, mit kurzem Ton bzw. Vibration als Bestätigung.
+   - **Am PC** mit einem USB-Barcode- oder NFC-Leser, der wie eine Tastatur arbeitet (Code + Enter). Den Code können Sie auch von Hand eintippen und mit Enter bestätigen.
+   - **Am Handy** mit **Mit Kamera scannen** (Barcodes und QR-Codes, Android und iPhone). Die Kamera bleibt offen, bis Sie sie schließen. Sie funktioniert nur über eine sichere Verbindung (https).
+
+Gefunden wird ein Stück über das Feld **Barcode / NFC** (z. B. der Hersteller-Barcode oder die Seriennummer eines NFC-Tags) oder über die **Inventarnummer**. Groß-/Kleinschreibung sowie Doppelpunkte, Bindestriche und Leerzeichen spielen keine Rolle. Den Code tragen Sie im Formular des Materials ein – am einfachsten, indem Sie ihn dort mit dem Leser oder der Kamera scannen. Ist ein Stück bereits bei diesem Mitglied, bietet VEMA **Zurücknehmen** an; ist es bei jemand anderem oder ausgeschieden, wird es nicht ausgegeben. Unbekannte Codes können mit **Material anlegen** gleich erfasst werden.
 
 **Prüfung / Wartung:** Im Formular können Sie ein **Prüfintervall** in Monaten und die **nächste Prüfung** festlegen. **+ Prüfung erfassen** trägt Datum, Ergebnis (*In Ordnung*, *Mängel*, *Ausgeschieden*) und Notiz ein. Mit Intervall wird der nächste Termin automatisch berechnet; Sie können ihn auch von Hand setzen. „Mängel“ setzt den Zustand auf *Defekt*, „Ausgeschieden“ nimmt das Stück aus dem Bestand.
 
