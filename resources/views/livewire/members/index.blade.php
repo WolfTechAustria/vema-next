@@ -2,6 +2,20 @@
 
     @include('partials.flash-messages')
 
+    @if($pendingApplications > 0)
+        <a
+            href="{{ route('members.applications.index') }}"
+            wire:navigate
+            class="mb-6 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900 hover:bg-amber-100"
+        >
+            <span>
+                <strong>{{ $pendingApplications }} {{ $pendingApplications === 1 ? 'neue Online-Anmeldung wartet' : 'neue Online-Anmeldungen warten' }}</strong>
+                auf die Freigabe.
+            </span>
+            <span class="font-semibold">Ansehen →</span>
+        </a>
+    @endif
+
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
         <div>
@@ -23,6 +37,16 @@
         >
             PDF Mitgliederliste
         </a>
+
+        @if($applicationsEnabled || $pendingApplications > 0)
+            <a
+                href="{{ route('members.applications.index') }}"
+                wire:navigate
+                class="inline-flex justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+                Online-Anmeldungen
+            </a>
+        @endif
 
         <a href="{{ route('members.birthdays') }}"
            target="_blank"

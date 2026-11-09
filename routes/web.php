@@ -13,6 +13,7 @@ use App\Http\Controllers\HomepagePreviewController;
 use App\Http\Controllers\HomepageSeoController;
 use App\Http\Controllers\InventoryPhotoController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\MemberApplicationController;
 use App\Http\Controllers\MemberAuthController;
 use App\Http\Controllers\MemberCalendarController;
 use App\Http\Controllers\MemberController;
@@ -21,10 +22,13 @@ use App\Http\Controllers\MemberPhotoController;
 use App\Http\Controllers\MemberPortalDocumentController;
 use App\Http\Controllers\MembershipFeePrescriptionController;
 use App\Http\Controllers\UserManualController;
+use App\Livewire\Admin\Settings\Application as ApplicationSettings;
 use App\Livewire\Admin\Settings\BoardFunctions;
 use App\Livewire\Admin\Settings\Documents;
 use App\Livewire\Admin\Settings\Federations;
 use App\Livewire\Admin\Settings\MemberFields as MemberFieldSettings;
+use App\Livewire\Application\Form as ApplicationForm;
+use App\Livewire\Application\Verify as ApplicationVerify;
 use App\Livewire\CashBook\Index as CashBookIndex;
 use App\Livewire\CashBook\Years as CashBookYears;
 use App\Livewire\Dashboard\Index as DashboardIndex;
@@ -65,6 +69,8 @@ use App\Livewire\MemberPortal\MyFees;
 use App\Livewire\MemberPortal\MyInventory;
 use App\Livewire\MemberPortal\Profile;
 use App\Livewire\MemberPortal\SelectProfile;
+use App\Livewire\Members\Applications as MemberApplicationsIndex;
+use App\Livewire\Members\ApplicationShow as MemberApplicationShow;
 use App\Livewire\Members\Birthdays as MembersBirthdays;
 use App\Livewire\Members\Create as MembersCreate;
 use App\Livewire\Members\Edit as MembersEdit;
@@ -83,6 +89,14 @@ Route::get('/robots.txt', [HomepageSeoController::class, 'appRobots'])
 Route::get('/support-login', SupportLoginController::class)
     ->middleware(['signed', 'throttle:20,1'])
     ->name('support.login');
+
+// Online-Mitgliedsanmeldung (öffentlich, auch angemeldet erreichbar).
+Route::livewire('/anmeldung', ApplicationForm::class)
+    ->name('application.form');
+
+Route::livewire('/anmeldung/bestaetigen/{token}', ApplicationVerify::class)
+    ->middleware('throttle:20,1')
+    ->name('application.verify');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])
@@ -137,6 +151,15 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
 
     Route::livewire('/members/create', MembersCreate::class)
         ->name('members.create');
+
+    Route::livewire('/members/applications', MemberApplicationsIndex::class)
+        ->name('members.applications.index');
+
+    Route::livewire('/members/applications/{application}', MemberApplicationShow::class)
+        ->name('members.applications.show');
+
+    Route::get('/members/applications/{application}/pdf', [MemberApplicationController::class, 'pdf'])
+        ->name('members.applications.pdf');
 
     Route::livewire('/members/birthdays', MembersBirthdays::class)
         ->name('members.birthdays');
@@ -330,6 +353,10 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
         ->middleware('admin')
         ->middleware('feature:member_fields')
         ->name('admin.settings.member-fields');
+
+    Route::livewire('/settings/application', ApplicationSettings::class)
+        ->middleware('admin')
+        ->name('admin.settings.application');
 
     Route::livewire('/settings/federations', Federations::class)
         ->middleware('admin')

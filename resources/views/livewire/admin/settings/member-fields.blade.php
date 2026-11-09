@@ -94,6 +94,11 @@
                     </div>
                 </div>
 
+                <label class="flex items-center gap-3 text-sm text-slate-700">
+                    <input type="checkbox" wire:model="onApplication" class="rounded border-slate-300">
+                    Auch in der Online-Anmeldung abfragen
+                </label>
+
                 @if($type === \App\Enums\MemberFieldType::Select->value)
                     <div>
                         <label class="mb-1 block text-sm font-medium text-slate-700">
@@ -160,6 +165,12 @@
                                     inaktiv
                                 </span>
                             @endunless
+
+                            @if($field->on_application)
+                                <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                                    Online-Anmeldung
+                                </span>
+                            @endif
 
                             @if($field->portal !== \App\Enums\MemberFieldPortal::Hidden)
                                 <span class="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">

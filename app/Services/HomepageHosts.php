@@ -99,6 +99,17 @@ class HomepageHosts
         return rtrim($root, '/').route('member.login', [], false);
     }
 
+    /**
+     * Absolute Adresse der Online-Mitgliedsanmeldung auf der App-Domain
+     * (auch von der Homepage-Domain aus verlinkbar).
+     */
+    public function applicationUrl(): string
+    {
+        $root = $this->tenantManager->current()?->url() ?? (string) config('app.url');
+
+        return rtrim($root, '/').route('application.form', [], false);
+    }
+
     public function forgetSingleDomain(): void
     {
         Cache::forget(self::SINGLE_CACHE_KEY);

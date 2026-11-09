@@ -23,6 +23,7 @@ class MemberField extends Model
         'type' => 'Art',
         'options' => 'Auswahlmöglichkeiten',
         'portal' => 'Mitgliederportal',
+        'on_application' => 'In der Online-Anmeldung',
         'active' => 'Aktiv',
     ];
 
@@ -36,6 +37,7 @@ class MemberField extends Model
         'type' => MemberFieldType::class,
         'portal' => MemberFieldPortal::class,
         'options' => 'array',
+        'on_application' => 'boolean',
         'active' => 'boolean',
     ];
 
@@ -49,6 +51,7 @@ class MemberField extends Model
             'type' => $this->type,
             'options' => $this->options ?? [],
             'portal' => $this->portal,
+            'on_application' => (bool) $this->on_application,
             'active' => (bool) $this->active,
         ];
     }

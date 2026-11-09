@@ -175,6 +175,16 @@
                 >
                     <span>♙</span>
                     Mitglieder
+
+                    @php
+                        $pendingApplicationCount = \App\Models\MemberApplication::query()->pending()->count();
+                    @endphp
+
+                    @if($pendingApplicationCount > 0)
+                        <span class="ml-auto rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-slate-900" title="Neue Online-Anmeldungen">
+                            {{ $pendingApplicationCount }}
+                        </span>
+                    @endif
                 </a>
 
 

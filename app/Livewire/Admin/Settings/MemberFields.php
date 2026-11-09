@@ -29,6 +29,9 @@ class MemberFields extends Component
 
     public string $portal = 'hidden';
 
+    /** Auch in der Online-Anmeldung abfragen */
+    public bool $onApplication = false;
+
     /**
      * @return array<string, list<mixed>>
      */
@@ -44,6 +47,7 @@ class MemberFields extends Component
             'type' => ['required', Rule::enum(MemberFieldType::class)],
             'options' => [Rule::requiredIf($this->type === MemberFieldType::Select->value), 'string', 'max:5000'],
             'portal' => ['required', Rule::enum(MemberFieldPortal::class)],
+            'onApplication' => ['boolean'],
         ];
     }
 
@@ -78,6 +82,7 @@ class MemberFields extends Component
         $this->type = $field->type->value;
         $this->options = implode("\n", $field->options ?? []);
         $this->portal = $field->portal->value;
+        $this->onApplication = (bool) $field->on_application;
         $this->showForm = true;
 
         $this->resetValidation();
@@ -116,6 +121,7 @@ class MemberFields extends Component
             'type' => $type,
             'options' => $options,
             'portal' => MemberFieldPortal::from($validated['portal']),
+            'on_application' => $validated['onApplication'],
         ];
 
         if ($field) {
@@ -289,7 +295,7 @@ class MemberFields extends Component
 
     private function resetForm(): void
     {
-        $this->reset(['showForm', 'editingFieldID', 'name', 'type', 'options', 'portal']);
+        $this->reset(['showForm', 'editingFieldID', 'name', 'type', 'options', 'portal', 'onApplication']);
     }
 
     public function render()
