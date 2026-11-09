@@ -5,6 +5,7 @@ use App\Http\Controllers\HomepageController;
 use App\Http\Controllers\HomepageMediaController;
 use App\Http\Controllers\HomepageSeoController;
 use App\Services\HomepageHosts;
+use App\Services\MemberApplicationSettings;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -81,6 +82,13 @@ Route::prefix(HomepageHosts::PATH_PREFIX)
         Route::get('/icon-{size}.png', [BrandingController::class, 'icon'])
             ->whereIn('size', ['32', '180', '192'])
             ->name('icon');
+
+        // Online-Mitgliedsanmeldung liegt auf der App-Domain.
+        Route::get('/anmeldung', function (HomepageHosts $hosts, MemberApplicationSettings $settings) {
+            abort_unless($settings->isEnabled(), 404);
+
+            return redirect()->away($hosts->applicationUrl());
+        })->name('application');
 
         Route::get('/{slug}', [HomepageController::class, 'page'])
             ->where('slug', '[a-z0-9-]+')

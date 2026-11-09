@@ -48,6 +48,17 @@
         </a>
     @endfeature
 
+    <a
+        href="{{ route('admin.settings.application') }}"
+        wire:navigate
+        class="whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition
+        {{ request()->routeIs('admin.settings.application')
+            ? 'border-slate-900 text-slate-900'
+            : 'border-transparent text-slate-500 hover:text-slate-800' }}"
+    >
+        Online-Anmeldung
+    </a>
+
     @if(app(\App\Services\TenantManager::class)->current())
         <a
             href="{{ route('admin.settings.federations') }}"

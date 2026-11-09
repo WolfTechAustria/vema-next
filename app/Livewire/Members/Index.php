@@ -6,8 +6,10 @@ use App\Enums\MemberFieldType;
 use App\Exports\MembersExport;
 use App\Models\Honor;
 use App\Models\Member;
+use App\Models\MemberApplication;
 use App\Models\MemberField;
 use App\Services\ActivityLogger;
+use App\Services\MemberApplicationSettings;
 use App\Services\MemberColumns;
 use App\Services\MemberFields;
 use Illuminate\Database\Eloquent\Builder;
@@ -207,6 +209,8 @@ class Index extends Component
             // Erst die sichtbaren in ihrer Reihenfolge, dann die übrigen.
             'columnChoices' => [...$visibleColumns, ...array_values(array_diff(array_keys($catalog), $visibleColumns))],
             'hasPersonalColumns' => $columns->hasPersonalColumns(auth()->user()),
+            'pendingApplications' => MemberApplication::query()->pending()->count(),
+            'applicationsEnabled' => app(MemberApplicationSettings::class)->isEnabled(),
             'isAdmin' => (bool) auth()->user()?->hasRole('admin'),
             'filterableFields' => app(MemberFields::class)->fields(),
             'filterField' => $this->filterField(),

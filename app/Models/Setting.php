@@ -27,6 +27,12 @@ class Setting extends Model
             'imap_port' => 'integer',
             'imap_validate_cert' => 'boolean',
             'imap_password' => 'encrypted',
+            'application_enabled' => 'boolean',
+            'application_signature' => 'boolean',
+            'application_notify_emails' => 'array',
+            'application_fields' => 'array',
+            'application_membership_types' => 'array',
+            'application_consents' => 'array',
         ];
     }
 

@@ -32,6 +32,11 @@ Schedule::command('tenants:run', ['inventory:send-reminders'])
     ->weeklyOn(1, '07:15')
     ->withoutOverlapping();
 
+// täglich: unbestätigte Online-Anmeldungen löschen
+Schedule::command('tenants:run', ['applications:prune'])
+    ->dailyAt('03:40')
+    ->withoutOverlapping();
+
 // stündlich: Termine aus externen iCal-Kalendern übernehmen
 Schedule::command('tenants:run', ['events:sync-external'])
     ->hourly()

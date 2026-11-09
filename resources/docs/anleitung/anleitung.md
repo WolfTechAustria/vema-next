@@ -53,7 +53,7 @@ Welche Menüpunkte Sie sehen, hängt von Ihrer Rolle ab:
 
 | Rolle | Darf … |
 |---|---|
-| **Mitarbeiter** (ohne Zusatzrolle) | Dashboard, Mitglieder, Termine, Dienstplan, Mitgliedsbeiträge und Kommunikation nutzen |
+| **Mitarbeiter** (ohne Zusatzrolle) | Dashboard, Mitglieder (inkl. Online-Anmeldungen freigeben), Termine, Dienstplan, Mitgliedsbeiträge und Kommunikation nutzen |
 | **Kassier** | zusätzlich **Kassabuch** und **Rechnungen** |
 | **Homepage** | zusätzlich **Homepage** (Beiträge, Seiten, Gestaltung) |
 | **Zeugwart** | zusätzlich **Material** (Inventar, Ausgabe an Mitglieder, Prüftermine) |
@@ -347,6 +347,25 @@ Gefunden wird ein Stück über das Feld **Barcode / NFC** (z. B. der Hersteller-
 Fällige Prüfungen (ab 14 Tage vorher) und überfällige Rückgaben erscheinen in der Liste farbig, im Dashboard-Modul **Material** und in einer wöchentlichen Erinnerungs-Mail an Admins und Zeugwarte (Kapitel 14).
 
 > **Löschen oder ausscheiden?** **Löschen** entfernt ein Stück samt Ausgabe- und Prüfverlauf. Für Material, das nicht mehr verwendet wird, setzen Sie besser den Zustand auf **Ausgeschieden** – so bleibt der Verlauf erhalten.
+
+### 5.10 Online-Anmeldungen
+
+Ist die Online-Anmeldung eingerichtet (Kapitel 12.8), können sich neue Mitglieder über ein Formular im Internet anmelden – statt die Beitrittserklärung auf Papier auszufüllen. Jede Anmeldung landet zuerst unter **Mitglieder → Online-Anmeldungen** und wird erst nach Ihrer Freigabe zum Mitglied. Neue Anmeldungen zeigt VEMA mit einer Zahl beim Menüpunkt **Mitglieder** und mit einem Hinweis über der Mitgliederliste an; die eingestellten Empfänger erhalten außerdem eine E-Mail.
+
+**Anmeldung prüfen:** Ein Klick auf den Namen zeigt alle Angaben, die gewählte Mitgliedsart, die Zustimmungen und – falls verlangt – die Unterschrift. **Beitrittserklärung (PDF)** zeigt die ausgefüllte Erklärung. Gibt es bereits ein Mitglied mit gleichem Namen oder gleicher E-Mail-Adresse (auch ausgetretene), weist VEMA darauf hin. Tippfehler korrigieren Sie mit **Korrigieren**.
+
+**Freigeben:** **Als Mitglied aufnehmen** legt das Mitglied an:
+- Beitrittsdatum ist der Tag der Anmeldung.
+- E-Mail-Adresse, Telefonnummer und eigene Mitgliederfelder werden übernommen.
+- Die Mitgliedsart setzt die Kennzeichnung *Ordentliches* bzw. *Unterstützendes Mitglied*.
+- Die Beitrittserklärung wird als PDF unter **Dateien** beim Mitglied abgelegt (Kategorie „Beitrittserklärung“, nicht im Mitgliederbereich sichtbar).
+- Auf Wunsch geht die Willkommens-E-Mail hinaus.
+
+Fehlt die Anrede, ergänzen Sie sie vorher mit **Korrigieren**.
+
+**Ablehnen:** Mit optionaler Begründung, auf Wunsch mit E-Mail an den Antragsteller. Die Unterschrift wird dabei gelöscht. Ein ehemaliges Mitglied, das sich erneut anmeldet, nehmen Sie besser über den **Wiedereintritt** beim bestehenden Mitglied auf (Kapitel 5.4) und lehnen die Anmeldung ab.
+
+**Status:** *Offen* (wartet auf Freigabe), *E-Mail nicht bestätigt* (der Bestätigungslink wurde noch nicht angeklickt – solche Anmeldungen löscht VEMA nach 7 Tagen automatisch), *Freigegeben* und *Abgelehnt*. **Anmeldung löschen** entfernt eine Anmeldung endgültig.
 ---
 
 ## 6. Dienstplan
@@ -965,9 +984,30 @@ Unter **Einstellungen → Mitgliederfelder** legen Admins eigene Angaben zu den 
 - **Art:** Text, Zahl, Datum, Ja/Nein oder Auswahlliste (Auswahlmöglichkeiten eine pro Zeile). Sobald Werte erfasst sind, lässt sich die Art nicht mehr ändern und verwendete Auswahlmöglichkeiten nicht mehr entfernen.
 - **Mitgliederportal:** *Nicht im Portal*, *Im Portal sichtbar* oder *Im Portal bearbeitbar* – dann können Mitglieder den Wert in ihrem Profil selbst pflegen.
 - **↑ / ↓** bestimmen die Reihenfolge, **Deaktivieren** blendet ein Feld aus, ohne die Werte zu verlieren. **Löschen** entfernt das Feld samt aller Werte.
+- **Auch in der Online-Anmeldung abfragen:** Das Feld erscheint im Anmeldeformular (Kapitel 12.8); der Wert wird bei der Freigabe übernommen.
 - **Platzhalter:** Jedes Feld hat einen Platzhalter wie `{{feld_instrument}}`, der in Rundschreiben, Beitragsvorschreibungen, Erinnerungen und der Willkommens-E-Mail durch den Wert des Mitglieds ersetzt wird.
 
 Die Felder erscheinen beim Mitglied unter **Weitere Angaben**, als Spalte und Filter in der Mitgliederliste und im Excel-Export.
+
+### 12.8 Online-Anmeldung
+
+Unter **Einstellungen → Online-Anmeldung** richten Admins das Anmeldeformular für neue Mitglieder ein (in allen Paketen enthalten):
+
+- **Online-Anmeldung aktivieren** und den **Link zum Formular** kopieren, etwa für einen Button „Mitglied werden“ auf Ihrer Homepage. Auf der Vereinshomepage von VEMA führt auch die Adresse `/anmeldung` zum Formular.
+- **Texte:** Die **Einleitung** steht oben im Formular (z. B. Höhe des Mitgliedsbeitrags), die **Datenschutzhinweise** unten. Beide erscheinen auch in der Beitrittserklärung (PDF).
+- **Felder:** Anrede, Geburtsdatum, Adresse, Telefon und Ort der Unterzeichnung lassen sich ein- und ausblenden und als Pflicht markieren. Vorname, Nachname und E-Mail werden immer abgefragt. Das Beitrittsdatum ist fix der Tag der Anmeldung. Ergibt das Geburtsdatum ein Alter unter 18 Jahren, fragt das Formular nach der/dem Erziehungsberechtigten. Eigene Mitgliederfelder nehmen Sie mit der Option **Auch in der Online-Anmeldung abfragen** auf (Kapitel 12.7).
+- **Mitgliedsarten:** z. B. *Ordentliches Mitglied* und *Unterstützendes Mitglied*, jeweils mit einem **Infotext**, der im Formular direkt darunter steht. **Beim Mitglied** legt fest, welche Kennzeichnung das Mitglied bei der Freigabe erhält.
+- **Zustimmungen:** Checkboxen unter den Datenschutzhinweisen, z. B. zur Datenverarbeitung oder zur Veröffentlichung von Fotos. Als **Pflicht** markierte müssen angehakt werden.
+- **Unterschrift verlangen:** Das Formular zeigt ein Feld, in dem mit Finger oder Maus unterschrieben wird.
+- **Spam-Schutz:**
+  - **E-Mail-Bestätigung:** Die Anmeldung erscheint erst, wenn der Link in der Bestätigungs-E-Mail angeklickt wurde (72 Stunden gültig).
+  - **Captcha:** Eine Sicherheitsprüfung von Cloudflare Turnstile beim Absenden; die Anmeldung erscheint sofort. Erwähnen Sie den Dienst in den Datenschutzhinweisen.
+  - **Beides** kombiniert die zwei Verfahren.
+
+  Zusätzlich sind unsichtbare Fallen für Bots und eine Begrenzung auf wenige Anmeldungen pro Stunde je Anschluss immer aktiv. Captcha ist nur wählbar, wenn es auf dem Server eingerichtet ist.
+- **Benachrichtigung an:** E-Mail-Adressen, die bei jeder neuen Anmeldung informiert werden (leer: alle Administratoren). Der Antragsteller erhält eine Eingangsbestätigung mit seinen Angaben.
+
+Die Bearbeitung der Anmeldungen ist in Kapitel 5.10 beschrieben.
 
 ---
 
@@ -1059,6 +1099,7 @@ VEMA erledigt einige Aufgaben selbstständig:
 | **Geburtstags-Erinnerung** | täglich 7:00 Uhr | Bei runden und halbrunden Geburtstagen aktiver Mitglieder erhält die eingestellte Empfängergruppe (Standard **„Vorstand“**) eine E-Mail – die Empfänger stehen im BCC. |
 | **Monatliche Geburtstagsliste** | am 1. jedes Monats, 6:30 Uhr | PDF-Liste aller Geburtstage des Monats an dieselbe Gruppe, ebenfalls im BCC. |
 | **Material-Erinnerung** | montags 7:15 Uhr | Admins und Zeugwarte erhalten eine Sammel-Mail mit fälligen Prüfungen und überfälligen Rückgaben – nur wenn seit der letzten Erinnerung etwas Neues fällig wurde (Kapitel 5.9). |
+| **Unbestätigte Online-Anmeldungen löschen** | täglich 3:40 Uhr | Anmeldungen, deren E-Mail-Adresse nach 7 Tagen nicht bestätigt ist, werden gelöscht (Kapitel 5.10). |
 | **Dienst-Erinnerung** | täglich 7:00 Uhr | Helfer mit Dienst in 2 Tagen erhalten eine E-Mail (sofern nicht abgeschaltet und E-Mail vorhanden). |
 | **Externe Kalender abgleichen** | stündlich | Termine aller aktiven externen Kalender werden übernommen (Kapitel 7.4). |
 | **Beiträge per E-Mail abrufen** | alle 5 Minuten | Berechtigte Mails im Beitrags-Postfach werden zu Homepage-Entwürfen (Kapitel 16.6). |
