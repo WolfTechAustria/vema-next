@@ -3,10 +3,6 @@
 use App\Livewire\MemberPortal\MyDuties;
 use App\Models\ActivityLog;
 use App\Models\DutyCalendarShare;
-use App\Models\DutyPlan;
-use App\Models\DutyPlanAssignment;
-use App\Models\DutyPlanEvent;
-use App\Models\DutyPlanRole;
 use App\Models\Member;
 use App\Models\MemberDutySettings;
 use App\Models\MemberEmail;
@@ -15,15 +11,6 @@ use Livewire\Livewire;
 function shareMember(string $name, string $surname, bool $active = true): Member
 {
     return Member::create(['gender' => 'w', 'name' => $name, 'surname' => $surname, 'active' => $active ? 1 : 0]);
-}
-
-function assignDuty(Member $member, string $dutyName = 'Bar'): DutyPlanAssignment
-{
-    $plan = DutyPlan::query()->firstOrCreate(['name' => 'Saison'], ['date_from' => today()->toDateString(), 'date_to' => today()->addYear()->toDateString()]);
-    $role = DutyPlanRole::create(['planID' => $plan->planID, 'name' => $dutyName, 'weekday_mask' => 127]);
-    $event = DutyPlanEvent::create(['planID' => $plan->planID, 'roleID' => $role->roleID, 'duty_date' => today()->addDays(3)->toDateString(), 'duty_name' => $dutyName, 'required_helpers' => 1]);
-
-    return DutyPlanAssignment::create(['eventID' => $event->eventID, 'slot_no' => 1, 'memberID' => $member->memberID]);
 }
 
 function calendarTokenOf(Member $member): string

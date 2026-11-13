@@ -216,6 +216,112 @@
         </div>
     </section>
 
+    @if($swapsAvailable && ($incomingSwaps->isNotEmpty() || $outgoingSwaps->isNotEmpty()))
+        <!-- Tauschanfragen -->
+        <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="border-b border-slate-200 px-6 py-4">
+                <h3 class="font-semibold text-slate-900">
+                    Tauschanfragen
+                </h3>
+            </div>
+
+            @error('swap')
+                <p class="border-b border-red-100 bg-red-50 px-6 py-3 text-sm text-red-700">{{ $message }}</p>
+            @enderror
+
+            @foreach($incomingSwaps as $swap)
+                @php($swapWarnings = $swap->status === \App\Enums\DutySwapStatus::Pending ? $swaps->warningsForRequest($swap, $member) : [])
+                <div wire:key="swap-in-{{ $swap->swapID }}" class="border-b border-slate-100 px-6 py-4 last:border-b-0">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="text-sm text-slate-700">
+                            @if($swap->isSwap())
+                                <span class="font-medium text-slate-900">{{ $swap->requester->full_name }}</span> möchte tauschen:
+                                du übernimmst <strong>{{ $swaps->describe($swap->assignment->event) }}</strong>,
+                                dafür übernimmt {{ $swap->requester->name }} deinen Dienst <strong>{{ $swaps->describe($swap->targetAssignment?->event) }}</strong>.
+                            @else
+                                <span class="font-medium text-slate-900">{{ $swap->requester->full_name }}</span> sucht
+                                {{ $swap->isOpenToAll() ? 'jemanden' : 'dich' }} für <strong>{{ $swaps->describe($swap->assignment->event) }}</strong>.
+                                @if($swap->isOpenToAll())
+                                    <span class="text-slate-500">(an alle im Dienstplan – wer zuerst annimmt, übernimmt)</span>
+                                @endif
+                            @endif
+
+                            @if($swap->message)
+                                <p class="mt-1 italic text-slate-500">„{{ $swap->message }}“</p>
+                            @endif
+                        </div>
+
+                        @if($swap->status === \App\Enums\DutySwapStatus::AwaitingApproval)
+                            <span class="rounded-full px-2.5 py-0.5 text-xs font-medium {{ $swap->status->badgeClasses() }}">
+                                Angenommen – {{ $swap->status->label() }}
+                            </span>
+                        @else
+                            <div class="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    wire:click="acceptSwap({{ $swap->swapID }})"
+                                    wire:confirm="{{ $swap->isSwap() ? 'Dienste tauschen?' : 'Dienst übernehmen?' }}"
+                                    class="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700"
+                                >
+                                    {{ $swap->isSwap() ? 'Tauschen' : 'Übernehmen' }}
+                                </button>
+                                @unless($swap->isOpenToAll())
+                                    <button
+                                        type="button"
+                                        wire:click="declineSwap({{ $swap->swapID }})"
+                                        class="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                                    >
+                                        Ablehnen
+                                    </button>
+                                @endunless
+                            </div>
+                        @endif
+                    </div>
+
+                    @if($swapWarnings !== [])
+                        <div class="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                            @foreach($swapWarnings as $warning)
+                                <div>{{ $warning }}</div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @endforeach
+
+            @foreach($outgoingSwaps as $swap)
+                <div wire:key="swap-out-{{ $swap->swapID }}" class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-4 last:border-b-0">
+                    <div class="text-sm text-slate-700">
+                        Deine Anfrage:
+                        {{ $swap->isSwap() ? 'Tausch' : 'Abgabe' }} von <strong>{{ $swaps->describe($swap->assignment->event) }}</strong>
+                        @if($swap->isSwap())
+                            gegen <strong>{{ $swaps->describe($swap->targetAssignment?->event) }}</strong>
+                        @endif
+                        – {{ $swap->targetMember ? 'an '.$swap->targetMember->full_name : 'an alle im Dienstplan' }}
+                        @if($swap->acceptedBy)
+                            <span class="text-slate-500">(angenommen von {{ $swap->acceptedBy->full_name }})</span>
+                        @endif
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <span class="rounded-full px-2.5 py-0.5 text-xs font-medium {{ $swap->status->badgeClasses() }}">
+                            {{ $swap->status->label() }}
+                        </span>
+                        @if($swap->status->isOpen())
+                            <button
+                                type="button"
+                                wire:click="cancelSwap({{ $swap->swapID }})"
+                                wire:confirm="Anfrage zurückziehen?"
+                                class="text-sm text-red-600 hover:text-red-800"
+                            >
+                                Zurückziehen
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </section>
+    @endif
+
     <!-- Anstehende Dienste -->
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div class="border-b border-slate-200 px-6 py-4">
@@ -225,15 +331,111 @@
         </div>
 
         @forelse ($upcoming as $assignment)
-            <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 last:border-b-0">
-                <div>
-                    <div class="font-medium text-slate-900">
-                        {{ $assignment->event->duty_name }}
+            <div wire:key="upcoming-{{ $assignment->assignmentID }}" class="border-b border-slate-100 px-6 py-4 last:border-b-0">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <div class="font-medium text-slate-900">
+                            {{ $assignment->event->duty_name }}
+                        </div>
+                        <div class="text-sm text-slate-500">
+                            {{ $assignment->event->duty_date->translatedFormat('l, d.m.Y') }}
+                        </div>
                     </div>
-                    <div class="text-sm text-slate-500">
-                        {{ $assignment->event->duty_date->translatedFormat('l, d.m.Y') }}
-                    </div>
+
+                    @if($swapsAvailable)
+                        @if(in_array($assignment->assignmentID, $openSwapAssignmentIDs, true))
+                            <span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">Tausch angefragt</span>
+                        @elseif($swapForm === null && $swaps->isBeforeDeadline($assignment->event))
+                            <button
+                                type="button"
+                                wire:click="openSwap({{ $assignment->assignmentID }})"
+                                class="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            >
+                                Tauschen / abgeben
+                            </button>
+                        @endif
+                    @endif
                 </div>
+
+                @if($swapForm && $swapForm['assignment']->assignmentID === $assignment->assignmentID)
+                    <form wire:submit="sendSwapRequest" class="mt-4 space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <div class="flex flex-wrap gap-4 text-sm">
+                            <label class="flex items-center gap-2">
+                                <input type="radio" wire:model.live="swapType" value="handover">
+                                Abgeben (jemand übernimmt meinen Dienst)
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="radio" wire:model.live="swapType" value="swap">
+                                Tauschen (gegen einen Dienst eines anderen Mitglieds)
+                            </label>
+                        </div>
+
+                        @if($swapForm['candidates']->isEmpty())
+                            <p class="text-sm text-slate-500">Im Dienstplan gibt es keine weiteren Helfer, an die du eine Anfrage senden kannst.</p>
+                        @else
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="swap-target" class="mb-1 block text-sm font-medium text-slate-700">An</label>
+                                    <select id="swap-target" wire:model.live="swapTarget" class="w-full rounded-md border-slate-300 text-sm">
+                                        @if($swapType === 'handover')
+                                            <option value="all">Alle im Dienstplan</option>
+                                        @else
+                                            <option value="">Mitglied wählen …</option>
+                                        @endif
+                                        @foreach($swapForm['candidates'] as $candidate)
+                                            <option value="{{ $candidate->memberID }}">{{ $candidate->full_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('swapTarget') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                </div>
+
+                                @if($swapType === 'swap' && $swapTarget !== '')
+                                    <div>
+                                        <label for="swap-target-assignment" class="mb-1 block text-sm font-medium text-slate-700">Gegen diesen Dienst</label>
+                                        @if($swapForm['targetAssignments']->isEmpty())
+                                            <p class="text-sm text-slate-500">Dieses Mitglied hat keine tauschbaren Dienste in diesem Dienstplan.</p>
+                                        @else
+                                            <select id="swap-target-assignment" wire:model.live="swapTargetAssignmentID" class="w-full rounded-md border-slate-300 text-sm">
+                                                <option value="">Dienst wählen …</option>
+                                                @foreach($swapForm['targetAssignments'] as $targetAssignment)
+                                                    <option value="{{ $targetAssignment->assignmentID }}">{{ $swaps->describe($targetAssignment->event) }}</option>
+                                                @endforeach
+                                            </select>
+                                        @endif
+                                        @error('swapTargetAssignmentID') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                    </div>
+                                @endif
+                            </div>
+
+                            @if($swapForm['warnings'] !== [])
+                                <div class="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                                    @foreach($swapForm['warnings'] as $warning)
+                                        <div>{{ $warning }}</div>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <div>
+                                <label for="swap-message" class="mb-1 block text-sm font-medium text-slate-700">Nachricht (optional)</label>
+                                <textarea id="swap-message" wire:model="swapMessage" rows="2" maxlength="500" class="w-full rounded-md border-slate-300 text-sm"></textarea>
+                                @error('swapMessage') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                        @endif
+
+                        @error('swap') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+
+                        <div class="flex gap-2">
+                            @if($swapForm['candidates']->isNotEmpty())
+                                <button type="submit" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                                    Anfrage senden
+                                </button>
+                            @endif
+                            <button type="button" wire:click="closeSwap" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                                Abbrechen
+                            </button>
+                        </div>
+                    </form>
+                @endif
             </div>
         @empty
             <p class="px-6 py-4 text-sm text-slate-500">

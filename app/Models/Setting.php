@@ -33,6 +33,10 @@ class Setting extends Model
             'application_fields' => 'array',
             'application_membership_types' => 'array',
             'application_consents' => 'array',
+            'duty_swaps_enabled' => 'boolean',
+            'duty_swap_requires_approval' => 'boolean',
+            'duty_swap_deadline_hours' => 'integer',
+            'duty_swap_notify_emails' => 'array',
         ];
     }
 

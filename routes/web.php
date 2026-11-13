@@ -35,6 +35,7 @@ use App\Livewire\CashBook\Years as CashBookYears;
 use App\Livewire\Dashboard\Index as DashboardIndex;
 use App\Livewire\DutyPlan\Absences as DutyPlanAbsences;
 use App\Livewire\DutyPlan\Index as DutyPlanIndex;
+use App\Livewire\DutyPlan\SwapRequests as DutyPlanSwapRequests;
 use App\Livewire\DutyPlan\Volunteers as DutyPlanVolunteers;
 use App\Livewire\Events\Index as EventsIndex;
 use App\Livewire\ExternalContacts\Index;
@@ -195,6 +196,10 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/duty-plan/absences', DutyPlanAbsences::class)
         ->middleware('feature:duty_plan')
         ->name('duty-plan.absences');
+
+    Route::livewire('/duty-plan/tausch', DutyPlanSwapRequests::class)
+        ->middleware('feature:duty_plan')
+        ->name('duty-plan.swaps');
 
     Route::livewire('/events', EventsIndex::class)
         ->middleware('feature:events')

@@ -2,15 +2,21 @@
 
 namespace App\Livewire\MemberPortal;
 
+use App\Enums\DutySwapStatus;
+use App\Enums\DutySwapType;
 use App\Enums\Feature;
 use App\Models\DutyCalendarShare;
+use App\Models\DutyPlanAssignment;
+use App\Models\DutyPlanVolunteer;
+use App\Models\DutySwapRequest;
 use App\Models\Member;
 use App\Models\MemberDutySettings;
+use App\Services\ActiveMemberResolver;
 use App\Services\ActivityLogger;
 use App\Services\DutyCalendarShares;
+use App\Services\DutySwaps;
 use App\Services\PlanEntitlements;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class MyDuties extends Component
@@ -24,6 +30,20 @@ class MyDuties extends Component
 
     /** Freigabe, deren eigener Abo-Link angezeigt wird */
     public ?int $visibleLinkShareID = null;
+
+    /** Dienst, für den gerade eine Tausch-/Abgabeanfrage erstellt wird */
+    public ?int $swapAssignmentID = null;
+
+    /** "handover" oder "swap" */
+    public string $swapType = 'handover';
+
+    /** memberID des angefragten Mitglieds oder "all" (Abgabe an alle) */
+    public string $swapTarget = 'all';
+
+    /** Gewünschter Dienst des anderen Mitglieds (nur beim Tausch) */
+    public ?int $swapTargetAssignmentID = null;
+
+    public string $swapMessage = '';
 
     public function mount(): void
     {
@@ -164,6 +184,226 @@ class MyDuties extends Component
     }
 
     /**
+     * Formular für eine Tausch- bzw. Abgabeanfrage öffnen.
+     */
+    public function openSwap(int $assignmentID, DutySwaps $swaps): void
+    {
+        $this->ensureSwapsAvailable($swaps);
+
+        $assignment = $this->offerableAssignment($assignmentID, $swaps);
+
+        $this->resetErrorBag();
+        $this->swapAssignmentID = $assignment->assignmentID;
+        $this->swapType = DutySwapType::Handover->value;
+        $this->swapTarget = 'all';
+        $this->swapTargetAssignmentID = null;
+        $this->swapMessage = '';
+    }
+
+    public function closeSwap(): void
+    {
+        $this->swapAssignmentID = null;
+        $this->resetErrorBag();
+    }
+
+    public function updatedSwapType(): void
+    {
+        if ($this->swapType === DutySwapType::Swap->value && $this->swapTarget === 'all') {
+            $this->swapTarget = '';
+        }
+
+        $this->swapTargetAssignmentID = null;
+    }
+
+    public function updatedSwapTarget(): void
+    {
+        $this->swapTargetAssignmentID = null;
+    }
+
+    public function sendSwapRequest(DutySwaps $swaps): void
+    {
+        $this->ensureSwapsAvailable($swaps);
+
+        $member = $this->activeMember();
+        $assignment = $this->offerableAssignment((int) $this->swapAssignmentID, $swaps);
+        $type = DutySwapType::tryFrom($this->swapType) ?? abort(404);
+
+        $this->validate([
+            'swapTarget' => ['required', 'string'],
+            'swapMessage' => ['nullable', 'string', 'max:500'],
+            'swapTargetAssignmentID' => [$type === DutySwapType::Swap ? 'required' : 'nullable', 'integer'],
+        ], [
+            'swapTarget.required' => 'Bitte ein Mitglied wählen.',
+            'swapTargetAssignmentID.required' => 'Bitte den gewünschten Dienst wählen.',
+        ]);
+
+        $target = null;
+        $targetAssignment = null;
+
+        if ($this->swapTarget !== 'all' || $type === DutySwapType::Swap) {
+            $target = $swaps->candidates($member, $assignment)->firstWhere('memberID', (int) $this->swapTarget) ?? abort(404);
+        }
+
+        if ($type === DutySwapType::Swap) {
+            $targetAssignment = $swaps->targetAssignments($target, $assignment)
+                ->firstWhere('assignmentID', (int) $this->swapTargetAssignmentID) ?? abort(404);
+        }
+
+        $swaps->request($member, $assignment, $type, $target, $targetAssignment, $this->swapMessage);
+
+        $this->swapAssignmentID = null;
+
+        session()->flash('success', $target
+            ? 'Deine Anfrage wurde an '.$target->full_name.' gesendet.'
+            : 'Dein Dienst wurde allen im Dienstplan zur Übernahme angeboten.');
+    }
+
+    public function acceptSwap(int $swapID, DutySwaps $swaps): void
+    {
+        $this->ensureSwapsAvailable($swaps);
+
+        $member = $this->activeMember();
+        $swap = DutySwapRequest::query()->find($swapID);
+
+        abort_unless($swap && $swaps->canRespond($swap, $member), 404);
+
+        $swap = $swaps->accept($swap, $member);
+
+        session()->flash('success', $swap->status === DutySwapStatus::AwaitingApproval
+            ? 'Danke! Der Tausch wird nach der Freigabe durch den Verein im Dienstplan übernommen.'
+            : 'Erledigt – der Dienstplan wurde angepasst.');
+    }
+
+    public function declineSwap(int $swapID, DutySwaps $swaps): void
+    {
+        $swap = DutySwapRequest::query()->find($swapID) ?? abort(404);
+
+        $swaps->decline($swap, $this->activeMember());
+
+        session()->flash('success', 'Die Anfrage wurde abgelehnt.');
+    }
+
+    public function cancelSwap(int $swapID, DutySwaps $swaps): void
+    {
+        $swap = DutySwapRequest::query()->find($swapID) ?? abort(404);
+
+        $swaps->cancel($swap, $this->activeMember());
+
+        session()->flash('success', 'Die Anfrage wurde zurückgezogen.');
+    }
+
+    private function ensureSwapsAvailable(DutySwaps $swaps): void
+    {
+        abort_unless(app(PlanEntitlements::class)->allows(Feature::DutyPlan) && $swaps->isEnabled(), 403);
+    }
+
+    private function offerableAssignment(int $assignmentID, DutySwaps $swaps): DutyPlanAssignment
+    {
+        $assignment = DutyPlanAssignment::query()->with('event')->find($assignmentID);
+
+        abort_unless($assignment && $swaps->canOffer($this->activeMember(), $assignment), 404);
+
+        return $assignment;
+    }
+
+    /**
+     * Offene Anfragen, auf die das Mitglied antworten kann, und solche, die
+     * es angenommen hat und die noch auf die Freigabe warten.
+     *
+     * @return Collection<int, DutySwapRequest>
+     */
+    private function incomingSwaps(Member $member): Collection
+    {
+        $planIDs = DutyPlanVolunteer::query()
+            ->where('memberID', $member->memberID)
+            ->where('active', 1)
+            ->pluck('planID');
+
+        return DutySwapRequest::query()
+            ->with(['requester', 'assignment.event.role', 'targetAssignment.event'])
+            ->where('requesterID', '!=', $member->memberID)
+            ->where(fn ($query) => $query
+                ->where(fn ($query) => $query
+                    ->where('status', DutySwapStatus::Pending)
+                    ->where(fn ($query) => $query
+                        ->where('targetMemberID', $member->memberID)
+                        ->orWhere(fn ($query) => $query
+                            ->whereNull('targetMemberID')
+                            ->whereHas('assignment.event', fn ($query) => $query->whereIn('planID', $planIDs)))))
+                ->orWhere(fn ($query) => $query
+                    ->where('status', DutySwapStatus::AwaitingApproval)
+                    ->where('acceptedByID', $member->memberID)))
+            ->get()
+            ->filter(fn (DutySwapRequest $swap) => $swap->assignment?->event !== null)
+            ->sortBy(fn (DutySwapRequest $swap) => $swap->assignment->event->duty_date)
+            ->values();
+    }
+
+    /**
+     * Eigene Anfragen: offene und die der letzten 30 Tage.
+     *
+     * @return Collection<int, DutySwapRequest>
+     */
+    private function outgoingSwaps(Member $member): Collection
+    {
+        return DutySwapRequest::query()
+            ->with(['targetMember', 'acceptedBy', 'assignment.event', 'targetAssignment.event'])
+            ->where('requesterID', $member->memberID)
+            ->where(fn ($query) => $query
+                ->whereIn('status', DutySwapStatus::open())
+                ->orWhere('updated_at', '>=', now()->subDays(30)))
+            ->latest()
+            ->get()
+            ->filter(fn (DutySwapRequest $swap) => $swap->assignment?->event !== null)
+            ->values();
+    }
+
+    /**
+     * Daten für das geöffnete Anfrage-Formular.
+     *
+     * @return array{assignment: DutyPlanAssignment, candidates: Collection<int, Member>, targetAssignments: Collection<int, DutyPlanAssignment>, warnings: list<string>}|null
+     */
+    private function swapForm(Member $member, DutySwaps $swaps): ?array
+    {
+        if ($this->swapAssignmentID === null) {
+            return null;
+        }
+
+        $assignment = DutyPlanAssignment::query()->with('event.role')->find($this->swapAssignmentID);
+
+        if (! $assignment || ! $swaps->canOffer($member, $assignment)) {
+            $this->swapAssignmentID = null;
+
+            return null;
+        }
+
+        $candidates = $swaps->candidates($member, $assignment);
+        $target = $candidates->firstWhere('memberID', (int) $this->swapTarget);
+        $targetAssignments = $target && $this->swapType === DutySwapType::Swap->value
+            ? $swaps->targetAssignments($target, $assignment)
+            : collect();
+
+        $warnings = [];
+
+        if ($target) {
+            $warnings = $swaps->warningsFor($target, $assignment->event, $this->swapTargetAssignmentID);
+
+            $wanted = $targetAssignments->firstWhere('assignmentID', (int) $this->swapTargetAssignmentID);
+
+            if ($wanted) {
+                $warnings = [...$warnings, ...$swaps->warningsFor($member, $wanted->event, $assignment->assignmentID)];
+            }
+        }
+
+        return [
+            'assignment' => $assignment,
+            'candidates' => $candidates,
+            'targetAssignments' => $targetAssignments,
+            'warnings' => $warnings,
+        ];
+    }
+
+    /**
      * @return Collection<int, Member>
      */
     private function shareCandidates(Member $owner, DutyCalendarShares $shares): Collection
@@ -200,21 +440,7 @@ class MyDuties extends Component
 
     private function activeMember(): Member
     {
-        $account = Auth::guard('member')->user();
-
-        abort_unless($account, 403);
-
-        $memberID = session('active_member_id');
-
-        abort_unless($memberID, 403, 'Kein Mitgliederprofil ausgewählt.');
-
-        return Member::query()
-            ->where('memberID', $memberID)
-            ->where('active', true)
-            ->whereHas('emails', function ($query) use ($account) {
-                $query->where('email', $account->email);
-            })
-            ->firstOrFail();
+        return app(ActiveMemberResolver::class)->resolve();
     }
 
     public function render()
@@ -239,6 +465,25 @@ class MyDuties extends Component
 
         $sharingAvailable = app(PlanEntitlements::class)->allows(Feature::DutyPlan);
 
+        $swaps = app(DutySwaps::class);
+        $swapsAvailable = $sharingAvailable && $swaps->isEnabled();
+
+        if ($swapsAvailable) {
+            $swaps->expireStale();
+        }
+
+        $openSwapAssignmentIDs = $swapsAvailable
+            ? DutySwapRequest::query()
+                ->open()
+                ->where(fn ($query) => $query
+                    ->whereIn('assignmentID', $upcoming->pluck('assignmentID'))
+                    ->orWhereIn('targetAssignmentID', $upcoming->pluck('assignmentID')))
+                ->get(['assignmentID', 'targetAssignmentID'])
+                ->flatMap(fn (DutySwapRequest $swap) => [$swap->assignmentID, $swap->targetAssignmentID])
+                ->filter()
+                ->all()
+            : [];
+
         return view('livewire.member-portal.my-duties', [
             'upcoming' => $upcoming,
             'past' => $past,
@@ -246,6 +491,13 @@ class MyDuties extends Component
             'sharesGiven' => $sharingAvailable ? $member->dutySharesGiven()->with('viewer')->get()->filter(fn (DutyCalendarShare $share) => $share->viewer?->active)->sortBy('viewer.surname')->values() : collect(),
             'sharesReceived' => $sharingAvailable ? DutyCalendarShare::query()->active()->where('viewerID', $member->memberID)->with('owner')->get()->sortBy('owner.surname')->values() : collect(),
             'shareCandidates' => $sharingAvailable ? $this->shareCandidates($member, app(DutyCalendarShares::class)) : collect(),
+            'swapsAvailable' => $swapsAvailable,
+            'swaps' => $swaps,
+            'member' => $member,
+            'incomingSwaps' => $swapsAvailable ? $this->incomingSwaps($member) : collect(),
+            'outgoingSwaps' => $swapsAvailable ? $this->outgoingSwaps($member) : collect(),
+            'openSwapAssignmentIDs' => $openSwapAssignmentIDs,
+            'swapForm' => $swapsAvailable ? $this->swapForm($member, $swaps) : null,
         ])->layout('layouts.app', [
             'title' => 'Meine Dienste | VEMA',
             'heading' => 'Meine Dienste',

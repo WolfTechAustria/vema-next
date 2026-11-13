@@ -42,6 +42,20 @@
                 Abwesenheiten
             </a>
 
+            @php
+                $awaitingSwaps = \App\Models\DutySwapRequest::query()->where('status', \App\Enums\DutySwapStatus::AwaitingApproval)->count();
+            @endphp
+            <a
+                href="{{ route('duty-plan.swaps') }}"
+                wire:navigate
+                class="rounded-lg text-center border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+                Diensttausch
+                @if($awaitingSwaps > 0)
+                    <span class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">{{ $awaitingSwaps }}</span>
+                @endif
+            </a>
+
         </div>
 
     </div>
