@@ -40,6 +40,22 @@
     $isInternal = $webUser !== null;
 
     /*
+     * Admin hat den Mitgliederbereich als Mitglied geöffnet: beide Anmeldungen
+     * bestehen, die Seite entscheidet, welche Ansicht gilt.
+     */
+    $impersonatedBy = $isMember && $isInternal
+        ? session(\App\Http\Controllers\MemberImpersonationController::SESSION_KEY)
+        : null;
+
+    if ($isMember && $isInternal) {
+        if (request()->routeIs('member.*')) {
+            $isInternal = false;
+        } else {
+            $isMember = false;
+        }
+    }
+
+    /*
      * Im Mitgliederbereich gilt das gewählte Profil (Familien mit gemeinsamer
      * E-Mail), sonst das Mitglied des Kontos.
      */
@@ -769,7 +785,25 @@
                 </button>
 
 
-                @if(Route::has('member.logout'))
+                @if($impersonatedBy)
+
+                    <form
+                        method="POST"
+                        action="{{ route('member.impersonation.stop') }}"
+                    >
+                        @csrf
+
+                        <button
+                            type="submit"
+                            class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                        >
+                            <span>↩</span>
+                            Zurück zur Verwaltung
+                        </button>
+
+                    </form>
+
+                @elseif(Route::has('member.logout'))
 
                     <form
                         method="POST"
@@ -932,6 +966,22 @@
             $platformTenant = app(\App\Services\TenantManager::class)->current();
             $supportLoginBy = session(\App\Http\Controllers\Auth\SupportLoginController::SESSION_KEY);
         @endphp
+
+        @if($impersonatedBy && $isMember)
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-amber-300 bg-amber-100 px-4 py-2.5 text-sm text-amber-900 sm:px-6 lg:px-8">
+                <p class="min-w-0 flex-1">
+                    <span class="font-bold">Mitgliederansicht</span>
+                    – Sie sehen den Mitgliederbereich als „{{ $portalMember?->full_name ?? $memberAccount->email }}“. Änderungen werden für dieses Mitglied gespeichert.
+                </p>
+
+                <form method="POST" action="{{ route('member.impersonation.stop') }}">
+                    @csrf
+                    <button type="submit" class="rounded-lg bg-amber-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-800">
+                        Zurück zur Verwaltung
+                    </button>
+                </form>
+            </div>
+        @endif
 
         @if($supportLoginBy && $webUser)
             <div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-violet-300 bg-violet-100 px-4 py-2.5 text-sm text-violet-900 sm:px-6 lg:px-8">

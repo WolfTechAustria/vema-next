@@ -149,6 +149,7 @@ class Show extends Component
 
         return view('livewire.members.show', [
             'canManageInventory' => $canManageInventory,
+            'canOpenMemberPortal' => $this->canOpenMemberPortal(),
             'inventoryLoans' => $canManageInventory ? $this->member->inventoryLoans()->with('item')->get() : collect(),
             'availableInventoryItems' => $canManageInventory && $this->showInventoryForm
                 ? InventoryItem::query()->inService()->whereDoesntHave('currentLoan')->orderBy('name')->get()
@@ -164,6 +165,17 @@ class Show extends Component
                 'title' => $this->member->full_name.' | VEMA',
                 'heading' => 'Mitglied',
             ]);
+    }
+
+    /**
+     * Admins können den Mitgliederbereich aus Sicht des Mitglieds öffnen.
+     */
+    private function canOpenMemberPortal(): bool
+    {
+        return auth()->user()?->hasRole('admin')
+            && $this->member->active
+            && $this->member->emails->isNotEmpty()
+            && app(PlanEntitlements::class)->allows(Feature::MemberPortal);
     }
 
     public function showCircularEmail(int $recipientID): void

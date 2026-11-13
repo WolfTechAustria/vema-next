@@ -18,6 +18,7 @@ use App\Http\Controllers\MemberAuthController;
 use App\Http\Controllers\MemberCalendarController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberFileController;
+use App\Http\Controllers\MemberImpersonationController;
 use App\Http\Controllers\MemberPhotoController;
 use App\Http\Controllers\MemberPortalDocumentController;
 use App\Http\Controllers\MembershipFeePrescriptionController;
@@ -172,6 +173,10 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
 
     Route::livewire('/members/{member}/edit', MembersEdit::class)
         ->name('members.edit');
+
+    Route::post('/members/{member}/als-mitglied', [MemberImpersonationController::class, 'start'])
+        ->middleware(['admin', 'feature:member_portal'])
+        ->name('members.impersonate');
 
     Route::get('/member-files/{memberFile}', [MemberFileController::class, 'show'])
         ->name('member-files.show');
@@ -460,6 +465,9 @@ Route::middleware(['auth:member', 'feature:member_portal'])->group(function () {
 
     Route::post('/member/logout', [MemberAuthController::class, 'logout'])
         ->name('member.logout');
+
+    Route::post('/member/zurueck-zur-verwaltung', [MemberImpersonationController::class, 'stop'])
+        ->name('member.impersonation.stop');
 
     Route::livewire('/member/duties', MemberPortalMyDuties::class)
         ->name('member.duties');

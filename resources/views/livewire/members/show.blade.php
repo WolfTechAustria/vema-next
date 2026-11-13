@@ -81,6 +81,19 @@
                 </button>
             @endif
 
+            @if($canOpenMemberPortal)
+                <form method="POST" action="{{ route('members.impersonate', $member) }}">
+                    @csrf
+                    <button
+                        type="submit"
+                        title="Mitgliederbereich so öffnen, wie ihn das Mitglied sieht"
+                        class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                        Als Mitglied anmelden
+                    </button>
+                </form>
+            @endif
+
             <a
                 href="{{ route('members.edit', $member) }}"
                 wire:navigate
