@@ -513,6 +513,9 @@ Route::middleware(['auth:member', 'feature:member_portal'])->group(function () {
 Route::get('/calendar/duty/{token}.ics', [MemberCalendarController::class, 'show'])
     ->name('member-calendar.ical');
 
+Route::get('/calendar/shared/{token}.ics', [MemberCalendarController::class, 'shared'])
+    ->name('member-calendar.shared');
+
 Route::get('/branding/logo', [BrandingController::class, 'logo'])
     ->name('branding.logo');
 

@@ -314,6 +314,22 @@ class Member extends Model
         )->withTimestamps();
     }
 
+    /**
+     * Freigaben der eigenen Dienste an andere Mitglieder.
+     */
+    public function dutySharesGiven(): HasMany
+    {
+        return $this->hasMany(DutyCalendarShare::class, 'ownerID', 'memberID');
+    }
+
+    /**
+     * Dienste anderer Mitglieder, die für dieses Mitglied freigegeben sind.
+     */
+    public function dutySharesReceived(): HasMany
+    {
+        return $this->hasMany(DutyCalendarShare::class, 'viewerID', 'memberID');
+    }
+
     public function dutySettings(): HasOne
     {
         return $this->hasOne(

@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\DutyPlanAssignment;
 use App\Models\Member;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Spatie\IcalendarGenerator\Components\Calendar;
 use Spatie\IcalendarGenerator\Components\Event;
 
@@ -14,7 +16,40 @@ class DutyPlanIcalService
      */
     public function addToCalendar(Calendar $calendar, Member $member): void
     {
-        $assignments = $member->dutyAssignments()
+        foreach ($this->assignments($member) as $assignment) {
+            $name = $assignment->event->duty_name ?? 'Dienst';
+
+            $calendar->event(
+                $this->eventFor($assignment, $name)
+                    ->uniqueIdentifier('duty-assignment-'.$assignment->assignmentID)
+                    ->description('Dienst "'.$name.'" für '.$member->full_name)
+            );
+        }
+    }
+
+    /**
+     * Trägt die Dienste eines anderen Mitglieds ein, das sie freigegeben hat
+     * – deutlich als fremde Dienste gekennzeichnet.
+     */
+    public function addSharedToCalendar(Calendar $calendar, Member $owner): void
+    {
+        foreach ($this->assignments($owner) as $assignment) {
+            $name = $assignment->event->duty_name ?? 'Dienst';
+
+            $calendar->event(
+                $this->eventFor($assignment, 'Dienst von '.$owner->full_name.': '.$name)
+                    ->uniqueIdentifier('shared-duty-assignment-'.$assignment->assignmentID)
+                    ->description('Freigegebener Dienst "'.$name.'" von '.$owner->full_name.' – nicht dein eigener Dienst.')
+            );
+        }
+    }
+
+    /**
+     * @return Collection<int, DutyPlanAssignment>
+     */
+    private function assignments(Member $member): Collection
+    {
+        return $member->dutyAssignments()
             ->with('event')
             ->whereHas('event', fn ($query) => $query->where(
                 'duty_date',
@@ -23,34 +58,27 @@ class DutyPlanIcalService
             ))
             ->get()
             ->filter(fn ($assignment) => $assignment->event !== null);
+    }
 
-        foreach ($assignments as $assignment) {
-            $event = $assignment->event;
+    private function eventFor(DutyPlanAssignment $assignment, string $title): Event
+    {
+        $event = $assignment->event;
+        $icalEvent = Event::create($title);
 
-            $icalEvent = Event::create($event->duty_name ?? 'Dienst')
-                ->uniqueIdentifier('duty-assignment-'.$assignment->assignmentID)
-                ->description(
-                    'Dienst "'.($event->duty_name ?? 'Dienst')
-                    .'" für '.$member->full_name
-                );
+        if ($event->start_time) {
+            $start = Carbon::parse(
+                $event->duty_date->toDateString().' '.$event->start_time
+            );
 
-            if ($event->start_time) {
-                $start = Carbon::parse(
-                    $event->duty_date->toDateString().' '.$event->start_time
-                );
+            $end = $event->end_time
+                ? Carbon::parse($event->duty_date->toDateString().' '.$event->end_time)
+                : $start->copy()->addHour();
 
-                $end = $event->end_time
-                    ? Carbon::parse($event->duty_date->toDateString().' '.$event->end_time)
-                    : $start->copy()->addHour();
-
-                $icalEvent->startsAt($start)->endsAt($end);
-            } else {
-                // Kein Beginn hinterlegt (z. B. Training/Saisonabend ohne Uhrzeit):
-                // wie bisher ganztägig anzeigen.
-                $icalEvent->startsAt($event->duty_date, withTime: false)->fullDay();
-            }
-
-            $calendar->event($icalEvent);
+            return $icalEvent->startsAt($start)->endsAt($end);
         }
+
+        // Kein Beginn hinterlegt (z. B. Training/Saisonabend ohne Uhrzeit):
+        // wie bisher ganztägig anzeigen.
+        return $icalEvent->startsAt($event->duty_date, withTime: false)->fullDay();
     }
 }

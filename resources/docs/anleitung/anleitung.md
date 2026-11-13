@@ -1056,7 +1056,18 @@ Alle Rundschreiben, die das Mitglied erhalten hat, als PDF – inklusive Anhäng
 
 - **Anstehende** und **vergangene Dienste** auf einen Blick.
 - **Kalender-Abo:** siehe 13.7.
+- **Dienste freigeben:** siehe unten.
 - **E-Mail-Erinnerung:** Ist der Schalter aktiv (Standard), erhält das Mitglied **2 Tage vor jedem Dienst** eine Erinnerung per E-Mail.
+
+**Dienste freigeben:** Unter **Meine Dienste freigeben** sucht das Mitglied ein anderes aktives Mitglied nach **Name** oder **E-Mail-Adresse** und klickt auf **Freigeben** – z. B. damit der Partner oder die Eltern die Dienste im eigenen Kalender sehen. Freigegeben werden nur Datum, Uhrzeit und Bezeichnung der Dienste. **Freigabe beenden** nimmt sie jederzeit zurück.
+
+Wer Dienste freigegeben bekommt, sieht sie unter **Mit mir geteilte Dienste** und entscheidet pro Mitglied:
+
+- **In meinem Kalender-Abo** (Schalter): Die Dienste erscheinen im eigenen Abo als „Dienst von Anna Huber: …“.
+- **Eigener Abo-Link:** ein separater Link nur mit den Diensten dieses Mitglieds, z. B. als eigener Kalender mit eigener Farbe. **Link erneuern** macht den alten Link ungültig.
+- **Entfernen** löscht die Freigabe auch auf dieser Seite.
+
+Endet die Freigabe oder tritt das Mitglied aus, verschwinden die Dienste beim nächsten Abgleich aus dem Kalender; der eigene Link funktioniert dann nicht mehr.
 
 ### 13.6 Termine
 
@@ -1075,6 +1086,7 @@ Auf den Seiten **Mein Dienstplan** und **Termine** steht derselbe persönliche *
 Das Abo enthält:
 
 - alle eigenen **Dienste**,
+- **Dienste anderer Mitglieder**, die sie freigegeben haben und für die der Schalter **In meinem Kalender-Abo** aktiv ist (13.5),
 - alle **Vereinstermine**, die das Mitglied sehen darf – außer solchen, für die es **abgesagt** hat,
 - Termine **externer Kalender** nur, wenn das Mitglied sie einschaltet: Auf der Seite **Termine** gibt es dafür unter **Weitere Kalender ins Abo übernehmen** pro Kalender einen Schalter (standardmäßig aus). Im Mitgliederbereich selbst werden diese Termine immer angezeigt.
 

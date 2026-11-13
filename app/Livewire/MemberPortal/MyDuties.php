@@ -2,9 +2,14 @@
 
 namespace App\Livewire\MemberPortal;
 
+use App\Enums\Feature;
+use App\Models\DutyCalendarShare;
 use App\Models\Member;
 use App\Models\MemberDutySettings;
 use App\Services\ActivityLogger;
+use App\Services\DutyCalendarShares;
+use App\Services\PlanEntitlements;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -13,6 +18,12 @@ class MyDuties extends Component
     public bool $reminderEnabled = true;
 
     public string $icalUrl = '';
+
+    /** Suche nach Name oder E-Mail-Adresse für eine neue Freigabe */
+    public string $shareSearch = '';
+
+    /** Freigabe, deren eigener Abo-Link angezeigt wird */
+    public ?int $visibleLinkShareID = null;
 
     public function mount(): void
     {
@@ -91,6 +102,102 @@ class MyDuties extends Component
         );
     }
 
+    /**
+     * Eigene Dienste einem anderen Mitglied freigeben.
+     */
+    public function shareWith(int $memberID, DutyCalendarShares $shares): void
+    {
+        $this->ensureSharingAvailable();
+
+        $owner = $this->activeMember();
+        $candidates = $this->shareCandidates($owner, $shares);
+
+        abort_unless($candidates->contains('memberID', $memberID), 404);
+
+        $viewer = Member::query()->findOrFail($memberID);
+        $shares->share($owner, $viewer);
+
+        $this->shareSearch = '';
+
+        session()->flash('success', 'Deine Dienste sind jetzt für '.$viewer->full_name.' freigegeben.');
+    }
+
+    /**
+     * Freigabe beenden – als freigebendes oder als empfangendes Mitglied.
+     */
+    public function endShare(int $shareID, DutyCalendarShares $shares): void
+    {
+        $member = $this->activeMember();
+        $share = $this->shareInvolving($member, $shareID);
+
+        $shares->end($share, $member);
+
+        session()->flash('success', 'Die Freigabe wurde beendet.');
+    }
+
+    public function toggleInOwnCalendar(int $shareID): void
+    {
+        $this->ensureSharingAvailable();
+
+        $share = $this->receivedShare($shareID);
+        $share->update(['in_own_calendar' => ! $share->in_own_calendar]);
+    }
+
+    public function toggleSharedLink(int $shareID): void
+    {
+        $this->ensureSharingAvailable();
+
+        $share = $this->receivedShare($shareID);
+        $share->getOrCreateIcalToken();
+
+        $this->visibleLinkShareID = $this->visibleLinkShareID === $share->shareID ? null : $share->shareID;
+    }
+
+    public function regenerateSharedLink(int $shareID): void
+    {
+        $this->ensureSharingAvailable();
+
+        $this->receivedShare($shareID)->regenerateIcalToken();
+        $this->visibleLinkShareID = $shareID;
+
+        session()->flash('success', 'Der Link wurde erneuert. Der alte Link funktioniert nicht mehr.');
+    }
+
+    /**
+     * @return Collection<int, Member>
+     */
+    private function shareCandidates(Member $owner, DutyCalendarShares $shares): Collection
+    {
+        $search = trim($this->shareSearch);
+        $alreadyShared = $owner->dutySharesGiven()->pluck('viewerID')->all();
+
+        $candidates = str_contains($search, '@')
+            ? $shares->searchByEmail($owner, $search)
+            : $shares->searchByName($owner, $search);
+
+        return $candidates->reject(fn (Member $member) => in_array($member->memberID, $alreadyShared, true))->values();
+    }
+
+    private function receivedShare(int $shareID): DutyCalendarShare
+    {
+        return DutyCalendarShare::query()
+            ->active()
+            ->where('viewerID', $this->activeMember()->memberID)
+            ->find($shareID) ?? abort(404);
+    }
+
+    private function shareInvolving(Member $member, int $shareID): DutyCalendarShare
+    {
+        return DutyCalendarShare::query()
+            ->where(fn ($query) => $query->where('ownerID', $member->memberID)->orWhere('viewerID', $member->memberID))
+            ->find($shareID) ?? abort(404);
+    }
+
+    private function ensureSharingAvailable(): void
+    {
+        abort_unless(app(PlanEntitlements::class)->allows(Feature::DutyPlan), 403);
+    }
+
     private function activeMember(): Member
     {
         $account = Auth::guard('member')->user();
@@ -130,9 +237,15 @@ class MyDuties extends Component
                 && ! $assignment->event->duty_date->isToday()
         )->reverse()->values();
 
+        $sharingAvailable = app(PlanEntitlements::class)->allows(Feature::DutyPlan);
+
         return view('livewire.member-portal.my-duties', [
             'upcoming' => $upcoming,
             'past' => $past,
+            'sharingAvailable' => $sharingAvailable,
+            'sharesGiven' => $sharingAvailable ? $member->dutySharesGiven()->with('viewer')->get()->filter(fn (DutyCalendarShare $share) => $share->viewer?->active)->sortBy('viewer.surname')->values() : collect(),
+            'sharesReceived' => $sharingAvailable ? DutyCalendarShare::query()->active()->where('viewerID', $member->memberID)->with('owner')->get()->sortBy('owner.surname')->values() : collect(),
+            'shareCandidates' => $sharingAvailable ? $this->shareCandidates($member, app(DutyCalendarShares::class)) : collect(),
         ])->layout('layouts.app', [
             'title' => 'Meine Dienste | VEMA',
             'heading' => 'Meine Dienste',

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Feature;
+use App\Models\DutyCalendarShare;
 use App\Models\MemberDutySettings;
 use App\Services\ClubEventIcalService;
 use App\Services\DutyPlanIcalService;
@@ -42,12 +43,47 @@ class MemberCalendarController extends Controller
 
         if ($includesDuties) {
             $dutyPlanIcal->addToCalendar($calendar, $member);
+
+            DutyCalendarShare::query()
+                ->active()
+                ->where('viewerID', $member->memberID)
+                ->where('in_own_calendar', true)
+                ->with('owner')
+                ->get()
+                ->each(fn (DutyCalendarShare $share) => $dutyPlanIcal->addSharedToCalendar($calendar, $share->owner));
         }
 
         if ($includesEvents) {
             $clubEventIcal->addToCalendar($calendar, $member);
         }
 
+        return $this->calendarResponse($calendar);
+    }
+
+    /**
+     * Eigener Abo-Link für die Dienste, die ein anderes Mitglied freigegeben hat.
+     */
+    public function shared(string $token, PlanEntitlements $entitlements, DutyPlanIcalService $dutyPlanIcal): Response
+    {
+        abort_unless($entitlements->allows(Feature::DutyPlan), 404);
+
+        $share = DutyCalendarShare::query()
+            ->active()
+            ->where('ical_token', $token)
+            ->with('owner')
+            ->firstOrFail();
+
+        $calendar = Calendar::create('Dienste '.$share->owner->full_name.' (freigegeben)')
+            ->refreshInterval(60)
+            ->withoutTimezone();
+
+        $dutyPlanIcal->addSharedToCalendar($calendar, $share->owner);
+
+        return $this->calendarResponse($calendar);
+    }
+
+    private function calendarResponse(Calendar $calendar): Response
+    {
         return response($calendar->get(), 200, [
             'Content-Type' => 'text/calendar; charset=utf-8',
             'Content-Disposition' => 'inline; filename="kalender.ics"',
