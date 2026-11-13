@@ -232,7 +232,9 @@ Die Detailseite zeigt alle Informationen zu einem Mitglied.
 - **Dateien** – Dokumente des Mitglieds sowie alle Beitragsschreiben und Rundschreiben wie in einem Dateiexplorer (siehe 5.8).
 - **Rundschreiben** – was das Mitglied erhalten hat; **E-Mail anzeigen** zeigt die versendete Nachricht.
 
-Oben rechts: **Zurück**, **Austritt erfassen** (bzw. **Wiedereintritt erfassen** bei inaktiven Mitgliedern), **Willkommens-E-Mail senden** (bei aktiven Mitgliedern mit E-Mail-Adresse – z. B. wenn die erste E-Mail nicht angekommen ist) und **Bearbeiten**.
+Oben rechts: **Zurück**, **Austritt erfassen** (bzw. **Wiedereintritt erfassen** bei inaktiven Mitgliedern), **Willkommens-E-Mail senden** (bei aktiven Mitgliedern mit E-Mail-Adresse – z. B. wenn die erste E-Mail nicht angekommen ist), **Als Mitglied anmelden** und **Bearbeiten**.
+
+**Als Mitglied anmelden** (nur Admins, bei aktiven Mitgliedern mit E-Mail-Adresse und gebuchtem Mitgliederbereich) öffnet den Mitgliederbereich so, wie ihn das Mitglied sieht – praktisch für Rückfragen am Telefon oder um zu prüfen, was ein Mitglied an Diensten, Beiträgen und Dokumenten sieht. Ein gelber Balken zeigt, dass Sie in der Mitgliederansicht sind; Änderungen (z. B. am Profil) werden für das Mitglied gespeichert. **Zurück zur Verwaltung** beendet die Ansicht und führt zurück zur Mitgliederseite, Ihre eigene Anmeldung bleibt bestehen. Jeder Aufruf wird im Protokoll festgehalten.
 
 ### 5.4 Austritt und Wiedereintritt
 
