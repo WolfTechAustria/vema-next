@@ -40,20 +40,7 @@
 
         <div>
             <label class="mb-1 block text-sm font-medium">Text</label>
-            <div
-                wire:ignore
-                x-data="{ quill: null }"
-                x-init="
-                    quill = new Quill($refs.editor, {
-                        theme: 'snow',
-                        modules: { toolbar: [['bold', 'italic', 'underline'], ['link'], [{ list: 'ordered' }, { list: 'bullet' }], ['clean']] }
-                    });
-                    quill.root.innerHTML = @js($popupHtml) || '';
-                    quill.on('text-change', () => { $wire.set('popupHtml', quill.root.innerHTML, false); });
-                "
-            >
-                <div x-ref="editor" class="min-h-[160px] bg-white"></div>
-            </div>
+            <x-homepage-editor property="popupHtml" :value="$popupHtml" toolbar="compact" height="min-h-[160px]" />
         </div>
 
         <div>

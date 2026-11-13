@@ -87,7 +87,7 @@ describe('posts', function () {
 
         $post = Post::sole();
 
-        expect($post->body_html)->toBe('<p>Danke <strong>allen</strong>!</p>')
+        expect($post->body_html)->toBe('<p>Danke <strong>allen</strong>!</p><img src="x" />')
             ->and($post->status)->toBe(PostStatus::Published)
             ->and($post->published_at)->not->toBeNull()
             ->and($post->created_by)->toBe($this->editor->id)
@@ -284,4 +284,58 @@ it('removes scripts and event handlers from editor html', function () {
     expect($sanitizer->sanitize('<p onclick="x()">Hi <a href="javascript:alert(1)">Link</a> <a href="https://verein.at">ok</a></p>'))
         ->toBe('<p>Hi <a rel="noopener noreferrer">Link</a> <a href="https://verein.at" rel="noopener noreferrer">ok</a></p>')
         ->and($sanitizer->sanitize('<p><br></p>'))->toBe('');
+});
+
+describe('html blocks', function () {
+    it('keeps tables, images and figures', function () {
+        $html = '<div class="hp-html" contenteditable="false"><table><tr><th scope="col">Name</th><td colspan="2" onclick="x()">98</td></tr></table>'
+            .'<figure><img src="https://verein.at/a.jpg" alt="Siegerin"><figcaption>Siegerin</figcaption></figure>'
+            .'<img src="/site/media/1.jpg"><img src="data:image/png;base64,AAA"><img src="javascript:alert(1)"></div>';
+
+        expect(app(HtmlSanitizer::class)->sanitize($html))->toBe(
+            '<div class="hp-html"><table><tbody><tr><th scope="col">Name</th><td colspan="2">98</td></tr></tbody></table>'
+            .'<figure><img src="https://verein.at/a.jpg" alt="Siegerin" /><figcaption>Siegerin</figcaption></figure>'
+            .'<img src="/site/media/1.jpg" /></div>'
+        );
+    });
+
+    it('allows only embeds from youtube, vimeo and google maps', function (string $source, ?string $expected) {
+        $html = app(HtmlSanitizer::class)->sanitize('<iframe src="'.$source.'" allowfullscreen></iframe>');
+
+        expect($html)->toBe($expected === null ? '' : '<iframe src="'.$expected.'" allowfullscreen></iframe>');
+    })->with([
+        'youtube wird datenschutzfreundlich' => ['https://www.youtube.com/embed/abc', 'https://www.youtube-nocookie.com/embed/abc'],
+        'vimeo' => ['https://player.vimeo.com/video/123', 'https://player.vimeo.com/video/123'],
+        'google maps' => ['https://www.google.com/maps/embed?pb=1', 'https://www.google.com/maps/embed?pb&#61;1'],
+        'fremde seite' => ['https://evil.example/embed/abc', null],
+        'kein https' => ['http://www.youtube.com/embed/abc', null],
+        'youtube ohne embed' => ['https://www.youtube.com/watch?v=abc', null],
+    ]);
+
+    it('keeps harmless inline styles only', function () {
+        $html = app(HtmlSanitizer::class)->sanitize(
+            '<div style="text-align: center; position: fixed; z-index: 99; background: url(x.png); color: #c00; display: flex; display: contents; width: expression(1)">x</div>'
+        );
+
+        expect($html)->toBe('<div style="text-align: center; color: #c00; display: flex">x</div>');
+    });
+
+    it('drops scripts, forms and invalid ids', function () {
+        expect(app(HtmlSanitizer::class)->sanitize('<section id="ergebnisse"><script>alert(1)</script><form action="/x"><input name="a"></form><p id="1 x">Text</p></section>'))
+            ->toBe('<section id="ergebnisse"><p>Text</p></section>');
+    });
+
+    it('shows tables and videos of a post on the homepage', function () {
+        $this->actingAs(homepageEditor());
+
+        $post = Post::factory()->create([
+            'title' => 'Vereinsmeisterschaft',
+            'body_html' => '<p>Ergebnisse</p><div class="hp-html"><table><tr><td>Anna</td><td>98</td></tr></table><iframe src="https://www.youtube.com/embed/abc"></iframe></div>',
+        ]);
+
+        $this->get(route('homepage-admin.posts.preview', $post))
+            ->assertOk()
+            ->assertSee('<td>Anna</td>', false)
+            ->assertSee('https://www.youtube-nocookie.com/embed/abc', false);
+    });
 });

@@ -146,4 +146,18 @@
     .hp-lead > p:first-child { @apply text-[1.25rem] font-semibold text-brand-deep; }
     .hp-content .ql-align-center { @apply text-center; }
     .hp-content .ql-align-right { @apply text-right; }
+
+    /* HTML-Blöcke: Tabellen, Bilder, Einbettungen */
+    .hp-content .hp-html > * + * { @apply mt-4; }
+    .hp-content table { @apply block w-full max-w-full overflow-x-auto text-[15px] sm:table; border-collapse: collapse; }
+    .hp-content caption { @apply mb-2 text-left text-sm opacity-75; }
+    .hp-content th { @apply bg-brand-soft px-3 py-2 text-left font-semibold; }
+    .hp-content td { @apply border-b border-black/10 px-3 py-2 align-top; }
+    .hp-content img { @apply h-auto max-w-full rounded-lg; }
+    .hp-content img:not([src]), .hp-content iframe:not([src]) { @apply hidden; }
+    .hp-content figure img { @apply mx-auto; }
+    .hp-content figcaption { @apply mt-2 text-center text-sm opacity-70; }
+    .hp-content iframe { @apply aspect-video h-auto w-full rounded-lg border-0; }
+    .hp-content hr { @apply my-8 border-black/10; }
+    .hp-content pre { @apply overflow-x-auto rounded-lg bg-black/5 p-4 text-sm; }
 }

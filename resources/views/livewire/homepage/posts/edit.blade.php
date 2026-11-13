@@ -92,32 +92,7 @@
             <div>
                 <label class="mb-1 block text-sm font-medium">Text</label>
 
-                <div
-                    wire:ignore
-                    x-data="{ quill: null }"
-                    x-init="
-                        quill = new Quill($refs.editor, {
-                            theme: 'snow',
-                            modules: {
-                                toolbar: [
-                                    [{ header: [2, 3, false] }],
-                                    ['bold', 'italic', 'underline'],
-                                    ['link', 'blockquote'],
-                                    [{ list: 'ordered' }, { list: 'bullet' }],
-                                    ['clean']
-                                ]
-                            }
-                        });
-
-                        quill.root.innerHTML = @js($bodyHtml) || '';
-
-                        quill.on('text-change', () => {
-                            $wire.set('bodyHtml', quill.root.innerHTML, false);
-                        });
-                    "
-                >
-                    <div x-ref="editor" class="min-h-[320px] bg-white"></div>
-                </div>
+                <x-homepage-editor property="bodyHtml" :value="$bodyHtml" height="min-h-[320px]" />
 
                 @error('bodyHtml')
                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>

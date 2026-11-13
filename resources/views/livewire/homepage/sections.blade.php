@@ -147,32 +147,7 @@
                         <div>
                             <label class="mb-1 block text-sm font-medium">Text</label>
 
-                            <div
-                                wire:ignore
-                                x-data="{ quill: null }"
-                                x-init="
-                                    quill = new Quill($refs.editor, {
-                                        theme: 'snow',
-                                        modules: {
-                                            toolbar: [
-                                                [{ header: [2, 3, false] }],
-                                                ['bold', 'italic', 'underline'],
-                                                ['link', 'blockquote'],
-                                                [{ list: 'ordered' }, { list: 'bullet' }],
-                                                ['clean']
-                                            ]
-                                        }
-                                    });
-
-                                    quill.root.innerHTML = @js($bodyHtml) || '';
-
-                                    quill.on('text-change', () => {
-                                        $wire.set('bodyHtml', quill.root.innerHTML, false);
-                                    });
-                                "
-                            >
-                                <div x-ref="editor" class="min-h-[200px] bg-white"></div>
-                            </div>
+                            <x-homepage-editor property="bodyHtml" :value="$bodyHtml" height="min-h-[200px]" />
 
                             @if($editingType === HomepageSectionType::TextBox)
                                 <p class="mt-1 text-xs text-slate-500">Nummerierte Listen erscheinen in der Vorlage „Verein“ als Schritte mit Kreis-Nummern.</p>
