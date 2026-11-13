@@ -453,6 +453,21 @@ Unter **Abwesenheiten** tragen Sie Urlaube oder sonstige Verhinderungen ein: **H
 
 Über **Excel exportieren** oder **PDF exportieren** erhalten Sie den Dienstplan zum Aushängen oder Weitergeben. Mit den Filtern **Export** (Wochentag) und **Dienstbezeichnung** lässt sich der Export einschränken – z. B. nur alle Freitage oder nur den Ausschank.
 
+### 6.8 Diensttausch
+
+Mitglieder können ihre Dienste im Mitgliederbereich selbst tauschen oder an andere Helfer desselben Dienstplans abgeben (siehe 13.5). Unter **Dienstplan → Diensttausch** sehen Sie alle Anfragen mit ihrem Status.
+
+**Einstellungen** (nur Administratoren):
+
+- **Diensttausch im Mitgliederbereich erlauben** – schaltet die Funktion für den Verein ein oder aus.
+- **Tausch muss vom Verein freigegeben werden** – ist der Haken gesetzt, wird ein angenommener Tausch erst nach Ihrer Freigabe in den Dienstplan übernommen. Ohne Haken gilt er sofort.
+- **Frist (Stunden vor Dienstbeginn)** – bis wann vor dem Dienst noch getauscht werden darf. *0* bedeutet bis zum Dienstbeginn; offene Anfragen verfallen danach automatisch.
+- **Benachrichtigung an** – diese Adressen erhalten eine E-Mail bei jedem Tausch bzw. wenn eine Freigabe nötig ist. Leer = alle Administratoren.
+
+**Freigeben:** Wartende Tausche stehen oben unter **Wartet auf Freigabe**. Hinweise (z. B. Abwesenheit oder ein weiterer Dienst am selben Tag) werden gelb angezeigt. **Freigeben** übernimmt den Tausch in den Dienstplan, **Ablehnen** lässt alles unverändert. Beide Mitglieder werden per E-Mail informiert.
+
+Ändern Sie eine Einteilung, für die noch eine Anfrage offen ist, wird diese Anfrage hinfällig.
+
 ---
 
 ## 7. Termine
@@ -1057,6 +1072,7 @@ Alle Rundschreiben, die das Mitglied erhalten hat, als PDF – inklusive Anhäng
 - **Anstehende** und **vergangene Dienste** auf einen Blick.
 - **Kalender-Abo:** siehe 13.7.
 - **Dienste freigeben:** siehe unten.
+- **Dienste tauschen oder abgeben:** siehe unten.
 - **E-Mail-Erinnerung:** Ist der Schalter aktiv (Standard), erhält das Mitglied **2 Tage vor jedem Dienst** eine Erinnerung per E-Mail.
 
 **Dienste freigeben:** Unter **Meine Dienste freigeben** sucht das Mitglied ein anderes aktives Mitglied nach **Name** oder **E-Mail-Adresse** und klickt auf **Freigeben** – z. B. damit der Partner oder die Eltern die Dienste im eigenen Kalender sehen. Freigegeben werden nur Datum, Uhrzeit und Bezeichnung der Dienste. **Freigabe beenden** nimmt sie jederzeit zurück.
@@ -1068,6 +1084,15 @@ Wer Dienste freigegeben bekommt, sieht sie unter **Mit mir geteilte Dienste** un
 - **Entfernen** löscht die Freigabe auch auf dieser Seite.
 
 Endet die Freigabe oder tritt das Mitglied aus, verschwinden die Dienste beim nächsten Abgleich aus dem Kalender; der eigene Link funktioniert dann nicht mehr.
+
+**Dienste tauschen oder abgeben:** Bei jedem anstehenden Dienst gibt es den Button **Tauschen / abgeben** (sofern der Verein die Funktion aktiviert hat und die Frist noch nicht abgelaufen ist):
+
+- **Abgeben:** Jemand anderer übernimmt den Dienst. Die Anfrage geht an **alle im Dienstplan** – wer zuerst annimmt, übernimmt – oder an eine bestimmte Person.
+- **Tauschen:** Das Mitglied wählt eine Person aus dem Dienstplan und einen ihrer Dienste; beide Dienste wechseln.
+
+Optional kann eine kurze Nachricht mitgeschickt werden. Die angefragten Mitglieder erhalten eine E-Mail und sehen die Anfrage unter **Tauschanfragen** mit **Übernehmen** bzw. **Tauschen** und **Ablehnen**. Hinweise wie eine eingetragene Abwesenheit oder ein weiterer Dienst am selben Tag werden gelb angezeigt, verhindern den Tausch aber nicht. Eigene Anfragen lassen sich mit **Zurückziehen** zurücknehmen, solange sie offen sind.
+
+Nach der Annahme wird der Dienstplan sofort angepasst – oder, falls der Verein das eingestellt hat, nach dessen Freigabe. Das anfragende Mitglied wird jeweils per E-Mail informiert.
 
 ### 13.6 Termine
 

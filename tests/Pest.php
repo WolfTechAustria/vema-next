@@ -1,6 +1,10 @@
 <?php
 
 use App\Models\ActivityLog;
+use App\Models\DutyPlan;
+use App\Models\DutyPlanAssignment;
+use App\Models\DutyPlanEvent;
+use App\Models\DutyPlanRole;
 use App\Models\Member;
 use App\Models\MemberAccount;
 use App\Models\MemberEmail;
@@ -143,6 +147,19 @@ function loginPortalMember(string $surname = 'Muster'): Member
     session(['active_member_id' => $member->memberID]);
 
     return $member;
+}
+
+/**
+ * Teilt das Mitglied im Dienstplan „Saison“ zu einem Dienst ein (eigene
+ * Rolle je Aufruf, Termin in "$daysAhead" Tagen).
+ */
+function assignDuty(Member $member, string $dutyName = 'Bar', int $daysAhead = 3, ?string $startTime = null): DutyPlanAssignment
+{
+    $plan = DutyPlan::query()->firstOrCreate(['name' => 'Saison'], ['date_from' => today()->toDateString(), 'date_to' => today()->addYear()->toDateString()]);
+    $role = DutyPlanRole::create(['planID' => $plan->planID, 'name' => $dutyName, 'weekday_mask' => 127]);
+    $event = DutyPlanEvent::create(['planID' => $plan->planID, 'roleID' => $role->roleID, 'duty_date' => today()->addDays($daysAhead)->toDateString(), 'duty_name' => $dutyName, 'required_helpers' => 1, 'start_time' => $startTime]);
+
+    return DutyPlanAssignment::create(['eventID' => $event->eventID, 'slot_no' => 1, 'memberID' => $member->memberID]);
 }
 
 /**
