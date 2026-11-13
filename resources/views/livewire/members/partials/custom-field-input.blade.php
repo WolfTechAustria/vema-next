@@ -20,7 +20,16 @@
             {{ $field->name }}
         </label>
 
-        @if($field->type === \App\Enums\MemberFieldType::Select)
+        @if($field->type === \App\Enums\MemberFieldType::MultiSelect)
+            <div class="flex flex-wrap gap-x-5 gap-y-2 py-1">
+                @foreach($field->options ?? [] as $option)
+                    <label class="flex items-center gap-2 text-sm text-slate-700">
+                        <input type="checkbox" wire:model="customFields.{{ $field->fieldID }}" value="{{ $option }}" class="rounded border-slate-300">
+                        {{ $option }}
+                    </label>
+                @endforeach
+            </div>
+        @elseif($field->type === \App\Enums\MemberFieldType::Select)
             <select
                 wire:model="customFields.{{ $field->fieldID }}"
                 class="w-full rounded-lg border border-slate-300 px-3 py-2"

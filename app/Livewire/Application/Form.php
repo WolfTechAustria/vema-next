@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Application;
 
-use App\Enums\MemberFieldType;
 use App\Models\City;
 use App\Models\MemberField;
 use App\Models\Setting;
@@ -253,10 +252,8 @@ class Form extends Component
             'guardian_name' => $this->isMinor() ? $this->guardianName : null,
             'place' => ($validated['place'] ?? '') ?: (($validated['city'] ?? '') ?: null),
             'custom_fields' => $customFieldDefinitions
-                ->mapWithKeys(fn (MemberField $field) => [$field->fieldID => $field->type === MemberFieldType::Boolean
-                    ? ((bool) ($this->customFields[$field->fieldID] ?? false) ? '1' : '0')
-                    : trim((string) ($this->customFields[$field->fieldID] ?? ''))])
-                ->filter(fn (string $value) => $value !== '' && $value !== '0')
+                ->mapWithKeys(fn (MemberField $field) => [$field->fieldID => app(MemberFields::class)->normalize($field, $this->customFields[$field->fieldID] ?? null)])
+                ->filter()
                 ->all(),
             'consents' => collect($settings->consents())
                 ->map(fn (array $consent, int $index) => ['text' => $consent['text'], 'accepted' => (bool) ($this->consents[$index] ?? false)])

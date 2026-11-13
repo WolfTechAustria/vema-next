@@ -12,6 +12,7 @@ enum MemberFieldType: string
     case Date = 'date';
     case Boolean = 'boolean';
     case Select = 'select';
+    case MultiSelect = 'multiselect';
 
     public function label(): string
     {
@@ -21,6 +22,15 @@ enum MemberFieldType: string
             self::Date => 'Datum',
             self::Boolean => 'Ja/Nein',
             self::Select => 'Auswahlliste',
+            self::MultiSelect => 'Mehrfachauswahl (Checkboxen)',
         };
+    }
+
+    /**
+     * Arten mit festen Auswahlmöglichkeiten.
+     */
+    public function hasOptions(): bool
+    {
+        return $this === self::Select || $this === self::MultiSelect;
     }
 }

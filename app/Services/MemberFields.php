@@ -66,18 +66,21 @@ class MemberFields
     }
 
     /**
-     * Startwerte für ein Formular (Ja/Nein als bool, sonst Text).
+     * Startwerte für ein Formular (Ja/Nein als bool, Mehrfachauswahl als
+     * Liste, sonst Text).
      *
-     * @return array<int, string|bool>
+     * @return array<int, string|bool|list<string>>
      */
     public function formValues(?Member $member = null, ?Collection $fields = null): array
     {
         $stored = $member ? $this->storedValues($member) : [];
 
         return ($fields ?? $this->fields())
-            ->mapWithKeys(fn (MemberField $field) => [$field->fieldID => $field->type === MemberFieldType::Boolean
-                ? ($stored[$field->fieldID] ?? '') === '1'
-                : (string) ($stored[$field->fieldID] ?? '')])
+            ->mapWithKeys(fn (MemberField $field) => [$field->fieldID => match ($field->type) {
+                MemberFieldType::Boolean => ($stored[$field->fieldID] ?? '') === '1',
+                MemberFieldType::MultiSelect => $this->decodeList($stored[$field->fieldID] ?? null),
+                default => (string) ($stored[$field->fieldID] ?? ''),
+            }])
             ->all();
     }
 
@@ -86,15 +89,28 @@ class MemberFields
      */
     public function rules(string $prefix = 'customFields', ?Collection $fields = null): array
     {
-        return ($fields ?? $this->fields())
-            ->mapWithKeys(fn (MemberField $field) => [$prefix.'.'.$field->fieldID => match ($field->type) {
+        $rules = [];
+
+        foreach ($fields ?? $this->fields() as $field) {
+            $key = $prefix.'.'.$field->fieldID;
+
+            if ($field->type === MemberFieldType::MultiSelect) {
+                $rules[$key] = ['nullable', 'array'];
+                $rules[$key.'.*'] = [Rule::in($field->options ?? [])];
+
+                continue;
+            }
+
+            $rules[$key] = match ($field->type) {
                 MemberFieldType::Text => ['nullable', 'string', 'max:255'],
                 MemberFieldType::Number => ['nullable', 'regex:/^-?\d+([.,]\d+)?$/', 'max:30'],
                 MemberFieldType::Date => ['nullable', 'date_format:Y-m-d'],
                 MemberFieldType::Boolean => ['boolean'],
                 MemberFieldType::Select => ['nullable', Rule::in($field->options ?? [])],
-            }])
-            ->all();
+            };
+        }
+
+        return $rules;
     }
 
     /**
@@ -149,6 +165,7 @@ class MemberFields
         }
 
         return match ($field->type) {
+            MemberFieldType::MultiSelect => implode(', ', $this->decodeList($value)) ?: null,
             MemberFieldType::Date => Carbon::parse($value)->format('d.m.Y'),
             MemberFieldType::Number => str_replace('.', ',', $value),
             default => $value,
@@ -216,10 +233,47 @@ class MemberFields
             ->all();
     }
 
-    private function normalize(MemberField $field, mixed $value): ?string
+    /**
+     * Gespeicherte Mehrfachauswahl als Liste (JSON-Text in der Datenbank).
+     *
+     * @return list<string>
+     */
+    public function decodeList(?string $value): array
+    {
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+
+        return is_array($decoded) ? array_values(array_map('strval', $decoded)) : [$value];
+    }
+
+    /**
+     * Text, wie eine Mehrfachauswahl-Option gespeichert ist — zum Suchen.
+     */
+    public function encodedOption(string $option): string
+    {
+        return json_encode($option, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * Formular- oder Rohwert in die gespeicherte Form bringen (null = leer).
+     */
+    public function normalize(MemberField $field, mixed $value): ?string
     {
         if ($field->type === MemberFieldType::Boolean) {
             return filter_var($value, FILTER_VALIDATE_BOOLEAN) ? '1' : null;
+        }
+
+        if ($field->type === MemberFieldType::MultiSelect) {
+            $selected = is_array($value) ? $value : $this->decodeList(is_string($value) ? $value : null);
+            $selected = array_map(fn ($option) => trim((string) $option), $selected);
+
+            // In der Reihenfolge der Auswahlmöglichkeiten, ohne Doppelte.
+            $ordered = array_values(array_filter($field->options ?? [], fn (string $option) => in_array($option, $selected, true)));
+
+            return $ordered === [] ? null : json_encode($ordered, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
         $value = trim((string) $value);

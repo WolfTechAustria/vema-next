@@ -981,13 +981,13 @@ Beim Bearbeiten legen Sie außerdem fest:
 
 Unter **Einstellungen → Mitgliederfelder** legen Admins eigene Angaben zu den Mitgliedern an, z. B. *Instrument*, *Verbandsnummer* oder *Trachtenträger* (ab Paket „Verein“).
 
-- **Art:** Text, Zahl, Datum, Ja/Nein oder Auswahlliste (Auswahlmöglichkeiten eine pro Zeile). Sobald Werte erfasst sind, lässt sich die Art nicht mehr ändern und verwendete Auswahlmöglichkeiten nicht mehr entfernen.
+- **Art:** Text, Zahl, Datum, Ja/Nein, Auswahlliste (genau ein Wert) oder **Mehrfachauswahl** (Checkboxen, mehrere Werte – z. B. mehrere Instrumente oder die Disziplinen Luftgewehr und Luftpistole). Auswahlmöglichkeiten tragen Sie eine pro Zeile ein. Sobald Werte erfasst sind, lässt sich die Art nicht mehr ändern und verwendete Auswahlmöglichkeiten nicht mehr entfernen.
 - **Mitgliederportal:** *Nicht im Portal*, *Im Portal sichtbar* oder *Im Portal bearbeitbar* – dann können Mitglieder den Wert in ihrem Profil selbst pflegen.
 - **↑ / ↓** bestimmen die Reihenfolge, **Deaktivieren** blendet ein Feld aus, ohne die Werte zu verlieren. **Löschen** entfernt das Feld samt aller Werte.
 - **Auch in der Online-Anmeldung abfragen:** Das Feld erscheint im Anmeldeformular (Kapitel 12.8); der Wert wird bei der Freigabe übernommen.
 - **Platzhalter:** Jedes Feld hat einen Platzhalter wie `{{feld_instrument}}`, der in Rundschreiben, Beitragsvorschreibungen, Erinnerungen und der Willkommens-E-Mail durch den Wert des Mitglieds ersetzt wird.
 
-Die Felder erscheinen beim Mitglied unter **Weitere Angaben**, als Spalte und Filter in der Mitgliederliste und im Excel-Export.
+Die Felder erscheinen beim Mitglied unter **Weitere Angaben**, als Spalte und Filter in der Mitgliederliste und im Excel-Export. Bei einer Mehrfachauswahl werden die gewählten Werte mit Komma getrennt angezeigt; der Filter findet alle Mitglieder, bei denen der gewählte Wert angehakt ist.
 
 ### 12.8 Online-Anmeldung
 

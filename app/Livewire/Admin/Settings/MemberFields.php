@@ -6,6 +6,7 @@ use App\Enums\MemberFieldPortal;
 use App\Enums\MemberFieldType;
 use App\Models\MemberField;
 use App\Services\ActivityLogger;
+use App\Services\MemberFields as MemberFieldsService;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -45,7 +46,7 @@ class MemberFields extends Component
                 Rule::unique('tb_member_fields', 'name')->ignore($this->editingFieldID, 'fieldID'),
             ],
             'type' => ['required', Rule::enum(MemberFieldType::class)],
-            'options' => [Rule::requiredIf($this->type === MemberFieldType::Select->value), 'string', 'max:5000'],
+            'options' => [Rule::requiredIf(MemberFieldType::tryFrom($this->type)?->hasOptions() ?? false), 'string', 'max:5000'],
             'portal' => ['required', Rule::enum(MemberFieldPortal::class)],
             'onApplication' => ['boolean'],
         ];
@@ -103,10 +104,13 @@ class MemberFields extends Component
             return;
         }
 
-        $options = $type === MemberFieldType::Select ? $this->parseOptions($validated['options']) : null;
+        $options = $type->hasOptions() ? $this->parseOptions($validated['options']) : null;
 
-        if ($field && $type === MemberFieldType::Select) {
-            $usedValues = $field->values()->distinct()->pluck('value')->all();
+        if ($field && $type->hasOptions()) {
+            $usedValues = $field->values()->distinct()->pluck('value')
+                ->flatMap(fn (string $value) => $type === MemberFieldType::MultiSelect ? app(MemberFieldsService::class)->decodeList($value) : [$value])
+                ->unique()
+                ->all();
             $missing = array_diff($usedValues, $options);
 
             if ($missing !== []) {

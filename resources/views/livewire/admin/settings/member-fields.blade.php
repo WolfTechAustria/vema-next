@@ -99,7 +99,7 @@
                     Auch in der Online-Anmeldung abfragen
                 </label>
 
-                @if($type === \App\Enums\MemberFieldType::Select->value)
+                @if(\App\Enums\MemberFieldType::tryFrom($type)?->hasOptions())
                     <div>
                         <label class="mb-1 block text-sm font-medium text-slate-700">
                             Auswahlmöglichkeiten
@@ -182,7 +182,7 @@
                         <div class="mt-1 text-sm text-slate-500">
                             {{ $field->values_count }} {{ $field->values_count === 1 ? 'Wert' : 'Werte' }} erfasst
                             · Platzhalter <code class="rounded bg-slate-100 px-1 text-xs">{{ $field->placeholder() }}</code>
-                            @if($field->type === \App\Enums\MemberFieldType::Select)
+                            @if($field->type->hasOptions())
                                 · {{ implode(', ', $field->options ?? []) }}
                             @endif
                         </div>
