@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\MemberApplicationStatus;
+use App\Enums\MemberFieldPortal;
+use App\Enums\MemberFieldType;
 use App\Enums\MembershipKind;
 use App\Livewire\Application\Form as ApplicationForm;
 use App\Livewire\Application\Verify as ApplicationVerify;
@@ -13,9 +15,11 @@ use App\Mail\MemberWelcomeMail;
 use App\Models\HomepageSetting;
 use App\Models\Member;
 use App\Models\MemberApplication;
+use App\Models\MemberField;
 use App\Models\MemberFile;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\MemberFields;
 use App\Services\TurnstileVerifier;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -366,4 +370,27 @@ it('redirects the homepage address to the form', function () {
     Setting::current()->update(['application_enabled' => false]);
 
     $this->get('/site/anmeldung')->assertNotFound();
+});
+
+it('takes over multiple choice member fields from the application', function () {
+    $field = MemberField::create([
+        'name' => 'Disziplinen', 'key' => 'disziplinen', 'type' => MemberFieldType::MultiSelect,
+        'options' => ['Luftgewehr', 'Luftpistole'], 'portal' => MemberFieldPortal::Hidden,
+        'on_application' => true, 'sort_order' => 1, 'active' => true,
+    ]);
+
+    Setting::current()->update(['application_spam_protection' => 'email']);
+
+    filledApplicationForm()
+        ->set("customFields.{$field->fieldID}", ['Luftpistole', 'Luftgewehr'])
+        ->call('submit')
+        ->assertHasNoErrors();
+
+    $application = MemberApplication::sole();
+    $application->update(['status' => MemberApplicationStatus::Pending]);
+
+    $this->actingAs(User::factory()->admin()->create());
+    Livewire::test(ApplicationShow::class, ['application' => $application])->call('approve')->assertHasNoErrors();
+
+    expect(app(MemberFields::class)->displayValues(Member::sole()))->toBe(['Disziplinen' => 'Luftgewehr, Luftpistole']);
 });

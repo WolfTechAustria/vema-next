@@ -193,7 +193,7 @@
                     </select>
 
                     @if($filterField)
-                        @if($filterField->type === \App\Enums\MemberFieldType::Select || $filterField->type === \App\Enums\MemberFieldType::Boolean)
+                        @if($filterField->type->hasOptions() || $filterField->type === \App\Enums\MemberFieldType::Boolean)
                             <select
                                 wire:model.live="fieldFilterValue"
                                 class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:border-slate-500 focus:outline-none sm:w-auto sm:py-2 sm:text-sm"

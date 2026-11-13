@@ -174,6 +174,7 @@ class Index extends Component
         $matches = fn ($values) => match ($field->type) {
             MemberFieldType::Boolean => $values->where('value', '1'),
             MemberFieldType::Select => $values->where('value', $this->fieldFilterValue),
+            MemberFieldType::MultiSelect => $values->where('value', 'like', '%'.app(MemberFields::class)->encodedOption($this->fieldFilterValue).'%'),
             default => $values->where('value', 'like', '%'.$this->fieldFilterValue.'%'),
         };
 

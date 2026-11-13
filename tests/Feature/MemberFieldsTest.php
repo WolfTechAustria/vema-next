@@ -248,3 +248,77 @@ describe('member portal', function () {
         expect($changes['Instrument'])->toMatchArray(['old' => null, 'new' => 'Klarinette']);
     });
 });
+
+describe('multiple choice', function () {
+    beforeEach(function () {
+        $this->disciplines = memberField('Disziplinen', MemberFieldType::MultiSelect, ['options' => ['Luftgewehr', 'Luftpistole', 'Kleinkaliber']]);
+    });
+
+    it('creates a multiple choice field in the settings', function () {
+        Livewire::actingAs($this->admin)
+            ->test(MemberFieldSettings::class)
+            ->call('newField')
+            ->set('name', 'Instrumente')
+            ->set('type', 'multiselect')
+            ->call('saveField')
+            ->assertHasErrors('options')
+            ->set('options', "Flöte\nKlarinette")
+            ->call('saveField')
+            ->assertHasNoErrors();
+
+        expect(MemberField::where('name', 'Instrumente')->sole()->options)->toBe(['Flöte', 'Klarinette']);
+    });
+
+    it('stores several choices in the order of the options and shows them', function () {
+        $member = fieldTestMember();
+
+        Livewire::actingAs($this->admin)
+            ->test(MembersEdit::class, ['member' => $member])
+            ->assertSet("customFields.{$this->disciplines->fieldID}", [])
+            ->set("customFields.{$this->disciplines->fieldID}", ['Luftpistole', 'Luftgewehr'])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect(app(MemberFields::class)->displayValues($member))->toBe(['Disziplinen' => 'Luftgewehr, Luftpistole']);
+
+        Livewire::actingAs($this->admin)
+            ->test(MembersEdit::class, ['member' => $member])
+            ->assertSet("customFields.{$this->disciplines->fieldID}", ['Luftgewehr', 'Luftpistole'])
+            ->set("customFields.{$this->disciplines->fieldID}", ['Armbrust'])
+            ->call('save')
+            ->assertHasErrors("customFields.{$this->disciplines->fieldID}.0")
+            ->set("customFields.{$this->disciplines->fieldID}", [])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect(app(MemberFields::class)->displayValues($member))->toBe([]);
+    });
+
+    it('filters the member list by one choice', function () {
+        $both = Member::create(['gender' => 'm', 'name' => 'Max', 'surname' => 'Beides', 'active' => 1]);
+        $rifle = Member::create(['gender' => 'w', 'name' => 'Eva', 'surname' => 'Gewehr', 'active' => 1]);
+        app(MemberFields::class)->save($both, [$this->disciplines->fieldID => ['Luftgewehr', 'Luftpistole']]);
+        app(MemberFields::class)->save($rifle, [$this->disciplines->fieldID => ['Luftgewehr']]);
+
+        Livewire::actingAs($this->admin)
+            ->test(MembersIndex::class)
+            ->set('fieldFilter', (string) $this->disciplines->fieldID)
+            ->set('fieldFilterValue', 'Luftpistole')
+            ->assertSee('Beides Max')
+            ->assertDontSee('Gewehr Eva')
+            ->set('fieldFilterValue', 'Luftgewehr')
+            ->assertSee('Beides Max')
+            ->assertSee('Gewehr Eva');
+    });
+
+    it('does not allow removing options that are in use', function () {
+        app(MemberFields::class)->save(fieldTestMember(), [$this->disciplines->fieldID => ['Luftpistole']]);
+
+        Livewire::actingAs($this->admin)
+            ->test(MemberFieldSettings::class)
+            ->call('editField', $this->disciplines->fieldID)
+            ->set('options', "Luftgewehr\nKleinkaliber")
+            ->call('saveField')
+            ->assertHasErrors('options');
+    });
+});

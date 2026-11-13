@@ -129,7 +129,16 @@
                             @else
                                 <label class="mb-1.5 block text-sm font-medium text-slate-700">{{ $field->name }} <span class="font-normal text-slate-400">(optional)</span></label>
 
-                                @if($field->type === \App\Enums\MemberFieldType::Select)
+                                @if($field->type === \App\Enums\MemberFieldType::MultiSelect)
+                                    <div class="flex flex-wrap gap-x-5 gap-y-2">
+                                        @foreach($field->options ?? [] as $option)
+                                            <label class="flex items-center gap-2 text-sm text-slate-700">
+                                                <input type="checkbox" wire:model="customFields.{{ $field->fieldID }}" value="{{ $option }}" class="rounded border-slate-300">
+                                                {{ $option }}
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                @elseif($field->type === \App\Enums\MemberFieldType::Select)
                                     <select wire:model="customFields.{{ $field->fieldID }}" class="w-full rounded-lg border border-slate-300 px-3 py-2">
                                         <option value="">–</option>
                                         @foreach($field->options ?? [] as $option)
