@@ -179,32 +179,7 @@
             <p class="mt-1 text-sm text-slate-500">Leer lassen, um die Seite „Über uns“ auszublenden.</p>
         </div>
 
-        <div
-            wire:ignore
-            x-data="{ quill: null }"
-            x-init="
-                quill = new Quill($refs.editor, {
-                    theme: 'snow',
-                    modules: {
-                        toolbar: [
-                            [{ header: [2, 3, false] }],
-                            ['bold', 'italic', 'underline'],
-                            ['link', 'blockquote'],
-                            [{ list: 'ordered' }, { list: 'bullet' }],
-                            ['clean']
-                        ]
-                    }
-                });
-
-                quill.root.innerHTML = @js($aboutHtml) || '';
-
-                quill.on('text-change', () => {
-                    $wire.set('aboutHtml', quill.root.innerHTML, false);
-                });
-            "
-        >
-            <div x-ref="editor" class="min-h-[220px] bg-white"></div>
-        </div>
+        <x-homepage-editor property="aboutHtml" :value="$aboutHtml" height="min-h-[220px]" />
     </section>
 
     <section class="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

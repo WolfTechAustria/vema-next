@@ -7,6 +7,19 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+[x-cloak] { display: none !important; }
+
+/* Homepage-Editor: HTML-Blöcke als Vorschau im visuellen Editor */
+@layer components {
+    .hp-editor .ql-toolbar .hp-editor__html-button { @apply w-auto px-1.5 font-mono text-xs font-bold text-slate-600; }
+    .hp-editor .ql-editor .hp-html { @apply relative my-3 cursor-pointer overflow-x-auto rounded-lg border border-dashed border-sky-300 bg-sky-50/40 p-3 pt-6; }
+    .hp-editor .ql-editor .hp-html::before { @apply absolute top-1 left-2 font-mono text-[10px] font-bold tracking-wide text-sky-600; content: 'HTML – Doppelklick zum Bearbeiten'; }
+    .hp-editor .ql-editor .hp-html table { @apply w-full border-collapse text-sm; }
+    .hp-editor .ql-editor .hp-html :is(th, td) { @apply border border-slate-300 px-2 py-1 text-left; }
+    .hp-editor .ql-editor .hp-html img { @apply h-auto max-w-full; }
+    .hp-editor .ql-editor .hp-html iframe { @apply pointer-events-none aspect-video h-auto w-full max-w-md; }
+}
+
 /* Benutzerhandbuch (/anleitung), aus resources/docs/anleitung/anleitung.md gerendert */
 @layer components {
     .manual-content { @apply text-[15px] leading-relaxed text-slate-700; }

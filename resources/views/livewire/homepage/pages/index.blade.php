@@ -62,33 +62,7 @@
             <div>
                 <label class="mb-1 block text-sm font-medium">Inhalt</label>
 
-                <div
-                    wire:key="page-editor-{{ $editingPageID ?? 'create' }}-{{ $formVersion }}"
-                    wire:ignore
-                    x-data="{ quill: null }"
-                    x-init="
-                        quill = new Quill($refs.editor, {
-                            theme: 'snow',
-                            modules: {
-                                toolbar: [
-                                    [{ header: [2, 3, false] }],
-                                    ['bold', 'italic', 'underline'],
-                                    ['link', 'blockquote'],
-                                    [{ list: 'ordered' }, { list: 'bullet' }],
-                                    ['clean']
-                                ]
-                            }
-                        });
-
-                        quill.root.innerHTML = @js($bodyHtml) || '';
-
-                        quill.on('text-change', () => {
-                            $wire.set('bodyHtml', quill.root.innerHTML, false);
-                        });
-                    "
-                >
-                    <div x-ref="editor" class="min-h-[260px] bg-white"></div>
-                </div>
+                <x-homepage-editor wire:key="page-editor-{{ $editingPageID ?? 'create' }}-{{ $formVersion }}" property="bodyHtml" :value="$bodyHtml" height="min-h-[260px]" />
             </div>
 
             <div class="flex flex-wrap items-center gap-6">

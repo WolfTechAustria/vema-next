@@ -1214,7 +1214,7 @@ Unter **Homepage → Beiträge** sehen Sie alle Beiträge mit Status, Datum und 
 1. **Neuer Beitrag** klicken.
 2. **Titel** eingeben. Die **Adresse** (z. B. `/news/sommerfest-2026`) schlägt VEMA vor; Sie können sie ändern.
 3. Optional einen **Kurztext** eintragen. Er erscheint in der Übersicht und in Suchmaschinen. Ohne Kurztext nimmt VEMA den Anfang des Beitrags. Eigenen Titel und eigene Beschreibung für Google tragen Sie unter **Suchmaschinen (Google)** ein (Kapitel 16.9).
-4. Den **Text** schreiben: Überschriften, fett/kursiv, Links, Zitate und Aufzählungen.
+4. Den **Text** schreiben: Überschriften, fett/kursiv, Links, Zitate und Aufzählungen. Tabellen, Bilder oder Videos fügen Sie als HTML ein (siehe unten).
 5. Unter **Bildergalerie** **Bilder auswählen** (JPG, PNG oder WebP, je max. 10 MB, mehrere auf einmal).
 6. Optional unter **Downloads** **PDF auswählen**, z. B. eine Ergebnisliste (je max. 20 MB). Die Bezeichnung können Sie ändern.
 7. **Status** wählen und **Beitrag anlegen** bzw. **Änderungen speichern**.
@@ -1226,6 +1226,13 @@ Unter **Homepage → Beiträge** sehen Sie alle Beiträge mit Status, Datum und 
 - **Veröffentlicht** mit Datum in der Zukunft – in der Liste als **Geplant** markiert und ab diesem Zeitpunkt automatisch sichtbar.
 
 **Vorschau** zeigt den Beitrag im Design der Homepage, auch als Entwurf.
+
+**HTML im Editor:** Alle Textfelder der Homepage (Beiträge, Seiten, Abschnitte, Hinweis-Popup, Über uns) können auch HTML:
+
+- **`</>` in der Werkzeugleiste** fügt an der Cursorposition einen **HTML-Block** ein, z. B. eine Tabelle mit Ergebnissen oder den Einbettungscode eines YouTube-Videos (auf YouTube unter *Teilen → Einbetten*). Im Editor erscheint der Block als Vorschau mit gestricheltem Rahmen; **Doppelklick** bearbeitet oder entfernt ihn.
+- **HTML-Quelltext** (rechts über dem Editor) zeigt den gesamten Text als HTML zum direkten Bearbeiten. Mit **Editor** wechseln Sie zurück; Teile, die der Editor nicht selbst darstellen kann, bleiben als HTML-Blöcke erhalten.
+
+Erlaubt sind Tabellen, Bilder (Adresse mit `https://`), Bildunterschriften, Videos von YouTube und Vimeo, Google-Maps-Karten sowie Inline-Styles wie Farben, Ausrichtung, Abstände und Rahmen. YouTube-Videos werden automatisch im erweiterten Datenschutzmodus (youtube-nocookie.com) eingebunden. Skripte, Formulare, andere Einbettungen und Styles, die die Seite überdecken könnten, entfernt VEMA beim Speichern.
 
 **Bildergalerie:** Das erste Bild ist das **Titelbild** des Beitrags. So tauschen Sie es nachträglich:
 
