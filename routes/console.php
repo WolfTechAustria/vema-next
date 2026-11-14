@@ -52,6 +52,13 @@ Schedule::command('tenants:run', ['demo:reset --if-nightly'])
     ->dailyAt(config('demo.reset_time'))
     ->withoutOverlapping();
 
+// Eigene Installation: Neuigkeiten zu VEMA von der Plattform holen
+if (config('tenancy.mode') !== 'multi') {
+    Schedule::command('platform-news:pull')
+        ->hourly()
+        ->withoutOverlapping();
+}
+
 // Plattform: abgelaufene, nie bestätigte Registrierungen entfernen, Erinnerungen
 if (config('tenancy.mode') === 'multi') {
     Schedule::command('tenants:prune-unverified')

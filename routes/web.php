@@ -369,7 +369,7 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
         ->middleware('admin')
         ->name('admin.settings.board-functions');
 
-    // Neuigkeiten zu VEMA (nur Plattformbetrieb).
+    // Neuigkeiten zu VEMA (Plattform; eigene Installation mit Feed-Schlüssel).
     Route::livewire('/neuigkeiten', NewsIndex::class)
         ->middleware('admin')
         ->name('news.index');

@@ -7,7 +7,8 @@ use Illuminate\Support\Carbon;
 use Livewire\Component;
 
 /**
- * Neuigkeiten zu VEMA für die Admins eines Vereins (nur Plattformbetrieb).
+ * Neuigkeiten zu VEMA für die Admins eines Vereins (Plattform oder eigene
+ * Installation mit Feed-Schlüssel).
  * Beim Öffnen gilt alles als gelesen; „neu“ bleibt bis zum nächsten Besuch markiert.
  */
 class Index extends Component
