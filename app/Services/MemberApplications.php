@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\MemberApplicationStatus;
 use App\Enums\MembershipKind;
+use App\Enums\PushCategory;
 use App\Mail\MemberApplicationConfirmationMail;
 use App\Mail\MemberApplicationReceivedMail;
 use App\Mail\MemberApplicationRejectedMail;
@@ -283,6 +284,14 @@ class MemberApplications
         if ($recipients !== []) {
             $this->send($recipients, new MemberApplicationReceivedMail($application));
         }
+
+        app(PushNotifier::class)->toAdmins(
+            PushCategory::Administration,
+            'Neue Online-Anmeldung',
+            $application->full_name.' möchte Mitglied werden.',
+            route('members.applications.show', $application),
+            'application-'.$application->getKey(),
+        );
 
         $this->send($application->email, new MemberApplicationConfirmationMail($application));
     }

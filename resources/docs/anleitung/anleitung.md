@@ -1026,6 +1026,16 @@ Unter **Einstellungen → Online-Anmeldung** richten Admins das Anmeldeformular 
 
 Die Bearbeitung der Anmeldungen ist in Kapitel 5.10 beschrieben.
 
+### 12.9 Push-Benachrichtigungen und App
+
+VEMA lässt sich wie eine App auf Handy oder Computer installieren und kann Push-Benachrichtigungen schicken – auch wenn VEMA gerade nicht geöffnet ist.
+
+- **Installieren:** Am Android-Handy oder im Chrome/Edge-Browser bietet der Browser **App installieren** bzw. **Zum Startbildschirm hinzufügen** an. Am iPhone/iPad in Safari auf **Teilen → Zum Home-Bildschirm** tippen. Das Symbol zeigt Ihr Vereinslogo.
+- **Aktivieren:** Unten links unter **🔔 Benachrichtigungen** auf **Auf diesem Gerät aktivieren** tippen und die Nachfrage des Browsers erlauben. Jedes Gerät wird einzeln aktiviert; am iPhone/iPad geht das nur in der installierten App.
+- **Kategorien:** Für Funktionäre gibt es **Verwaltung** (neue Online-Anmeldungen, Diensttausche, die auf Freigabe warten – an alle Administratoren). Mit **Testnachricht senden** prüfen Sie, ob alles funktioniert.
+
+Mitglieder richten Push-Benachrichtigungen im Mitgliederbereich selbst ein (Kapitel 13.10).
+
 ---
 
 ## 13. Der Mitgliederbereich
@@ -1126,6 +1136,18 @@ Unter **Meine Dokumente** findet das Mitglied Unterlagen, die der Verein für es
 ### 13.9 Mein Material
 
 Hat der Verein einem Mitglied Material ausgegeben (z. B. Tracht oder Instrument), erscheint im Mitgliederbereich der Punkt **Mein Material**. Dort steht, was das Mitglied seit wann hat und bis wann es zurückzugeben ist, darunter frühere, bereits zurückgegebene Stücke. Ändern kann das Mitglied hier nichts – dafür ist der Zeugwart zuständig.
+
+### 13.10 Benachrichtigungen aufs Handy
+
+Unter **🔔 Benachrichtigungen** (unten links) aktiviert das Mitglied Push-Benachrichtigungen für das aktuelle Gerät. Am iPhone/iPad muss der Mitgliederbereich dafür zuerst über **Teilen → Zum Home-Bildschirm** als App installiert werden.
+
+Einzeln ein- und ausschaltbar (gilt für alle Geräte):
+
+- **Dienste:** Erinnerung 2 Tage vor einem Dienst (wenn die E-Mail-Erinnerung aktiv ist), neue Einteilungen sowie Tauschanfragen und Antworten darauf.
+- **Termine:** neue Vereinstermine und Änderungen von Zeit oder Ort bei Terminen, für die zugesagt wurde.
+- **Rundschreiben & Dokumente:** neue Rundschreiben und neue, für das Mitglied freigegebene Dokumente.
+
+Ein Tipp auf die Benachrichtigung öffnet die passende Seite im Mitgliederbereich.
 
 ---
 

@@ -13,6 +13,8 @@
 
     @include('partials.favicon')
 
+    @include('partials.pwa-head', ['forMembers' => request()->routeIs('member.*')])
+
     @vite([
         'resources/css/app.css',
         'resources/js/app.js'
@@ -773,16 +775,17 @@
                 @endif
 
 
-                {{-- Einstellungen kommt als nächster Block --}}
-                <button
-                    type="button"
-                    disabled
-                    class="mb-1 flex w-full cursor-not-allowed items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-400"
-                    title="Kommt als nächstes"
+                <a
+                    href="{{ route('member.notifications') }}"
+                    wire:navigate
+                    class="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition
+                    {{ request()->routeIs('member.notifications')
+                        ? 'bg-slate-100 text-slate-900'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
                 >
-                    <span>⚙</span>
-                    Einstellungen
-                </button>
+                    <span>🔔</span>
+                    Benachrichtigungen
+                </a>
 
 
                 @if($impersonatedBy)
@@ -825,6 +828,18 @@
 
 
             @elseif($isInternal)
+
+                <a
+                    href="{{ route('notifications') }}"
+                    wire:navigate
+                    class="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition
+                    {{ request()->routeIs('notifications')
+                        ? 'bg-slate-100 text-slate-900'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
+                >
+                    <span>🔔</span>
+                    Benachrichtigungen
+                </a>
 
                 <a
                     href="{{ route('user-manual') }}"

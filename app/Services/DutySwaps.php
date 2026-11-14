@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\DutySwapStatus;
 use App\Enums\DutySwapType;
+use App\Enums\PushCategory;
 use App\Mail\DutySwapAdminMail;
 use App\Mail\DutySwapAnsweredMail;
 use App\Mail\DutySwapRequestedMail;
@@ -329,6 +330,10 @@ class DutySwaps
             ? collect([$target])
             : $this->candidates($requester, $assignment);
 
+        $this->push($recipients, $type === DutySwapType::Swap ? 'Tauschanfrage' : 'Dienst zur Übernahme',
+            $requester->full_name.($type === DutySwapType::Swap ? ' möchte Dienste tauschen: ' : ' sucht Ersatz für ')
+                .$this->describe($assignment->event).'.', $swap);
+
         foreach ($recipients as $recipient) {
             $this->mailMember($recipient, new DutySwapRequestedMail($swap, $recipient));
         }
@@ -375,6 +380,17 @@ class DutySwaps
 
         $this->mailMember($swap->requester, new DutySwapAnsweredMail($swap));
         $this->mailAdmins(new DutySwapAdminMail($swap));
+        $this->pushAnswer($swap, $swap->requester);
+
+        if ($swap->status === DutySwapStatus::AwaitingApproval) {
+            app(PushNotifier::class)->toAdmins(
+                PushCategory::Administration,
+                'Diensttausch wartet auf Freigabe',
+                $swap->requester?->full_name.' ↔ '.$swap->acceptedBy?->full_name.': '.$this->describe($swap->assignment->event),
+                route('duty-plan.swaps'),
+                'duty-swap-'.$swap->swapID,
+            );
+        }
 
         return $swap;
     }
@@ -396,6 +412,7 @@ class DutySwaps
         );
 
         $this->mailMember($swap->requester, new DutySwapAnsweredMail($swap));
+        $this->pushAnswer($swap, $swap->requester);
     }
 
     public function cancel(DutySwapRequest $swap, Member $member): void
@@ -439,6 +456,7 @@ class DutySwaps
 
         $this->mailMember($swap->requester, new DutySwapAnsweredMail($swap));
         $this->mailMember($swap->acceptedBy, new DutySwapAnsweredMail($swap, forAcceptor: true));
+        $this->pushAnswer($swap, $swap->requester, $swap->acceptedBy);
 
         return $swap;
     }
@@ -460,6 +478,7 @@ class DutySwaps
 
         $this->mailMember($swap->requester, new DutySwapAnsweredMail($swap));
         $this->mailMember($swap->acceptedBy, new DutySwapAnsweredMail($swap, forAcceptor: true));
+        $this->pushAnswer($swap, $swap->requester, $swap->acceptedBy);
     }
 
     /**
@@ -614,6 +633,34 @@ class DutySwaps
     // ---------------------------------------------------------------
     // Versand
     // ---------------------------------------------------------------
+
+    /**
+     * @param  iterable<Member>  $members
+     */
+    private function push(iterable $members, string $title, string $body, DutySwapRequest $swap): void
+    {
+        app(PushNotifier::class)->toMembers($members, PushCategory::Duties, $title, $body, route('member.duties'), 'duty-swap-'.$swap->swapID);
+    }
+
+    /**
+     * Rückmeldung zum Stand der Anfrage an die Beteiligten.
+     */
+    private function pushAnswer(DutySwapRequest $swap, ?Member ...$members): void
+    {
+        $event = $this->describe($swap->assignment?->event);
+
+        $body = match ($swap->status) {
+            DutySwapStatus::Completed => 'Erledigt – der Dienstplan wurde angepasst ('.$event.').',
+            DutySwapStatus::AwaitingApproval => $swap->acceptedBy?->full_name.' hat angenommen. Der Tausch wartet noch auf die Freigabe ('.$event.').',
+            DutySwapStatus::Declined => $swap->targetMember?->full_name.' hat abgelehnt ('.$event.').',
+            DutySwapStatus::Rejected => 'Der Verein hat den Tausch nicht freigegeben ('.$event.').',
+            default => null,
+        };
+
+        if ($body !== null) {
+            $this->push(array_filter($members), 'Diensttausch', $body, $swap);
+        }
+    }
 
     private function mailMember(?Member $member, Mailable $mail): void
     {

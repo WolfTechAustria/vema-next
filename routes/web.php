@@ -80,6 +80,7 @@ use App\Livewire\Members\Index as MembersIndex;
 use App\Livewire\Members\Show as MembersShow;
 use App\Livewire\MembershipFees\Index as MembershipFeesIndex;
 use App\Livewire\News\Index as NewsIndex;
+use App\Livewire\PushSettings;
 use App\Livewire\Templates\Index as TemplatesIndex;
 use App\Livewire\UserManual\Index as UserManualIndex;
 use Illuminate\Support\Facades\Route;
@@ -133,6 +134,9 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
 
     Route::livewire('/anleitung', UserManualIndex::class)
         ->name('user-manual');
+
+    Route::livewire('/benachrichtigungen', PushSettings::class)
+        ->name('notifications');
 
     Route::get('/anleitung/bilder/{image}', [UserManualController::class, 'image'])
         ->where('image', '[A-Za-z0-9_-]+\.png')
@@ -468,6 +472,9 @@ Route::middleware(['auth:member', 'feature:member_portal'])->group(function () {
     Route::livewire('/member/select-profile', SelectProfile::class)
         ->name('member.select-profile');
 
+    Route::livewire('/member/benachrichtigungen', PushSettings::class)
+        ->name('member.notifications');
+
     Route::post('/member/logout', [MemberAuthController::class, 'logout'])
         ->name('member.logout');
 
@@ -521,6 +528,9 @@ Route::get('/calendar/duty/{token}.ics', [MemberCalendarController::class, 'show
 Route::get('/calendar/shared/{token}.ics', [MemberCalendarController::class, 'shared'])
     ->name('member-calendar.shared');
 
+Route::get('/manifest.webmanifest', [BrandingController::class, 'manifest'])
+    ->name('manifest');
+
 Route::get('/branding/logo', [BrandingController::class, 'logo'])
     ->name('branding.logo');
 
@@ -528,5 +538,5 @@ Route::get('/favicon.ico', [BrandingController::class, 'favicon'])
     ->name('favicon');
 
 Route::get('/branding/icon-{size}.png', [BrandingController::class, 'icon'])
-    ->whereIn('size', ['32', '180', '192'])
+    ->whereIn('size', ['32', '180', '192', '512'])
     ->name('branding.icon');

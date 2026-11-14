@@ -12,6 +12,7 @@
     <title>VEMA Login</title>
 
     @include('partials.favicon')
+    @include('partials.pwa-head', ['forMembers' => false])
 
     @vite([
         'resources/css/app.css',
