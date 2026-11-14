@@ -8,10 +8,10 @@ use App\Models\CashBookAttachment;
 use App\Models\CashBookEntry;
 use App\Models\CashBookYear;
 use App\Services\ActivityLogger;
+use App\Services\CashBookEntries;
 use App\Services\PlanEntitlements;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -190,12 +190,7 @@ class Index extends Component
                 return $entry;
             }
 
-            CashBookYear::lockForUpdate()->findOrFail($year->cashBookYearID);
-
-            return $year->entries()->create($attributes + [
-                'receipt_number' => $year->nextReceiptNumber(),
-                'created_by' => Auth::guard('web')->id(),
-            ]);
+            return app(CashBookEntries::class)->create($year, $attributes);
         });
 
         $this->storeFiles($entry);

@@ -330,6 +330,19 @@ class Member extends Model
         return $this->hasMany(DutyCalendarShare::class, 'viewerID', 'memberID');
     }
 
+    public function sepaMandates(): HasMany
+    {
+        return $this->hasMany(SepaMandate::class, 'memberID', 'memberID');
+    }
+
+    /**
+     * Gültiges (nicht widerrufenes) SEPA-Lastschriftmandat.
+     */
+    public function activeSepaMandate(): HasOne
+    {
+        return $this->hasOne(SepaMandate::class, 'memberID', 'memberID')->whereNull('revoked_at')->latestOfMany('mandateID');
+    }
+
     public function dutySettings(): HasOne
     {
         return $this->hasOne(

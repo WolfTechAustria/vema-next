@@ -43,6 +43,7 @@ it('renders every staff page on an empty database', function (string $routeName)
     'admin.users.index',
     'admin.settings.index',
     'admin.settings.documents',
+    'admin.settings.sepa',
     'admin.activity-log.index',
     'cash-book.index',
     'cash-book.years',

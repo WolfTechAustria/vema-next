@@ -56,6 +56,18 @@
                         PDF offene Beiträge
                     </a>
 
+                    @if(auth()->user()?->hasAnyRole(['admin', 'kassier']))
+                        @feature('sepa_direct_debit')
+                            <a
+                                href="{{ route('membership-fees.sepa', $selectedYear->yearID) }}"
+                                wire:navigate
+                                class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            >
+                                SEPA-Lastschrift
+                            </a>
+                        @endfeature
+                    @endif
+
                 @endif
 
         </div>
@@ -711,6 +723,11 @@
 
                             <td class="px-6 py-4">
 
+                                @if($entry->isPending())
+                                    <span class="inline-flex rounded-full bg-sky-100 px-2.5 py-1 text-xs font-medium text-sky-800" title="Teil eines Lastschrift-Laufs, der noch bestätigt werden muss">
+                                        Im Einzug
+                                    </span>
+                                @else
                                 <select
                                     wire:change="updateStatus(
                                         {{ $entry->entryID }},
@@ -740,6 +757,10 @@
                                         Befreit
                                     </option>
                                 </select>
+                                @endif
+                                @if($entry->payment_method === 'sepa' && $entry->status === 'paid')
+                                    <div class="mt-1 text-xs text-slate-500">per Lastschrift</div>
+                                @endif
 
                             </td>
 
@@ -963,6 +984,10 @@
                                                 <span class="text-xs font-medium text-slate-500">
                                                     Befreit
                                                 </span>
+                                            @elseif($entry->isPending())
+                                                <span class="text-xs font-medium text-sky-700">
+                                                    Im Einzug
+                                                </span>
                                             @else
                                                 <span class="text-xs font-medium text-amber-700">
                                                     Offen
@@ -998,7 +1023,7 @@
 
                             </div>
 
-                            @if($selectedYear->active)
+                            @if($selectedYear->active && ! $entry->isPending())
 
                                 <div class="mt-3 flex gap-2">
 

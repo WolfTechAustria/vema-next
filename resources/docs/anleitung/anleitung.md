@@ -650,6 +650,25 @@ Wenn ein Beitrag eingeht, stellen Sie in der Spalte **Status** auf **Bezahlt**. 
 
 Mit **Beitragsjahr abschließen** wird ein Jahr gesperrt – Beträge und Status können dann nicht mehr verändert werden. Über **Beitragsjahr wieder öffnen** lässt sich das rückgängig machen. **PDF offene Beiträge** liefert eine Liste aller noch offenen Beiträge.
 
+### 8.8 SEPA-Lastschrift
+
+Beiträge von Mitgliedern mit Lastschriftmandat lassen sich per SEPA-Lastschrift einziehen (ab Paket Verein; nur für Admins und Kassiere).
+
+**Einrichten (einmalig):** Unter **Einstellungen → SEPA-Lastschrift** die **Gläubiger-ID** eintragen – sie wird bei der Hausbank beantragt. Die IBAN des Vereinskontos steht unter **Einstellungen → Allgemein**. Außerdem wählen Sie, wie bestätigte Einzüge ins Kassabuch kommen (eine Sammelbuchung, je Mitglied oder gar nicht), den Vorlauf für das Einzugsdatum und optional einen eigenen Mandatstext.
+
+**Mandate:** Beim Mitglied gibt es die Karte **SEPA-Lastschrift**. Dort erfassen Sie ein unterschriebenes Papier-Mandat (Kontoinhaber, IBAN, optional BIC, Datum der Unterschrift) oder widerrufen es. Mitglieder können das Mandat auch selbst im Mitgliederbereich erteilen (Kapitel 13.3) – Admins und Kassiere bekommen dann eine E-Mail. Ein neues Mandat ersetzt das bisherige. Andere Funktionäre sehen nur, *ob* ein Mandat vorliegt, nicht die Bankdaten.
+
+**Einzug durchführen:**
+
+1. Unter **Mitgliedsbeiträge** auf **SEPA-Lastschrift** klicken. Vorausgewählt sind alle offenen Beiträge mit Mandat; Beiträge ohne Mandat stehen darunter in einer eigenen Liste.
+2. **Einzugsdatum** prüfen, optional **Mitglieder per E-Mail vorab informieren** (Betrag, Datum, Mandatsreferenz) und **Lastschrift-Datei erstellen**. Die Beiträge stehen jetzt auf **Im Einzug** und lassen sich nicht mehr von Hand ändern.
+3. **XML herunterladen** und im Online-Banking (z. B. ELBA, George) als SEPA-Lastschrift-Datei hochladen.
+4. Sobald der Betrag am Konto gutgeschrieben ist: **Einzug bestätigen**. Erst jetzt gelten die Beiträge als **bezahlt** (Zahlungsdatum = Einzugsdatum, „per Lastschrift“) und die Einnahme wird – je nach Einstellung – ins Kassabuch gebucht.
+
+Wurde die Datei doch nicht eingereicht, setzt **Verwerfen** die Beiträge wieder auf offen. Kommt nach der Bestätigung eine **Rücklastschrift**, öffnen Sie beim Lauf **Posten anzeigen** und klicken beim Mitglied auf **Rücklastschrift**: der Beitrag ist wieder offen. Bei Kassabuch-Buchung je Mitglied wird die Rücklastschrift automatisch als Ausgabe gebucht, bei einer Sammelbuchung bitte selbst korrigieren.
+
+Die erste Lastschrift auf ein Mandat wird als Erstlastschrift (FRST), alle weiteren als Folgelastschrift (RCUR) eingereicht – darum kümmert sich VEMA.
+
 ---
 
 ## 9. Kommunikation
@@ -1068,6 +1087,8 @@ Mitglieder können Vorname, Nachname, Straße, PLZ und ihre **Telefonnummern** s
 ![Meine Beiträge](bilder/41-portal-beitraege.png)
 
 Übersicht aller Mitgliedsbeiträge mit Betrag, Zahlungsstatus und Fälligkeit. Versendete Vorschreibungen und Erinnerungen können direkt als PDF geöffnet werden.
+
+**Lastschrift:** Bietet der Verein SEPA-Lastschrift an, kann das Mitglied unter **Meine Beiträge** mit **Lastschrift erteilen** selbst ein Mandat erteilen: Kontoinhaber und IBAN eingeben, den Mandatstext bestätigen – fertig. **Konto ändern** erteilt ein neues Mandat, **Widerrufen** beendet es. Beiträge im laufenden Einzug sind als *Wird per Lastschrift eingezogen* markiert.
 
 ### 13.4 Meine Rundschreiben
 

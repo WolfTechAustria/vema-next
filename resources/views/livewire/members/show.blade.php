@@ -808,6 +808,8 @@
     @endif
 
     <!-- Dateien -->
+    <livewire:members.sepa-mandate-card :member="$member" :key="'member-sepa-'.$member->memberID" />
+
     <livewire:members.files :member="$member" :key="'member-files-'.$member->memberID" />
 
     <!-- Beitragsvorschreibungen -->

@@ -22,12 +22,14 @@ use App\Http\Controllers\MemberImpersonationController;
 use App\Http\Controllers\MemberPhotoController;
 use App\Http\Controllers\MemberPortalDocumentController;
 use App\Http\Controllers\MembershipFeePrescriptionController;
+use App\Http\Controllers\SepaDebitController;
 use App\Http\Controllers\UserManualController;
 use App\Livewire\Admin\Settings\Application as ApplicationSettings;
 use App\Livewire\Admin\Settings\BoardFunctions;
 use App\Livewire\Admin\Settings\Documents;
 use App\Livewire\Admin\Settings\Federations;
 use App\Livewire\Admin\Settings\MemberFields as MemberFieldSettings;
+use App\Livewire\Admin\Settings\Sepa as SepaSettings;
 use App\Livewire\Application\Form as ApplicationForm;
 use App\Livewire\Application\Verify as ApplicationVerify;
 use App\Livewire\CashBook\Index as CashBookIndex;
@@ -79,6 +81,7 @@ use App\Livewire\Members\Edit as MembersEdit;
 use App\Livewire\Members\Index as MembersIndex;
 use App\Livewire\Members\Show as MembersShow;
 use App\Livewire\MembershipFees\Index as MembershipFeesIndex;
+use App\Livewire\MembershipFees\SepaDebit as MembershipFeesSepaDebit;
 use App\Livewire\News\Index as NewsIndex;
 use App\Livewire\PushSettings;
 use App\Livewire\Templates\Index as TemplatesIndex;
@@ -211,6 +214,14 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
 
     Route::livewire('/membership-fees', MembershipFeesIndex::class)
         ->name('membership-fees.index');
+
+    Route::livewire('/membership-fees/{year}/lastschrift', MembershipFeesSepaDebit::class)
+        ->middleware(['invoices', 'feature:sepa_direct_debit'])
+        ->name('membership-fees.sepa');
+
+    Route::get('/membership-fees/lastschrift/{run}/datei', [SepaDebitController::class, 'download'])
+        ->middleware(['invoices', 'feature:sepa_direct_debit'])
+        ->name('membership-fees.sepa.download');
 
     Route::livewire('/templates', TemplatesIndex::class)
         ->middleware('feature:templates')
@@ -371,6 +382,11 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/settings/application', ApplicationSettings::class)
         ->middleware('admin')
         ->name('admin.settings.application');
+
+    Route::livewire('/settings/sepa', SepaSettings::class)
+        ->middleware('admin')
+        ->middleware('feature:sepa_direct_debit')
+        ->name('admin.settings.sepa');
 
     Route::livewire('/settings/federations', Federations::class)
         ->middleware('admin')

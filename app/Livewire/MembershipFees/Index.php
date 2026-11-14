@@ -1004,9 +1004,19 @@ class Index extends Component
             ->where('yearID', $this->yearId)
             ->firstOrFail();
 
+        if ($entry->isPending()) {
+            session()->flash(
+                'error',
+                'Dieser Beitrag ist im Lastschrift-Einzug. Bitte den Lauf unter „SEPA-Lastschrift“ bestätigen oder verwerfen.'
+            );
+
+            return;
+        }
+
         $before = $this->entrySnapshot($entry);
 
         $entry->status = $status;
+        $entry->payment_method = null;
 
         if ($status === 'paid') {
             $entry->paid_at = $entry->paid_at ?? now();
