@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Mail\StaffPasswordResetMail;
+use App\Models\Concerns\ReceivesPushNotifications;
 use App\Services\ImapSentMailService;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,6 +19,7 @@ class User extends Authenticatable
 
     use HasRoles;
     use Notifiable;
+    use ReceivesPushNotifications;
 
     protected $table = 'tb_user';
 

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\DutyPlan;
 
+use App\Enums\PushCategory;
 use App\Exports\DutyPlanExport;
 use App\Models\DutyPlan;
 use App\Models\DutyPlanAbsence;
@@ -14,7 +15,9 @@ use App\Models\Member;
 use App\Services\ActivityLogger;
 use App\Services\DutyPlanAssignmentService;
 use App\Services\DutyPlanGeneratorService;
+use App\Services\DutySwaps;
 use App\Services\PdfLetterheadService;
+use App\Services\PushNotifier;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Livewire\Attributes\On;
@@ -452,6 +455,7 @@ class Index extends Component
             ->first();
 
         $previousHelper = $this->assignmentHelperName($assignment);
+        $previousMemberID = $assignment?->memberID;
 
         if (! $volunteerKey) {
             if ($assignment) {
@@ -571,6 +575,17 @@ class Index extends Component
             $previousHelper,
             $this->assignmentHelperName($assignment->fresh())
         );
+
+        if ($type === 'member' && $id !== $previousMemberID && ! $event->duty_date->isPast()) {
+            app(PushNotifier::class)->toMembers(
+                Member::query()->whereKey($id)->get(),
+                PushCategory::Duties,
+                'Neuer Dienst',
+                'Du bist eingeteilt: '.app(DutySwaps::class)->describe($event).'.',
+                route('member.duties'),
+                'duty-assignment-'.$assignment->assignmentID,
+            );
+        }
     }
 
     /**

@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Members;
 
+use App\Enums\PushCategory;
 use App\Models\Member;
 use App\Models\MemberFile;
 use App\Services\ActivityLogger;
+use App\Services\PushNotifier;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -155,6 +157,17 @@ class Files extends Component
                 'visible_to_member' => 'Für das Mitglied sichtbar',
             ])
         );
+
+        if ($this->uploadVisible) {
+            app(PushNotifier::class)->toMembers(
+                $this->member,
+                PushCategory::Documents,
+                count($names) === 1 ? 'Neues Dokument' : 'Neue Dokumente',
+                count($names) === 1 ? $names[0] : count($names).' neue Dokumente für dich',
+                route('member.documents'),
+                'documents-'.$this->member->memberID,
+            );
+        }
 
         $this->reset(['pendingFiles', 'newFiles', 'uploadCategory', 'uploadNote', 'uploadVisible']);
 

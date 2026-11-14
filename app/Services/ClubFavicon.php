@@ -17,7 +17,7 @@ class ClubFavicon
      *
      * @var list<int>
      */
-    public const PNG_SIZES = [32, 180, 192];
+    public const PNG_SIZES = [32, 180, 192, 512];
 
     private const ICO_SIZES = [16, 32, 48];
 

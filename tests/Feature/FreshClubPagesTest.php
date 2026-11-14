@@ -32,6 +32,7 @@ it('renders every staff page on an empty database', function (string $routeName)
     'duty-plan.volunteers',
     'duty-plan.absences',
     'duty-plan.swaps',
+    'notifications',
     'events.index',
     'membership-fees.index',
     'templates.index',

@@ -3,6 +3,7 @@
 namespace App\Livewire\Events;
 
 use App\Enums\EventResponseStatus;
+use App\Enums\PushCategory;
 use App\Models\ClubEvent;
 use App\Models\ClubEventSeries;
 use App\Models\ClubEventSource;
@@ -12,6 +13,7 @@ use App\Services\ClubEventSeriesService;
 use App\Services\ExternalCalendarException;
 use App\Services\ExternalCalendarSyncService;
 use App\Services\FederationCalendar;
+use App\Services\PushNotifier;
 use App\Services\TenantManager;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -185,10 +187,53 @@ class Index extends Component
         // Keine Auswahl = für alle Mitglieder sichtbar.
         $event->members()->sync(array_map('intval', $this->selectedMembers));
 
+        if ($before === null) {
+            $this->pushNewEvent($event, array_map('intval', $this->selectedMembers), 'Neuer Termin', $event->title.' – '.$event->formattedPeriod());
+        } elseif ($event->wasChanged(['starts_at', 'ends_at', 'all_day', 'location'])) {
+            $this->pushChangedEvent($event);
+        }
+
         $this->logEventSaved($event->fresh(), $before);
         $this->publishSharedEvents();
 
         $this->resetForm();
+    }
+
+    /**
+     * Neuer (künftiger) Termin: an die ausgewählten bzw. alle aktiven Mitglieder.
+     *
+     * @param  list<int>  $memberIDs
+     */
+    private function pushNewEvent(ClubEvent $event, array $memberIDs, string $title, string $body): void
+    {
+        if ($event->starts_at->isPast()) {
+            return;
+        }
+
+        $members = Member::query()
+            ->where('active', true)
+            ->when($memberIDs !== [], fn ($query) => $query->whereIn('memberID', $memberIDs))
+            ->get();
+
+        app(PushNotifier::class)->toMembers($members, PushCategory::Events, $title, $body, route('member.events'), 'event-'.$event->eventID);
+    }
+
+    /**
+     * Zeit oder Ort geändert: an alle, die zugesagt haben.
+     */
+    private function pushChangedEvent(ClubEvent $event): void
+    {
+        if ($event->starts_at->isPast()) {
+            return;
+        }
+
+        $members = Member::query()
+            ->whereIn('memberID', $event->responses()->where('status', EventResponseStatus::Attending)->select('memberID'))
+            ->get();
+
+        $body = $event->title.': jetzt '.$event->formattedPeriod().($event->location ? ', '.$event->location : '');
+
+        app(PushNotifier::class)->toMembers($members, PushCategory::Events, 'Termin geändert', $body, route('member.events'), 'event-'.$event->eventID);
     }
 
     public function editEvent(int $eventID): void
@@ -389,6 +434,7 @@ class Index extends Component
             );
 
             session()->flash('success', 'Serie mit '.$result['created'].' Terminen wurde angelegt.');
+            $this->pushNewEvent($first, $memberIDs, 'Neue Terminserie', $first->title.' – ab '.$first->formattedPeriod());
             $this->resetForm();
 
             return;

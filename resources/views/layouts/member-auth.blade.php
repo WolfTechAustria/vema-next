@@ -14,6 +14,7 @@
     </title>
 
     @include('partials.favicon')
+    @include('partials.pwa-head', ['forMembers' => true])
 
     @vite([
         'resources/css/app.css',

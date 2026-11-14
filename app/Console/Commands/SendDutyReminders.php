@@ -3,11 +3,14 @@
 namespace App\Console\Commands;
 
 use App\Enums\Feature;
+use App\Enums\PushCategory;
 use App\Mail\DutyReminderMail;
 use App\Models\DutyPlanAssignment;
 use App\Models\DutyReminderSent;
+use App\Services\DutySwaps;
 use App\Services\ImapSentMailService;
 use App\Services\PlanEntitlements;
+use App\Services\PushNotifier;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 
@@ -100,6 +103,15 @@ class SendDutyReminders extends Command
                     );
                 }
             }
+
+            app(PushNotifier::class)->toMembers(
+                $member,
+                PushCategory::Duties,
+                'Dienst in 2 Tagen',
+                'Erinnerung: '.app(DutySwaps::class)->describe($assignment->event).'.',
+                route('member.duties'),
+                'duty-reminder-'.$assignment->assignmentID,
+            );
 
             DutyReminderSent::query()->create([
                 'assignmentID' => $assignment->assignmentID,

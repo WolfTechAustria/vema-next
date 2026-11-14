@@ -5,15 +5,19 @@ import 'cropperjs/dist/cropper.css';
 import { registerBarcodeScanner } from './barcode-scanner';
 import { registerApplicationForm } from './application-form';
 import { registerHomepageEditor } from './homepage-editor';
+import { registerPushDevice, registerServiceWorker } from './push-notifications';
 
 window.Quill = Quill;
 window.Cropper = Cropper;
+
+registerServiceWorker();
 
 document.addEventListener('alpine:init', () => {
 
     registerBarcodeScanner(window.Alpine);
     registerApplicationForm(window.Alpine);
     registerHomepageEditor(window.Alpine);
+    registerPushDevice(window.Alpine);
 
     /*
      * Profilbild zuschneiden: Bild wählen, quadratischen Ausschnitt per

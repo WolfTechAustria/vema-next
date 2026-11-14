@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PushCategory;
 use App\Mail\CircularMail;
 use App\Models\Circular;
 use App\Models\CircularAttachment;
@@ -12,6 +13,7 @@ use App\Services\CircularPdfService;
 use App\Services\ImapSentMailService;
 use App\Services\MailQuota;
 use App\Services\PdfLetterheadService;
+use App\Services\PushNotifier;
 use App\Services\TemplateRendererService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -287,6 +289,25 @@ class CircularController extends Controller
                 );
             }
         }
+
+        /*
+         * Mitglieder, deren Rundschreiben jetzt versendet wurde, zusätzlich
+         * per Push auf den Mitgliederbereich hinweisen.
+         */
+        $sentMemberIDs = CircularRecipient::query()
+            ->whereIn('recipientID', $emailRecipients->modelKeys())
+            ->whereNotNull('sent_at')
+            ->whereNotNull('memberID')
+            ->pluck('memberID');
+
+        app(PushNotifier::class)->toMembers(
+            Member::query()->whereIn('memberID', $sentMemberIDs)->get(),
+            PushCategory::Documents,
+            'Neues Rundschreiben',
+            $circular->title,
+            route('member.circulars'),
+            'circular-'.$circular->circularID,
+        );
 
         /*
          * Status erst auf "sent" setzen,
