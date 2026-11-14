@@ -17,6 +17,7 @@ enum Feature: string
     case Homepage = 'homepage';
     case MemberFields = 'member_fields';
     case Inventory = 'inventory';
+    case SepaDirectDebit = 'sepa_direct_debit';
     case MemberPortal = 'member_portal';
     case ActivityLog = 'activity_log';
     case TestMode = 'test_mode';
@@ -34,6 +35,7 @@ enum Feature: string
             self::Homepage => 'Vereinshomepage mit News',
             self::MemberFields => 'Eigene Mitgliederfelder',
             self::Inventory => 'Materialverwaltung',
+            self::SepaDirectDebit => 'SEPA-Lastschrift',
             self::MemberPortal => 'Mitgliederportal',
             self::ActivityLog => 'Aktivitätsprotokoll',
             self::TestMode => 'Testmodus',

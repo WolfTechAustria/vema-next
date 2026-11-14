@@ -29,6 +29,16 @@ class MembershipFeeEntry extends Model
         );
     }
 
+    /**
+     * Status „im Einzug“: Teil eines noch nicht bestätigten Lastschrift-Laufs.
+     */
+    public const STATUS_PENDING = 'pending';
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
     public function member()
     {
         return $this->belongsTo(
@@ -42,7 +52,7 @@ class MembershipFeeEntry extends Model
     {
         $year = $this->year;
 
-        if (!$year || !$year->due_date) {
+        if (! $year || ! $year->due_date) {
             return false;
         }
 
@@ -56,7 +66,7 @@ class MembershipFeeEntry extends Model
             ->sortByDesc('sent_at')
             ->first();
 
-        if (!$prescription) {
+        if (! $prescription) {
             return false;
         }
 
