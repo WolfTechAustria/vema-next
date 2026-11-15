@@ -179,7 +179,43 @@
                         </td>
 
                         <td class="col-span-2 sm:col-span-4 -mt-2 break-all text-sm text-slate-500 md:mt-0 md:table-cell md:px-6 md:py-4 md:text-slate-600">
-                            {{ $user->email }}
+                            @if($editingEmailUserId === $user->id)
+                                <form wire:submit="saveEmail" class="space-y-2">
+                                    <input
+                                        type="email"
+                                        wire:model="editedEmail"
+                                        aria-label="Login-E-Mail"
+                                        class="w-full min-w-56 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                                    >
+
+                                    @error('editedEmail')
+                                        <p class="text-xs text-red-600">{{ $message }}</p>
+                                    @enderror
+
+                                    <div class="flex gap-2">
+                                        <button type="submit" class="rounded-lg bg-slate-900 px-3 py-1 text-xs font-semibold text-white">Speichern</button>
+                                        <button type="button" wire:click="cancelEmail" class="rounded-lg border border-slate-300 px-3 py-1 text-xs">Abbrechen</button>
+                                    </div>
+                                </form>
+                            @else
+                                @php
+                                    $memberEmails = $user->member?->emails->map(fn ($memberEmail) => mb_strtolower(trim((string) $memberEmail->email))) ?? collect();
+                                    $isOutsideMemberData = $user->member && $user->email && ! $memberEmails->contains(mb_strtolower(trim($user->email)));
+                                @endphp
+
+                                {{ $user->email }}
+
+                                <button
+                                    type="button"
+                                    wire:click="editEmail({{ $user->id }})"
+                                    class="ml-1 text-xs text-slate-400 underline hover:text-slate-700"
+                                    title="Login-E-Mail ändern"
+                                >ändern</button>
+
+                                @if($isOutsideMemberData)
+                                    <span class="mt-1 block text-xs text-amber-700">nicht in den Mitgliedsdaten</span>
+                                @endif
+                            @endif
                         </td>
 
                         <td class="md:table-cell md:px-6 md:py-4 md:text-center">
