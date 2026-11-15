@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Central\AdminLoginController;
+use App\Http\Controllers\Central\NewsFeedController;
 use App\Http\Controllers\Central\RegistrationController;
 use App\Http\Controllers\Central\SupportLoginController;
 use App\Livewire\Central\Admin\Account;
@@ -36,6 +37,11 @@ Route::domain(config('tenancy.platform_host'))->group(function () {
     Route::redirect('/member/login', '/login?ziel=mitglieder')->name('central.member-login');
 
     Route::livewire('/registrieren', Register::class)->name('central.register');
+
+    // Neuigkeiten für eigene Installationen (Schlüssel als Bearer-Token).
+    Route::get('/api/neuigkeiten', NewsFeedController::class)
+        ->middleware('throttle:30,1')
+        ->name('central.news-feed');
 
     Route::get('/registrieren/bestaetigen/{token}', [RegistrationController::class, 'showVerification'])
         ->name('central.register.verify');

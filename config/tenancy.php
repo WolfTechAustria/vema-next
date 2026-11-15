@@ -64,6 +64,18 @@ return [
     'platform_admin_email' => env('TENANCY_PLATFORM_ADMIN_EMAIL'),
 
     /*
+     * Neuigkeiten zu VEMA für eigene Installationen (z. B. Angerberg).
+     * Plattform: erlaubte Schlüssel (kommagetrennt) für den Feed.
+     * Eigene Installation: Adresse des Feeds und eigener Schlüssel — ohne
+     * Schlüssel gibt es dort keine Neuigkeiten.
+     */
+    'news_feed_tokens' => array_values(array_filter(array_map('trim', explode(',', (string) env('TENANCY_NEWS_FEED_TOKENS', ''))))),
+
+    'news_feed_url' => env('TENANCY_NEWS_FEED_URL', 'https://app.vemat.at/api/neuigkeiten'),
+
+    'news_feed_token' => env('TENANCY_NEWS_FEED_TOKEN'),
+
+    /*
      * Zentrale Datenbank (Vereine, Plattform) und die zur Laufzeit auf die
      * Datenbank des jeweiligen Vereins gesetzte Verbindung.
      */

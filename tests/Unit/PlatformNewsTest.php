@@ -203,3 +203,21 @@ describe('news shipped with an update', function () {
         expect(PlatformNews::sole()->emailed_count)->toBe(2);
     });
 });
+
+it('serves published news to own installations only with a valid key', function () {
+    config(['tenancy.news_feed_tokens' => ['geheimer-schluessel']]);
+
+    writeNews('Neue Funktion', minPlan: Plan::Verein->value, sendEmail: true);
+    writeNews('Noch nicht fertig', publish: false);
+
+    $this->getJson('http://app.vemat.test/api/neuigkeiten')->assertUnauthorized();
+    $this->withToken('falsch')->getJson('http://app.vemat.test/api/neuigkeiten')->assertUnauthorized();
+
+    $this->withToken('geheimer-schluessel')
+        ->getJson('http://app.vemat.test/api/neuigkeiten')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.title', 'Neue Funktion')
+        ->assertJsonPath('data.0.min_plan', 'verein')
+        ->assertJsonPath('data.0.emailed', true);
+});
