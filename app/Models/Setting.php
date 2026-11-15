@@ -38,6 +38,7 @@ class Setting extends Model
             'duty_swap_deadline_hours' => 'integer',
             'duty_swap_notify_emails' => 'array',
             'sepa_lead_days' => 'integer',
+            'two_factor_required' => 'boolean',
         ];
     }
 

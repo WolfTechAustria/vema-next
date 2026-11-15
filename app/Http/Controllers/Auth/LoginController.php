@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\TwoFactorAuthentication;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -24,7 +26,7 @@ class LoginController extends Controller
         return view('auth.login');
     }
 
-    public function store(Request $request)
+    public function store(Request $request, TwoFactorAuthentication $twoFactor)
     {
         $request->merge([
             'username' => trim((string) $request->input('username')),
@@ -66,6 +68,27 @@ class LoginController extends Controller
 
         RateLimiter::clear($throttleKey);
 
+        if ($twoFactor->isRequired() && $twoFactor->isEnabled($user) && ! $twoFactor->isTrustedDevice($request, $user)) {
+            $request->session()->put(TwoFactorChallengeController::SESSION_KEY, [
+                'user_id' => $user->id,
+                'expires_at' => now()->addMinutes(15)->getTimestamp(),
+            ]);
+
+            if ($user->two_factor_method === TwoFactorAuthentication::METHOD_EMAIL) {
+                $twoFactor->sendEmailCode($user);
+            }
+
+            return redirect()->route('two-factor.challenge');
+        }
+
+        return self::completeLogin($request, $user);
+    }
+
+    /**
+     * Meldet den Funktionär an – nach Passwort und ggf. zweitem Faktor.
+     */
+    public static function completeLogin(Request $request, User $user): RedirectResponse
+    {
         Auth::login($user);
 
         $request->session()->regenerate();
