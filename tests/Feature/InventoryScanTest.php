@@ -159,3 +159,25 @@ it('stores a unique code on the item and logs it', function () {
     $log = ActivityLog::where('action', 'inventory.created')->where('subject_id', $item->itemID)->sole();
     expect(collect($log->changes)->pluck('new', 'field')['Barcode/NFC'])->toBe('04:A2:1B');
 });
+
+it('issues multi issue items to several members by scanning', function () {
+    $shirt = InventoryItem::factory()->multiIssue()->create(['code' => '5001']);
+    $max = Member::create(['gender' => 'm', 'name' => 'Max', 'surname' => 'Muster', 'active' => 1]);
+
+    Livewire::test(Scan::class)
+        ->call('selectMember', $this->anna->memberID)
+        ->call('scan', '5001')
+        ->assertSet('lastResult.status', 'issued')
+        ->call('selectMember', $max->memberID)
+        ->call('scan', '5001')
+        ->assertSet('lastResult.status', 'issued');
+
+    expect($shirt->openLoans()->count())->toBe(2);
+
+    Livewire::test(Scan::class)
+        ->call('selectMember', $max->memberID)
+        ->call('scan', '5001')
+        ->assertSet('lastResult.status', 'already');
+
+    expect($shirt->openLoans()->count())->toBe(2);
+});

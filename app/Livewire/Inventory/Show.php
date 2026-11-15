@@ -37,6 +37,9 @@ class Show extends Component
 
     public bool $showReturnForm = false;
 
+    /** Ausgabe, deren Rückgabe gerade erfasst wird */
+    public ?int $returnLoanID = null;
+
     public string $returnedOn = '';
 
     public string $returnCondition = '';
@@ -94,9 +97,10 @@ class Show extends Component
         session()->flash('success', 'Material wurde ausgegeben.');
     }
 
-    public function openReturnForm(): void
+    public function openReturnForm(?int $loanID = null): void
     {
         $this->resetValidation();
+        $this->returnLoanID = $loanID ?? $this->item->currentLoan?->loanID;
         $this->returnedOn = $this->today();
         $this->returnCondition = $this->item->condition->value;
         $this->showReturnForm = true;
@@ -104,7 +108,7 @@ class Show extends Component
 
     public function returnItem(InventoryLoans $loans): void
     {
-        $loan = $this->item->currentLoan;
+        $loan = $this->item->openLoans()->whereKey($this->returnLoanID)->first();
 
         abort_if($loan === null, 404);
 
@@ -119,6 +123,7 @@ class Show extends Component
         $loans->return($loan, $this->returnedOn, $this->returnCondition);
 
         $this->showReturnForm = false;
+        $this->returnLoanID = null;
         session()->flash('success', 'Rückgabe wurde erfasst.');
     }
 
@@ -195,10 +200,13 @@ class Show extends Component
 
     public function render()
     {
-        $this->item->load(['category', 'currentLoan.member', 'loans.member', 'inspections.user']);
+        $this->item->load(['category', 'openLoans.member', 'loans.member', 'inspections.user']);
 
         return view('livewire.inventory.show', [
-            'currentLoan' => $this->item->currentLoan,
+            'openLoans' => $this->item->openLoans,
+            'canIssue' => $this->item->condition !== InventoryCondition::Retired
+                && ($this->item->multi_issue || $this->item->openLoans->isEmpty()),
+            'returnLoan' => $this->returnLoanID ? $this->item->openLoans->firstWhere('loanID', $this->returnLoanID) : null,
             'memberMatches' => $this->memberMatches(),
             'selectedMember' => $this->loanMemberID ? Member::find($this->loanMemberID) : null,
             'conditions' => InventoryCondition::cases(),

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
 class InventoryItems
 {
     /**
-     * @param  array{name: string, category: ?string, inventory_number: ?string, code?: ?string, location: ?string, condition: string, purchased_on: ?string, purchase_price: ?string, note: ?string, inspection_interval_months: int|string|null, next_inspection_on: ?string}  $data
+     * @param  array{name: string, category: ?string, inventory_number: ?string, code?: ?string, location: ?string, condition: string, multi_issue?: bool, purchased_on: ?string, purchase_price: ?string, note: ?string, inspection_interval_months: int|string|null, next_inspection_on: ?string}  $data
      */
     public function save(?InventoryItem $item, array $data): InventoryItem
     {
@@ -27,6 +27,7 @@ class InventoryItems
                 'code' => $this->nullable($data['code'] ?? null),
                 'location' => $this->nullable($data['location']),
                 'condition' => $data['condition'],
+                'multi_issue' => (bool) ($data['multi_issue'] ?? false),
                 'purchased_on' => $data['purchased_on'] ?: null,
                 'purchase_price' => filled($data['purchase_price']) ? str_replace(',', '.', (string) $data['purchase_price']) : null,
                 'note' => $this->nullable($data['note']),

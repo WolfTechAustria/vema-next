@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\InventoryCondition;
+use App\Livewire\Inventory\Form as InventoryForm;
 use App\Livewire\Inventory\Show as InventoryShow;
 use App\Livewire\MemberPortal\MyInventory;
 use App\Livewire\Members\Index as MembersIndex;
@@ -158,4 +159,68 @@ it('serves item photos to the portal only for own material', function () {
     InventoryLoan::create(['itemID' => $this->item->itemID, 'memberID' => $member->memberID, 'issued_on' => '2026-01-01']);
 
     $this->get(route('member.inventory.photo', $this->item))->assertOk();
+});
+
+describe('multi issue', function () {
+    beforeEach(function () {
+        $this->actingAs($this->zeugwart);
+        $this->max = Member::create(['gender' => 'm', 'name' => 'Max', 'surname' => 'Muster', 'active' => 1]);
+        $this->shirts = InventoryItem::factory()->multiIssue()->create(['name' => 'Vereins-T-Shirt', 'inventory_number' => 'S-1']);
+    });
+
+    it('issues one item to several members and takes it back per member', function () {
+        foreach ([$this->anna, $this->max] as $member) {
+            Livewire::test(InventoryShow::class, ['item' => $this->shirts])
+                ->call('openLoanForm')
+                ->call('selectLoanMember', $member->memberID)
+                ->call('issue')
+                ->assertHasNoErrors();
+        }
+
+        $annaLoan = InventoryLoan::query()->where('memberID', $this->anna->memberID)->sole();
+
+        Livewire::test(InventoryShow::class, ['item' => $this->shirts])
+            ->assertSee('Ausgegeben an 2 Mitglieder')
+            ->assertSee('Anna Huber')
+            ->assertSee('Max Muster')
+            ->call('openReturnForm', $annaLoan->loanID)
+            ->assertSee('Rückgabe von Anna Huber')
+            ->call('returnItem')
+            ->assertHasNoErrors();
+
+        expect($annaLoan->fresh()->returned_on)->not->toBeNull()
+            ->and($this->shirts->openLoans()->pluck('memberID')->all())->toBe([$this->max->memberID]);
+    });
+
+    it('does not issue the item twice to the same member', function () {
+        InventoryLoan::create(['itemID' => $this->shirts->itemID, 'memberID' => $this->anna->memberID, 'issued_on' => '2026-01-01']);
+
+        Livewire::test(InventoryShow::class, ['item' => $this->shirts])
+            ->set('showLoanForm', true)
+            ->set('loanMemberID', $this->anna->memberID)
+            ->set('loanIssuedOn', '2026-02-01')
+            ->call('issue')
+            ->assertHasErrors(['loanMemberID' => 'Dieses Material ist bereits an Anna Huber ausgegeben.']);
+
+        // Beim Mitglied wird es nur noch für andere angeboten.
+        Livewire::test(MembersShow::class, ['member' => $this->anna])
+            ->call('openInventoryForm')
+            ->assertViewHas('availableInventoryItems', fn ($items) => ! $items->contains('itemID', $this->shirts->itemID));
+
+        Livewire::test(MembersShow::class, ['member' => $this->max])
+            ->call('openInventoryForm')
+            ->assertViewHas('availableInventoryItems', fn ($items) => $items->contains('itemID', $this->shirts->itemID));
+    });
+
+    it('cannot be switched off while several members hold the item', function () {
+        InventoryLoan::create(['itemID' => $this->shirts->itemID, 'memberID' => $this->anna->memberID, 'issued_on' => '2026-01-01']);
+        InventoryLoan::create(['itemID' => $this->shirts->itemID, 'memberID' => $this->max->memberID, 'issued_on' => '2026-01-01']);
+
+        Livewire::test(InventoryForm::class, ['item' => $this->shirts])
+            ->set('multiIssue', false)
+            ->call('save')
+            ->assertHasErrors('multiIssue');
+
+        expect($this->shirts->fresh()->multi_issue)->toBeTrue();
+    });
 });

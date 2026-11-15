@@ -32,6 +32,11 @@ class InventoryItemFactory extends Factory
         ]);
     }
 
+    public function multiIssue(): static
+    {
+        return $this->state(fn () => ['multi_issue' => true]);
+    }
+
     public function retired(): static
     {
         return $this->state(fn () => ['condition' => InventoryCondition::Retired]);

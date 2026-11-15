@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Material an Mitglieder ausgeben und zurücknehmen. Ein Stück kann immer nur
- * an ein Mitglied ausgegeben sein.
+ * Material an Mitglieder ausgeben und zurücknehmen. Ein Stück kann nur an ein
+ * Mitglied ausgegeben sein — außer bei Mehrfachausgabe, dann an beliebig
+ * viele (aber an jedes Mitglied nur einmal gleichzeitig).
  */
 class InventoryLoans
 {
@@ -20,7 +21,11 @@ class InventoryLoans
         return DB::transaction(function () use ($item, $member, $issuedOn, $dueOn, $note, $errorKey) {
             $item = InventoryItem::query()->lockForUpdate()->findOrFail($item->itemID);
 
-            if ($item->currentLoan()->exists()) {
+            if ($item->multi_issue && $item->openLoans()->where('memberID', $member->memberID)->exists()) {
+                throw ValidationException::withMessages([$errorKey => 'Dieses Material ist bereits an '.$member->full_name.' ausgegeben.']);
+            }
+
+            if (! $item->multi_issue && $item->currentLoan()->exists()) {
                 throw ValidationException::withMessages([$errorKey => 'Dieses Material ist bereits ausgegeben.']);
             }
 

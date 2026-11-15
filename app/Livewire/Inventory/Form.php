@@ -35,6 +35,8 @@ class Form extends Component
 
     public string $condition = 'good';
 
+    public bool $multiIssue = false;
+
     public string $purchasedOn = '';
 
     public string $purchasePrice = '';
@@ -63,6 +65,7 @@ class Form extends Component
         $this->code = $item->code ?? '';
         $this->location = $item->location ?? '';
         $this->condition = $item->condition->value;
+        $this->multiIssue = $item->multi_issue;
         $this->purchasedOn = $item->purchased_on?->toDateString() ?? '';
         $this->purchasePrice = $item->purchase_price !== null ? str_replace('.', ',', (string) $item->purchase_price) : '';
         $this->note = $item->note ?? '';
@@ -81,6 +84,7 @@ class Form extends Component
             'code' => ['nullable', 'string', 'max:100', Rule::unique('tb_inventory_items', 'code')->ignore($this->item?->itemID, 'itemID')],
             'location' => ['nullable', 'string', 'max:150'],
             'condition' => ['required', Rule::enum(InventoryCondition::class)],
+            'multiIssue' => ['boolean'],
             'purchasedOn' => ['nullable', 'date'],
             'purchasePrice' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             'note' => ['nullable', 'string', 'max:5000'],
@@ -102,6 +106,12 @@ class Form extends Component
             'photo' => 'Foto',
         ]);
 
+        if (! $validated['multiIssue'] && $this->item !== null && $this->item->openLoans()->count() > 1) {
+            $this->addError('multiIssue', 'Das Material ist derzeit an mehrere Mitglieder ausgegeben. Bitte zuerst die Rückgaben erfassen, bis höchstens eine Ausgabe offen ist.');
+
+            return;
+        }
+
         $isNew = $this->item === null;
 
         $item = $items->save($this->item, [
@@ -111,6 +121,7 @@ class Form extends Component
             'code' => $validated['code'],
             'location' => $validated['location'],
             'condition' => $validated['condition'],
+            'multi_issue' => $validated['multiIssue'],
             'purchased_on' => $validated['purchasedOn'],
             'purchase_price' => $validated['purchasePrice'],
             'note' => $validated['note'],

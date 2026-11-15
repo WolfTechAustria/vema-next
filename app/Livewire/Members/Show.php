@@ -152,7 +152,11 @@ class Show extends Component
             'canOpenMemberPortal' => $this->canOpenMemberPortal(),
             'inventoryLoans' => $canManageInventory ? $this->member->inventoryLoans()->with('item')->get() : collect(),
             'availableInventoryItems' => $canManageInventory && $this->showInventoryForm
-                ? InventoryItem::query()->inService()->whereDoesntHave('currentLoan')->orderBy('name')->get()
+                ? InventoryItem::query()
+                    ->issuable()
+                    ->whereDoesntHave('openLoans', fn ($query) => $query->where('memberID', $this->member->memberID))
+                    ->orderBy('name')
+                    ->get()
                 : collect(),
             'boardFunctions' => BoardFunction::active()->orderBy('sort_order')->get(),
             'currentFunctions' => app(BoardFunctionService::class)->currentFunctionsFor($this->member),

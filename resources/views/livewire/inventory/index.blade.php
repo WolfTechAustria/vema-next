@@ -121,13 +121,22 @@
                         </td>
 
                         <td class="px-4 py-3 text-sm">
-                            @if($item->currentLoan)
-                                <span class="text-slate-700">{{ $item->currentLoan->member?->full_name ?? 'Mitglied #'.$item->currentLoan->memberID }}</span>
-                                @if($item->currentLoan->isOverdue())
-                                    <span class="ml-1 text-xs font-semibold text-red-700">Rückgabe überfällig</span>
+                            @if($item->multi_issue)
+                                @if($item->openLoans->isNotEmpty())
+                                    <span class="text-slate-700" title="{{ $item->openLoans->map(fn ($loan) => $loan->member?->full_name ?? 'Mitglied #'.$loan->memberID)->join(', ') }}">
+                                        an {{ $item->openLoans->count() }} {{ $item->openLoans->count() === 1 ? 'Mitglied' : 'Mitglieder' }}
+                                    </span>
+                                @else
+                                    <span class="text-slate-400">verfügbar</span>
                                 @endif
+                                <span class="ml-1 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">mehrfach</span>
+                            @elseif($item->openLoans->isNotEmpty())
+                                <span class="text-slate-700">{{ $item->openLoans->first()->member?->full_name ?? 'Mitglied #'.$item->openLoans->first()->memberID }}</span>
                             @else
                                 <span class="text-slate-400">verfügbar</span>
+                            @endif
+                            @if($item->openLoans->contains(fn ($loan) => $loan->isOverdue()))
+                                <span class="ml-1 text-xs font-semibold text-red-700">Rückgabe überfällig</span>
                             @endif
                         </td>
 

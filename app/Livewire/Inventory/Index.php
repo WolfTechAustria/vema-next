@@ -35,7 +35,7 @@ class Index extends Component
 
     public function export(): BinaryFileResponse
     {
-        $items = $this->filteredQuery()->with(['category', 'currentLoan.member'])->get();
+        $items = $this->filteredQuery()->with(['category', 'openLoans.member'])->get();
 
         return Excel::download(new InventoryExport($items), 'material-'.now()->format('Y-m-d').'.xlsx');
     }
@@ -65,7 +65,7 @@ class Index extends Component
                 fn (Builder $query) => $query->where('condition', $this->conditionFilter),
                 fn (Builder $query) => $query->inService()
             )
-            ->when($this->statusFilter === 'available', fn (Builder $query) => $query->whereDoesntHave('currentLoan'))
+            ->when($this->statusFilter === 'available', fn (Builder $query) => $query->issuable())
             ->when($this->statusFilter === 'issued', fn (Builder $query) => $query->whereHas('currentLoan'))
             ->when($this->statusFilter === 'inspection_due', fn (Builder $query) => $query->inspectionDue())
             ->when($this->statusFilter === 'overdue_return', fn (Builder $query) => $query->whereHas('currentLoan', fn (Builder $query) => $query->whereDate('due_on', '<', today())))
@@ -77,7 +77,7 @@ class Index extends Component
     public function render()
     {
         return view('livewire.inventory.index', [
-            'items' => $this->filteredQuery()->with(['category', 'currentLoan.member'])->get(),
+            'items' => $this->filteredQuery()->with(['category', 'openLoans.member'])->get(),
             'categories' => InventoryCategory::query()->orderBy('name')->get(),
             'conditions' => InventoryCondition::cases(),
             'photos' => app(InventoryPhotoService::class),
