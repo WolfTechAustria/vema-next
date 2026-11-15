@@ -57,6 +57,7 @@ Welche Menüpunkte Sie sehen, hängt von Ihrer Rolle ab:
 | **Kassier** | zusätzlich **Kassabuch** und **Rechnungen** |
 | **Homepage** | zusätzlich **Homepage** (Beiträge, Seiten, Gestaltung) |
 | **Zeugwart** | zusätzlich **Material** (Inventar, Ausgabe an Mitglieder, Prüftermine) |
+| **Anwesenheit** | zusätzlich **Anwesenheit** bei Terminen erfassen und auswerten (z. B. Kapellmeister oder Schriftführer) |
 | **Admin** | alles, zusätzlich **Einstellungen**, **Benutzerverwaltung** und **Aktivitätsprotokoll** |
 
 Versucht jemand eine Seite ohne Berechtigung aufzurufen, erscheint die Meldung „Diese Seite ist nur für Kassier und Administratoren zugänglich“ bzw. „… nur für Administratoren zugänglich“.
@@ -538,7 +539,17 @@ Ein Klick auf **Rückmeldungen** klappt beim Termin zwei Spalten auf: **Zugesagt
 
 > Zu- und Absagen werden nur in VEMA gespeichert. Bei Terminen aus externen Kalendern wird nichts an den ursprünglichen Kalender zurückgemeldet.
 
-### 7.4 Externe Kalender einbinden
+### 7.4 Anwesenheit erfassen
+
+Admins und Funktionäre mit der Rolle **Anwesenheit** sehen bei jedem eigenen Termin ab dem Tag des Termins den Link **Anwesenheit**. Er öffnet die Anwesenheitsliste:
+
+- In der Liste stehen alle aktiven Mitglieder – bei Terminen, die nur für bestimmte Mitglieder sichtbar sind, nur diese.
+- Beim ersten Öffnen sind alle vorausgewählt, die **zugesagt** haben. Haken Sie an, wer tatsächlich da war, und klicken Sie auf **Anwesenheit speichern**. Mit **Alle anwesend** bzw. **Keine** setzen Sie alle (gefilterten) Häkchen auf einmal, das Suchfeld filtert nach Namen.
+- Die Anwesenheit lässt sich später jederzeit korrigieren. In der Terminliste steht danach „Anwesend: 12 von 20“.
+
+Über **Anwesenheit** oben in der Terminliste öffnen Sie die **Statistik**: für das gewählte Jahr die Anwesenheitsquote jedes Mitglieds (anwesend / erfasste Termine) und rechts alle Termine mit erfasster Anwesenheit. Es zählen nur Termine, für die eine Anwesenheit gespeichert wurde. Mitglieder sehen ihre eigene Quote im Mitgliederbereich (Kapitel 13.6).
+
+### 7.5 Externe Kalender einbinden
 
 Im Abschnitt **Externe Kalender** unten auf der Seite binden Sie Kalender ein, die als **iCal-Link** veröffentlicht sind – etwa den Terminkalender des Landesverbands, der Gemeinde oder einen Google-Kalender des Vorstands.
 
@@ -975,6 +986,7 @@ Leere Felder verwenden die Einstellungen des Servers.
 - die Rolle **Kassier** vergeben oder entziehen,
 - die Rolle **Homepage** vergeben oder entziehen (Kapitel 16.10),
 - die Rolle **Zeugwart** vergeben oder entziehen (Kapitel 5.9; nur wenn die Materialverwaltung im Paket enthalten ist),
+- die Rolle **Anwesenheit** vergeben oder entziehen (Kapitel 7.4; nur wenn die Vereinstermine im Paket enthalten sind),
 - mit **Link erneut senden** eine neue Einladung bzw. einen Passwort-Link verschicken.
 
 **Login-E-Mail ändern:** Mit **ändern** neben der E-Mail-Adresse passen Sie die Adresse an, mit der sich der Funktionär anmeldet und an die Passwort-Links gehen. Ändern Sie beim Mitglied (Kapitel 5) die E-Mail-Adresse, die zugleich Login-E-Mail ist, zieht der Zugang automatisch nach; wird sie gelöscht, übernimmt der Zugang die nächste Adresse des Mitglieds. In beiden Fällen bekommt die **bisherige** Adresse einen Sicherheitshinweis. Steht die Login-E-Mail nicht (mehr) in den Mitgliedsdaten, zeigt die Tabelle den Hinweis *nicht in den Mitgliedsdaten*.
@@ -1138,6 +1150,7 @@ Unter **Termine** sehen Mitglieder die anstehenden Vereinstermine – zunächst 
 - Mit **Zusagen** bzw. **Absagen** melden sich Mitglieder zurück. Die gewählte Antwort steht beim Termin („Zugesagt“ / „Abgesagt“) und kann bis zum Termin jederzeit geändert werden.
 - Bei reinen Informationsterminen gibt es keine Knöpfe.
 - Termine, die der Verein nur für bestimmte Mitglieder freigegeben hat, sehen auch nur diese.
+- Erfasst der Verein die Anwesenheit (Kapitel 7.4), steht darunter **Meine Anwesenheit** mit der Quote des laufenden Jahres und den letzten erfassten Terminen („Anwesend“ / „Nicht anwesend“).
 
 ### 13.7 Kalender-Abo
 
@@ -1187,7 +1200,7 @@ VEMA erledigt einige Aufgaben selbstständig:
 | **Material-Erinnerung** | montags 7:15 Uhr | Admins und Zeugwarte erhalten eine Sammel-Mail mit fälligen Prüfungen und überfälligen Rückgaben – nur wenn seit der letzten Erinnerung etwas Neues fällig wurde (Kapitel 5.9). |
 | **Unbestätigte Online-Anmeldungen löschen** | täglich 3:40 Uhr | Anmeldungen, deren E-Mail-Adresse nach 7 Tagen nicht bestätigt ist, werden gelöscht (Kapitel 5.10). |
 | **Dienst-Erinnerung** | täglich 7:00 Uhr | Helfer mit Dienst in 2 Tagen erhalten eine E-Mail (sofern nicht abgeschaltet und E-Mail vorhanden). |
-| **Externe Kalender abgleichen** | stündlich | Termine aller aktiven externen Kalender werden übernommen (Kapitel 7.4). |
+| **Externe Kalender abgleichen** | stündlich | Termine aller aktiven externen Kalender werden übernommen (Kapitel 7.5). |
 | **Beiträge per E-Mail abrufen** | alle 5 Minuten | Berechtigte Mails im Beitrags-Postfach werden zu Homepage-Entwürfen (Kapitel 16.6). |
 | **Testdaten zurücksetzen** | nachts (Standard 3:00 Uhr) | nur wenn in den Einstellungen „Jede Nacht automatisch“ gewählt ist |
 | **Hinweise zu Testphase und Lizenz** | täglich (nur vemat.at) | E-Mail an die Kontaktadresse des Vereins vor Ende der Testphase bzw. vor Ablauf der Lizenz (Kapitel 15.3) |

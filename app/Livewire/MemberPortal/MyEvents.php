@@ -9,6 +9,7 @@ use App\Models\ClubEventSource;
 use App\Models\MemberDutySettings;
 use App\Services\ActiveMemberResolver;
 use App\Services\ActivityLogger;
+use App\Services\EventAttendance;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -159,8 +160,13 @@ class MyEvents extends Component
             ->limit($this->visibleUpcomingCount)
             ->get();
 
+        $attendance = app(EventAttendance::class);
+
         return view('livewire.member-portal.my-events', [
             'events' => $events,
+            'attendanceYear' => now()->year,
+            'attendanceQuote' => $attendance->quoteFor($member, now()->year),
+            'attendanceRecords' => $attendance->recordsFor($member, now()->year)->take(10),
             'hiddenEventsCount' => $totalEvents - $events->count(),
             'member' => $member,
             'sources' => ClubEventSource::query()->where('active', true)->orderBy('name')->get(),

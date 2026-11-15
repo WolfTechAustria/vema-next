@@ -32,6 +32,7 @@ class ClubEvent extends Model
         'all_day' => 'boolean',
         'rsvp_enabled' => 'boolean',
         'show_on_homepage' => 'boolean',
+        'attendance_taken_at' => 'datetime',
     ];
 
     /**
@@ -88,6 +89,14 @@ class ClubEvent extends Model
     public function responses(): HasMany
     {
         return $this->hasMany(ClubEventResponse::class, 'eventID', 'eventID');
+    }
+
+    /**
+     * Erfasste Anwesenheit (eine Zeile je Mitglied der Anwesenheitsliste).
+     */
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(ClubEventAttendance::class, 'eventID', 'eventID');
     }
 
     public function source(): BelongsTo

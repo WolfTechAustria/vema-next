@@ -450,13 +450,21 @@
                     {{ $showPast ? 'Vergangene Termine' : 'Anstehende Termine' }}
                 </h3>
 
-                <button
-                    type="button"
-                    wire:click="$toggle('showPast')"
-                    class="text-sm font-medium text-slate-500 hover:text-slate-800"
-                >
-                    {{ $showPast ? 'Anstehende anzeigen' : 'Vergangene anzeigen' }}
-                </button>
+                <div class="flex items-center gap-4">
+                    @if($canManageAttendance)
+                        <a href="{{ route('events.attendance-statistics') }}" wire:navigate class="text-sm font-medium text-slate-500 hover:text-slate-800">
+                            Anwesenheit
+                        </a>
+                    @endif
+
+                    <button
+                        type="button"
+                        wire:click="$toggle('showPast')"
+                        class="text-sm font-medium text-slate-500 hover:text-slate-800"
+                    >
+                        {{ $showPast ? 'Anstehende anzeigen' : 'Vergangene anzeigen' }}
+                    </button>
+                </div>
             </div>
 
             <div class="divide-y divide-slate-100">
@@ -519,6 +527,12 @@
                                     </div>
                                 @endif
 
+                                @if($event->attendance_taken_at)
+                                    <div class="mt-1 text-xs text-slate-600">
+                                        Anwesend: {{ $event->present_count }} von {{ $event->attendances_count }}
+                                    </div>
+                                @endif
+
                                 @if($event->members->isNotEmpty())
                                     <div
                                         class="mt-1 text-xs text-amber-700"
@@ -530,6 +544,16 @@
                             </div>
 
                             <div class="flex shrink-0 items-center gap-3">
+
+                                @if($canManageAttendance && \App\Services\EventAttendance::canRecord($event))
+                                    <a
+                                        href="{{ route('events.attendance', $event) }}"
+                                        wire:navigate
+                                        class="text-sm font-medium text-slate-600 hover:text-slate-900"
+                                    >
+                                        Anwesenheit
+                                    </a>
+                                @endif
 
                                 @if($event->rsvp_enabled)
                                     <button

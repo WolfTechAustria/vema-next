@@ -5,6 +5,7 @@ use App\Http\Controllers\HomepageController;
 use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureHomepageIsPublished;
 use App\Http\Middleware\EnsureStaffAccountIsActive;
+use App\Http\Middleware\EnsureUserCanManageAttendance;
 use App\Http\Middleware\EnsureUserCanManageHomepage;
 use App\Http\Middleware\EnsureUserCanManageInventory;
 use App\Http\Middleware\EnsureUserCanManageInvoices;
@@ -42,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'feature' => EnsureFeatureEnabled::class,
             'homepage.manage' => EnsureUserCanManageHomepage::class,
             'inventory' => EnsureUserCanManageInventory::class,
+            'attendance' => EnsureUserCanManageAttendance::class,
             'homepage.published' => EnsureHomepageIsPublished::class,
         ]);
 

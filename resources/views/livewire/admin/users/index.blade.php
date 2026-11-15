@@ -149,6 +149,9 @@
                     @if($inventoryEnabled)
                         <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Zeugwart</th>
                     @endif
+                    @if($eventsEnabled)
+                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Anwesenheit</th>
+                    @endif
                     <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500"></th>
                 </tr>
                 </thead>
@@ -276,6 +279,20 @@
                                     {{ $user->hasRole('zeugwart') ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500' }}"
                                 >
                                     {{ $user->hasRole('zeugwart') ? 'Zeugwart' : '–' }}
+                                </button>
+                            </td>
+                        @endif
+
+                        @if($eventsEnabled)
+                            <td class="md:table-cell md:px-6 md:py-4 md:text-center">
+                                <div class="mb-1 text-xs text-slate-400 md:hidden">Anwesenheit</div>
+                                <button
+                                    type="button"
+                                    wire:click="toggleAttendance({{ $user->id }})"
+                                    class="inline-flex w-full justify-center rounded-full px-3 py-2 text-xs font-semibold md:w-auto md:py-1
+                                    {{ $user->hasRole('anwesenheit') ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500' }}"
+                                >
+                                    {{ $user->hasRole('anwesenheit') ? 'Anwesenheit' : '–' }}
                                 </button>
                             </td>
                         @endif
