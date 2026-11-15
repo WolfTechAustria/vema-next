@@ -31,6 +31,7 @@ class InventoryItem extends Model
         'code' => 'Barcode/NFC',
         'location' => 'Lagerort',
         'condition' => 'Zustand',
+        'multi_issue' => 'Mehrfachausgabe',
         'purchased_on' => 'Anschaffung',
         'purchase_price' => 'Anschaffungspreis',
         'note' => 'Notiz',
@@ -46,6 +47,7 @@ class InventoryItem extends Model
 
     protected $casts = [
         'condition' => InventoryCondition::class,
+        'multi_issue' => 'boolean',
         'purchased_on' => 'date',
         'purchase_price' => 'decimal:2',
         'inspection_interval_months' => 'integer',
@@ -81,6 +83,19 @@ class InventoryItem extends Model
     }
 
     /**
+     * Alle offenen Ausgaben (bei Mehrfachausgabe mehrere).
+     *
+     * @return HasMany<InventoryLoan, $this>
+     */
+    public function openLoans(): HasMany
+    {
+        return $this->hasMany(InventoryLoan::class, 'itemID', 'itemID')
+            ->whereNull('returned_on')
+            ->orderBy('issued_on')
+            ->orderBy('loanID');
+    }
+
+    /**
      * @return HasMany<InventoryInspection, $this>
      */
     public function inspections(): HasMany
@@ -100,6 +115,18 @@ class InventoryItem extends Model
         $query->whereNotNull('next_inspection_on')
             ->whereDate('next_inspection_on', '<=', today()->addDays(self::INSPECTION_NOTICE_DAYS))
             ->where('condition', '!=', InventoryCondition::Retired->value);
+    }
+
+    /**
+     * Kann (noch) ausgegeben werden: im Einsatz und frei oder mit Mehrfachausgabe.
+     *
+     * @param  Builder<InventoryItem>  $query
+     */
+    public function scopeIssuable(Builder $query): void
+    {
+        $query->inService()->where(fn (Builder $query) => $query
+            ->where('multi_issue', true)
+            ->orWhereDoesntHave('currentLoan'));
     }
 
     /**
@@ -146,6 +173,7 @@ class InventoryItem extends Model
             'code' => $this->code,
             'location' => $this->location,
             'condition' => $this->condition?->label(),
+            'multi_issue' => $this->multi_issue ? 'Ja' : 'Nein',
             'purchased_on' => $this->purchased_on?->format('d.m.Y'),
             'purchase_price' => $this->purchase_price !== null ? number_format((float) $this->purchase_price, 2, ',', '.').' €' : null,
             'note' => $this->note,

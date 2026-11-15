@@ -14,7 +14,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 class InventoryExport implements FromArray, ShouldAutoSize, WithHeadings
 {
     /**
-     * @param  Collection<int, InventoryItem>  $items  mit category und currentLoan.member
+     * @param  Collection<int, InventoryItem>  $items  mit category und openLoans.member
      */
     public function __construct(private Collection $items) {}
 
@@ -39,9 +39,9 @@ class InventoryExport implements FromArray, ShouldAutoSize, WithHeadings
                 $item->category?->name,
                 $item->location,
                 $item->condition->label(),
-                $item->currentLoan?->member?->full_name,
-                $item->currentLoan?->issued_on->format('d.m.Y'),
-                $item->currentLoan?->due_on?->format('d.m.Y'),
+                $item->openLoans->map(fn ($loan) => $loan->member?->full_name ?? 'Mitglied #'.$loan->memberID)->join(', ') ?: null,
+                $item->openLoans->first()?->issued_on->format('d.m.Y'),
+                $item->openLoans->pluck('due_on')->filter()->sort()->first()?->format('d.m.Y'),
                 $item->purchased_on?->format('d.m.Y'),
                 $item->purchase_price !== null ? (float) $item->purchase_price : null,
                 $item->inspection_interval_months,

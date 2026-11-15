@@ -101,6 +101,17 @@
                 </div>
 
                 <div class="sm:col-span-2">
+                    <label class="flex items-start gap-3">
+                        <input type="checkbox" wire:model="multiIssue" class="mt-0.5 rounded border-slate-300">
+                        <span>
+                            <span class="block text-sm font-medium">Mehrfachausgabe erlauben</span>
+                            <span class="block text-xs text-slate-500">Kann gleichzeitig an mehrere Mitglieder ausgegeben werden (z. B. Vereins-T-Shirts, Notenmappen). Die Rückgabe wird je Mitglied erfasst.</span>
+                        </span>
+                    </label>
+                    @error('multiIssue') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="sm:col-span-2">
                     <label class="mb-1 block text-sm font-medium">Notiz</label>
                     <textarea wire:model="note" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
                     @error('note') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror

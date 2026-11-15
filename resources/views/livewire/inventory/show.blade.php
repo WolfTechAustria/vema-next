@@ -43,37 +43,56 @@
             {{-- Ausgabe --}}
             <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-                    <h3 class="font-semibold text-slate-900">Ausgabe</h3>
+                    <h3 class="font-semibold text-slate-900">
+                        Ausgabe
+                        @if($item->multi_issue)
+                            <span class="ml-1 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">Mehrfachausgabe</span>
+                        @endif
+                    </h3>
 
-                    @if($currentLoan)
-                        <button type="button" wire:click="openReturnForm" class="text-sm font-medium text-slate-700 hover:underline">Rückgabe erfassen</button>
-                    @elseif($item->condition !== \App\Enums\InventoryCondition::Retired)
+                    @if($canIssue)
                         <button type="button" wire:click="openLoanForm" class="text-sm font-medium text-slate-700 hover:underline">+ An Mitglied ausgeben</button>
+                    @elseif(! $item->multi_issue && $openLoans->isNotEmpty())
+                        <button type="button" wire:click="openReturnForm({{ $openLoans->first()->loanID }})" class="text-sm font-medium text-slate-700 hover:underline">Rückgabe erfassen</button>
                     @endif
                 </div>
 
                 <div class="space-y-4 px-6 py-4">
-                    @if($currentLoan)
-                        <div class="rounded-lg {{ $currentLoan->isOverdue() ? 'bg-red-50' : 'bg-slate-50' }} px-4 py-3 text-sm">
-                            Ausgegeben an
-                            @if($currentLoan->member)
-                                <a href="{{ route('members.show', $currentLoan->member) }}" wire:navigate class="font-semibold text-slate-900 hover:underline">{{ $currentLoan->member->full_name }}</a>
-                            @else
-                                <span class="font-semibold">Mitglied #{{ $currentLoan->memberID }}</span>
-                            @endif
-                            seit {{ $currentLoan->issued_on->format('d.m.Y') }}
-                            @if($currentLoan->due_on)
-                                · Rückgabe bis <span class="{{ $currentLoan->isOverdue() ? 'font-semibold text-red-700' : '' }}">{{ $currentLoan->due_on->format('d.m.Y') }}</span>
-                            @endif
-                            @if($currentLoan->note)
-                                <div class="mt-1 text-slate-500">{{ $currentLoan->note }}</div>
-                            @endif
+                    @if($openLoans->isNotEmpty())
+                        @if($item->multi_issue)
+                            <p class="text-sm text-slate-600">Ausgegeben an {{ $openLoans->count() }} {{ $openLoans->count() === 1 ? 'Mitglied' : 'Mitglieder' }}:</p>
+                        @endif
+
+                        <div class="space-y-2">
+                            @foreach($openLoans as $openLoan)
+                                <div wire:key="open-loan-{{ $openLoan->loanID }}" class="flex flex-wrap items-start justify-between gap-2 rounded-lg {{ $openLoan->isOverdue() ? 'bg-red-50' : 'bg-slate-50' }} px-4 py-3 text-sm">
+                                    <div>
+                                        @unless($item->multi_issue) Ausgegeben an @endunless
+                                        @if($openLoan->member)
+                                            <a href="{{ route('members.show', $openLoan->member) }}" wire:navigate class="font-semibold text-slate-900 hover:underline">{{ $openLoan->member->full_name }}</a>
+                                        @else
+                                            <span class="font-semibold">Mitglied #{{ $openLoan->memberID }}</span>
+                                        @endif
+                                        seit {{ $openLoan->issued_on->format('d.m.Y') }}
+                                        @if($openLoan->due_on)
+                                            · Rückgabe bis <span class="{{ $openLoan->isOverdue() ? 'font-semibold text-red-700' : '' }}">{{ $openLoan->due_on->format('d.m.Y') }}</span>
+                                        @endif
+                                        @if($openLoan->note)
+                                            <div class="mt-1 text-slate-500">{{ $openLoan->note }}</div>
+                                        @endif
+                                    </div>
+
+                                    @if($item->multi_issue)
+                                        <button type="button" wire:click="openReturnForm({{ $openLoan->loanID }})" class="text-xs font-medium text-slate-700 hover:underline">Rückgabe</button>
+                                    @endif
+                                </div>
+                            @endforeach
                         </div>
                     @elseif(! $showLoanForm)
                         <p class="text-sm text-slate-500">Derzeit nicht ausgegeben.</p>
                     @endif
 
-                    @if($showLoanForm && ! $currentLoan)
+                    @if($showLoanForm && $canIssue)
                         <div class="space-y-3 rounded-lg border border-slate-200 p-4">
                             <div>
                                 <label class="mb-1 block text-sm font-medium">Mitglied</label>
@@ -123,8 +142,11 @@
                         </div>
                     @endif
 
-                    @if($showReturnForm && $currentLoan)
+                    @if($showReturnForm && $returnLoan)
                         <div class="space-y-3 rounded-lg border border-slate-200 p-4">
+                            @if($item->multi_issue)
+                                <p class="text-sm font-medium text-slate-700">Rückgabe von {{ $returnLoan->member?->full_name ?? 'Mitglied #'.$returnLoan->memberID }}</p>
+                            @endif
                             <div class="grid gap-3 sm:grid-cols-2">
                                 <div>
                                     <label class="mb-1 block text-sm font-medium">Zurückgegeben am</label>

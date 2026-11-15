@@ -70,6 +70,7 @@ class Scan extends Component
         $this->memberSearch = '';
         $this->history = [];
         $this->lastResult = null;
+        $this->lastScannedCode = null;
     }
 
     public function changeMember(): void
@@ -77,6 +78,7 @@ class Scan extends Component
         $this->memberID = null;
         $this->history = [];
         $this->lastResult = null;
+        $this->lastScannedCode = null;
     }
 
     public function scan(?string $scannedCode = null): void
@@ -121,7 +123,9 @@ class Scan extends Component
             return;
         }
 
-        $currentLoan = $item->currentLoan()->with('member')->first();
+        $currentLoan = $item->multi_issue
+            ? $item->openLoans()->where('memberID', $member->memberID)->first()
+            : $item->currentLoan()->with('member')->first();
 
         if ($currentLoan !== null && $currentLoan->memberID === $member->memberID) {
             $this->result('already', $item->label().' ist bereits bei '.$member->full_name.'.', $raw, $item, $currentLoan);
