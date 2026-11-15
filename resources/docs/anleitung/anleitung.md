@@ -975,6 +975,8 @@ Leere Felder verwenden die Einstellungen des Servers.
 - die Rolle **Zeugwart** vergeben oder entziehen (Kapitel 5.9; nur wenn die Materialverwaltung im Paket enthalten ist),
 - mit **Link erneut senden** eine neue Einladung bzw. einen Passwort-Link verschicken.
 
+**Login-E-Mail ändern:** Mit **ändern** neben der E-Mail-Adresse passen Sie die Adresse an, mit der sich der Funktionär anmeldet und an die Passwort-Links gehen. Ändern Sie beim Mitglied (Kapitel 5) die E-Mail-Adresse, die zugleich Login-E-Mail ist, zieht der Zugang automatisch nach; wird sie gelöscht, übernimmt der Zugang die nächste Adresse des Mitglieds. In beiden Fällen bekommt die **bisherige** Adresse einen Sicherheitshinweis. Steht die Login-E-Mail nicht (mehr) in den Mitgliedsdaten, zeigt die Tabelle den Hinweis *nicht in den Mitgliedsdaten*.
+
 > **Vereine auf vemat.at:** Die Zahl der aktiven Vorstandszugänge hängt vom Paket ab. Ist sie erreicht, können keine weiteren Benutzer angelegt oder entsperrt werden – sperren Sie bei Bedarf einen nicht mehr benötigten Zugang.
 
 ### 12.4 Aktivitätsprotokoll

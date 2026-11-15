@@ -8,6 +8,7 @@ use App\Models\MemberPhone;
 use App\Models\Skill;
 use App\Services\ActivityLogger;
 use App\Services\MemberFields;
+use App\Services\StaffLoginEmail;
 use Livewire\Component;
 
 class Edit extends Component
@@ -185,8 +186,12 @@ class Edit extends Component
             'supportingMember' => $validated['supportingMember'],
         ]);
 
+        $emailsBefore = app(StaffLoginEmail::class)->memberEmails($this->member);
+
         $this->syncEmails();
         $this->syncPhones();
+
+        $loginEmails = app(StaffLoginEmail::class)->syncFromMember($this->member, $emailsBefore);
 
         $this->member->skills()->sync(
             array_map('intval', $this->selectedSkills)
@@ -202,7 +207,11 @@ class Edit extends Component
             ActivityLogger::changes($before, $this->member->activitySnapshot(), Member::activityLabels())
         );
 
-        session()->flash('success', 'Mitglied wurde gespeichert.');
+        session()->flash('success', trim('Mitglied wurde gespeichert. '.implode(' ', $loginEmails['changed'])));
+
+        if ($loginEmails['warnings'] !== []) {
+            session()->flash('warning', implode(' ', $loginEmails['warnings']));
+        }
 
         return $this->redirectRoute(
             'members.show',

@@ -101,7 +101,7 @@ describe('staff', function () {
 
         $component = Livewire::test(EventsIndex::class)
             ->set('title', 'Vorstandssitzung')
-            ->set('startDate', '2026-11-14')
+            ->set('startDate', now()->addWeek()->toDateString())
             ->set('startTime', '19:30')
             ->set('selectedMembers', [(string) $anna->memberID, (string) $bernd->memberID])
             ->call('saveEvent')

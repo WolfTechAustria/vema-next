@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\ImapSentMailService;
 use App\Services\PlanEntitlements;
+use App\Services\StaffLoginEmail;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
@@ -29,6 +30,11 @@ class Index extends Component
     public string $newEmail = '';
 
     public bool $grantAdmin = false;
+
+    /** Zugang, dessen Login-E-Mail gerade bearbeitet wird */
+    public ?int $editingEmailUserId = null;
+
+    public string $editedEmail = '';
 
     protected function rules(): array
     {
@@ -51,6 +57,54 @@ class Index extends Component
         $this->memberSearch = '';
 
         $this->resetValidation();
+    }
+
+    public function editEmail(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+
+        $this->editingEmailUserId = $user->id;
+        $this->editedEmail = (string) $user->email;
+
+        $this->resetValidation();
+    }
+
+    public function cancelEmail(): void
+    {
+        $this->reset(['editingEmailUserId', 'editedEmail']);
+        $this->resetValidation();
+    }
+
+    public function saveEmail(StaffLoginEmail $loginEmail): void
+    {
+        $user = User::findOrFail($this->editingEmailUserId);
+
+        $this->editedEmail = trim($this->editedEmail);
+
+        $validated = $this->validate(
+            ['editedEmail' => ['required', 'email', 'max:100']],
+            ['editedEmail.required' => 'Bitte eine E-Mail-Adresse eingeben.', 'editedEmail.email' => 'Bitte eine gültige E-Mail-Adresse eingeben.'],
+            ['editedEmail' => 'E-Mail-Adresse'],
+        );
+
+        $changed = $loginEmail->change($user, $validated['editedEmail'], StaffLoginEmail::REASON_ADMIN);
+
+        $this->cancelEmail();
+
+        if (! $changed) {
+            return;
+        }
+
+        session()->flash('success', 'Login-E-Mail von „'.$user->username.'“ ist jetzt '.$user->email.'. Die bisherige Adresse wurde informiert.');
+
+        $isShared = User::query()
+            ->where('id', '!=', $user->id)
+            ->whereRaw('LOWER(email) = ?', [Str::lower($user->email)])
+            ->exists();
+
+        if ($isShared) {
+            session()->flash('warning', 'Ein anderer Zugang verwendet dieselbe E-Mail-Adresse. Die Anmeldung mit der E-Mail gelingt dann nur mit dem passenden Passwort – eindeutig ist der Benutzername.');
+        }
     }
 
     public function cancelInvite(): void
@@ -329,7 +383,7 @@ class Index extends Component
 
     public function render()
     {
-        $users = User::with(['member', 'roles'])
+        $users = User::with(['member.emails', 'roles'])
             ->orderBy('username')
             ->get();
 
