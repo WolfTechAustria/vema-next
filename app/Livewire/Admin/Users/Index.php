@@ -5,12 +5,14 @@ namespace App\Livewire\Admin\Users;
 use App\Enums\Feature;
 use App\Mail\StaffPasswordResetMail;
 use App\Models\Member;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\EventAttendance;
 use App\Services\ImapSentMailService;
 use App\Services\PlanEntitlements;
 use App\Services\StaffLoginEmail;
+use App\Services\TwoFactorAuthentication;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
@@ -362,6 +364,38 @@ class Index extends Component
         }
     }
 
+    public function toggleTwoFactorRequired(): void
+    {
+        $setting = Setting::current();
+        $setting->forceFill(['two_factor_required' => ! $setting->two_factor_required])->save();
+
+        ActivityLogger::log(
+            $setting->two_factor_required ? 'settings.two_factor_required' : 'settings.two_factor_optional',
+            $setting->two_factor_required
+                ? 'Zwei-Faktor-Anmeldung ist jetzt für alle Funktionäre verpflichtend.'
+                : 'Zwei-Faktor-Anmeldung ist nicht mehr verpflichtend.',
+        );
+
+        if ($setting->two_factor_required && ! app(TwoFactorAuthentication::class)->isEnabled(auth()->guard('web')->user())) {
+            $this->redirectRoute('two-factor.setup', navigate: true);
+        }
+    }
+
+    public function resetTwoFactor(int $userId, TwoFactorAuthentication $twoFactor): void
+    {
+        $user = User::findOrFail($userId);
+        $twoFactor->disable($user);
+
+        ActivityLogger::log(
+            'user.two_factor_reset',
+            'Zwei-Faktor-Anmeldung von Benutzer "'.$user->username.'" wurde zurückgesetzt.',
+            'User',
+            $user->id
+        );
+
+        session()->flash('success', 'Die Zwei-Faktor-Anmeldung von „'.$user->username.'“ wurde zurückgesetzt.');
+    }
+
     public function resendInvite(int $userId): void
     {
         $user = User::findOrFail($userId);
@@ -437,6 +471,7 @@ class Index extends Component
             'availableMembers' => $availableMembers,
             'inventoryEnabled' => app(PlanEntitlements::class)->allows(Feature::Inventory),
             'eventsEnabled' => app(PlanEntitlements::class)->allows(Feature::Events),
+            'twoFactorRequired' => app(TwoFactorAuthentication::class)->isRequired(),
         ])->layout('layouts.app', [
             'title' => 'Benutzerverwaltung | VEMA',
             'heading' => 'Benutzerverwaltung',

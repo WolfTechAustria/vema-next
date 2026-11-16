@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\SupportLoginController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\CashBookController;
 use App\Http\Controllers\CircularController;
@@ -32,6 +33,7 @@ use App\Livewire\Admin\Settings\MemberFields as MemberFieldSettings;
 use App\Livewire\Admin\Settings\Sepa as SepaSettings;
 use App\Livewire\Application\Form as ApplicationForm;
 use App\Livewire\Application\Verify as ApplicationVerify;
+use App\Livewire\Auth\TwoFactorSetup;
 use App\Livewire\CashBook\Index as CashBookIndex;
 use App\Livewire\CashBook\Years as CashBookYears;
 use App\Livewire\Dashboard\Index as DashboardIndex;
@@ -133,7 +135,24 @@ Route::middleware('guest')->group(function () {
         ->name('member.magic-login');
 });
 
+Route::middleware('guest')->group(function () {
+    Route::get('/login/bestaetigen', [TwoFactorChallengeController::class, 'create'])
+        ->name('two-factor.challenge');
+
+    Route::post('/login/bestaetigen', [TwoFactorChallengeController::class, 'store'])
+        ->middleware('throttle:20,1');
+
+    Route::post('/login/bestaetigen/neuer-code', [TwoFactorChallengeController::class, 'resend'])
+        ->middleware('throttle:5,1')
+        ->name('two-factor.resend');
+});
+
 Route::middleware(['auth', 'active.staff'])->group(function () {
+    Route::livewire('/zwei-faktor', TwoFactorSetup::class)
+        ->name('two-factor.setup');
+});
+
+Route::middleware(['auth', 'active.staff', 'two-factor'])->group(function () {
 
     Route::get('/', fn () => redirect()->route('dashboard'));
 

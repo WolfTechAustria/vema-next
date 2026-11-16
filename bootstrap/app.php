@@ -5,6 +5,7 @@ use App\Http\Controllers\HomepageController;
 use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureHomepageIsPublished;
 use App\Http\Middleware\EnsureStaffAccountIsActive;
+use App\Http\Middleware\EnsureTwoFactorIsConfigured;
 use App\Http\Middleware\EnsureUserCanManageAttendance;
 use App\Http\Middleware\EnsureUserCanManageHomepage;
 use App\Http\Middleware\EnsureUserCanManageInventory;
@@ -44,6 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'homepage.manage' => EnsureUserCanManageHomepage::class,
             'inventory' => EnsureUserCanManageInventory::class,
             'attendance' => EnsureUserCanManageAttendance::class,
+            'two-factor' => EnsureTwoFactorIsConfigured::class,
             'homepage.published' => EnsureHomepageIsPublished::class,
         ]);
 

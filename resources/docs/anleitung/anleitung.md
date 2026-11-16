@@ -101,6 +101,21 @@ Neue Funktionäre werden vom Admin eingeladen (Kapitel 12.3). Sie erhalten eine 
 
 Links unten in der Seitenleiste auf **Abmelden** klicken. An gemeinsam genutzten Computern sollten Sie sich immer abmelden.
 
+### 2.5 Zwei-Faktor-Anmeldung
+
+Jeder Verein entscheidet selbst, ob seine Funktionäre sich zusätzlich zum Passwort mit einem Code bestätigen müssen. Ein Admin schaltet das in der **Benutzerverwaltung** ein (Kapitel 12.3) – dann gilt es für alle Funktionäre. Der Mitgliederbereich ist davon nicht betroffen.
+
+**Einrichten:** Wer die Zwei-Faktor-Anmeldung noch nicht eingerichtet hat, landet nach der nächsten Anmeldung auf der Seite **Zwei-Faktor-Anmeldung** und wählt eine Methode:
+
+- **Authenticator-App** (empfohlen): QR-Code mit einer App wie Google Authenticator oder Microsoft Authenticator scannen (oder den Schlüssel abtippen) und den angezeigten sechsstelligen Code eingeben.
+- **Code per E-Mail**: VEMA schickt einen Code an die Login-E-Mail, den Sie zur Bestätigung eingeben.
+
+Danach zeigt VEMA einmalig acht **Wiederherstellungscodes**. Bewahren Sie diese sicher auf – damit melden Sie sich an, wenn Handy oder Postfach nicht greifbar sind. Jeder Code gilt nur einmal.
+
+**Anmelden:** Nach Benutzername und Passwort fragt VEMA den Code aus der App bzw. aus der E-Mail ab (E-Mail-Codes gelten 10 Minuten, **Neuen Code senden** schickt einen neuen). Mit **Diesem Gerät 30 Tage vertrauen** entfällt die Abfrage auf diesem Gerät für 30 Tage. Nach fünf falschen Codes beginnt die Anmeldung von vorne.
+
+Über **Zwei-Faktor-Anmeldung** in der Seitenleiste wechseln Sie später die Methode oder erzeugen neue Wiederherstellungscodes. Geht alles verloren, setzt ein Admin die Zwei-Faktor-Anmeldung in der Benutzerverwaltung zurück; bei der nächsten Anmeldung richten Sie sie neu ein.
+
 ---
 
 ## 3. Die Oberfläche im Überblick
@@ -987,7 +1002,10 @@ Leere Felder verwenden die Einstellungen des Servers.
 - die Rolle **Homepage** vergeben oder entziehen (Kapitel 16.10),
 - die Rolle **Zeugwart** vergeben oder entziehen (Kapitel 5.9; nur wenn die Materialverwaltung im Paket enthalten ist),
 - die Rolle **Anwesenheit** vergeben oder entziehen (Kapitel 7.4; nur wenn die Vereinstermine im Paket enthalten sind),
-- mit **Link erneut senden** eine neue Einladung bzw. einen Passwort-Link verschicken.
+- mit **Link erneut senden** eine neue Einladung bzw. einen Passwort-Link verschicken,
+- bei einem Zugang mit Zwei-Faktor-Anmeldung („2FA: …“ unter dem Benutzernamen) diese mit **zurücksetzen** entfernen, etwa nach einem verlorenen Handy.
+
+**Zwei-Faktor-Anmeldung für den Verein:** Oben auf der Seite machen Sie mit **Verpflichtend machen** die Zwei-Faktor-Anmeldung für alle Funktionäre zur Pflicht (Kapitel 2.5) und schalten sie mit **Ausschalten** wieder ab. Zugänge, die sie noch nicht eingerichtet haben, sind mit *2FA noch nicht eingerichtet* markiert. Der Plattform-Support (Anmeldung über vemat.at) ist davon ausgenommen.
 
 **Login-E-Mail ändern:** Mit **ändern** neben der E-Mail-Adresse passen Sie die Adresse an, mit der sich der Funktionär anmeldet und an die Passwort-Links gehen. Ändern Sie beim Mitglied (Kapitel 5) die E-Mail-Adresse, die zugleich Login-E-Mail ist, zieht der Zugang automatisch nach; wird sie gelöscht, übernimmt der Zugang die nächste Adresse des Mitglieds. In beiden Fällen bekommt die **bisherige** Adresse einen Sicherheitshinweis. Steht die Login-E-Mail nicht (mehr) in den Mitgliedsdaten, zeigt die Tabelle den Hinweis *nicht in den Mitgliedsdaten*.
 

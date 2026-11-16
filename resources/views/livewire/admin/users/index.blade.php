@@ -28,6 +28,30 @@
 
     </div>
 
+    <section class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div>
+            <h3 class="font-semibold text-slate-900">Zwei-Faktor-Anmeldung</h3>
+            <p class="mt-1 text-sm text-slate-500">
+                @if($twoFactorRequired)
+                    Pflicht für alle Funktionäre: Nach dem Passwort ist ein Code aus der Authenticator-App oder per E-Mail nötig.
+                    Wer sie noch nicht eingerichtet hat, wird bei der nächsten Anmeldung dazu aufgefordert.
+                @else
+                    Ausgeschaltet. Eingeschaltet müssen alle Funktionäre beim Anmelden zusätzlich einen Code eingeben.
+                @endif
+            </p>
+        </div>
+
+        <button
+            type="button"
+            wire:click="toggleTwoFactorRequired"
+            wire:confirm="{{ $twoFactorRequired ? 'Zwei-Faktor-Anmeldung für alle Funktionäre ausschalten?' : 'Zwei-Faktor-Anmeldung für alle Funktionäre verpflichtend machen? Auch du musst sie danach sofort einrichten.' }}"
+            aria-pressed="{{ $twoFactorRequired ? 'true' : 'false' }}"
+            class="shrink-0 rounded-lg px-4 py-2 text-sm font-semibold {{ $twoFactorRequired ? 'border border-slate-300 text-slate-700 hover:bg-slate-50' : 'bg-slate-900 text-white hover:bg-slate-800' }}"
+        >
+            {{ $twoFactorRequired ? 'Ausschalten' : 'Verpflichtend machen' }}
+        </button>
+    </section>
+
     @if($showInviteForm)
 
         <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
@@ -171,6 +195,22 @@
                                     <span class="ml-1 text-xs text-slate-400">(du)</span>
                                 @endif
                             </div>
+
+                            @if($user->two_factor_confirmed_at)
+                                <div class="mt-0.5 flex items-center gap-2 text-xs text-emerald-700">
+                                    2FA: {{ \App\Services\TwoFactorAuthentication::methodLabels()[$user->two_factor_method] ?? '–' }}
+                                    <button
+                                        type="button"
+                                        wire:click="resetTwoFactor({{ $user->id }})"
+                                        wire:confirm="Zwei-Faktor-Anmeldung von „{{ $user->username }}“ zurücksetzen? Der Zugang muss sie bei der nächsten Anmeldung neu einrichten."
+                                        class="font-medium text-slate-500 underline hover:text-slate-800"
+                                    >
+                                        zurücksetzen
+                                    </button>
+                                </div>
+                            @elseif($twoFactorRequired)
+                                <div class="mt-0.5 text-xs text-amber-700">2FA noch nicht eingerichtet</div>
+                            @endif
 
                             <div class="text-sm text-slate-500 md:hidden">
                                 {{ $user->member?->full_name ?? '–' }}

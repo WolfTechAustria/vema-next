@@ -842,6 +842,18 @@
                 </a>
 
                 <a
+                    href="{{ route('two-factor.setup') }}"
+                    wire:navigate
+                    class="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition
+                    {{ request()->routeIs('two-factor.setup')
+                        ? 'bg-slate-100 text-slate-900'
+                        : 'text-slate-700 hover:bg-slate-100' }}"
+                >
+                    <span>🔐</span>
+                    Zwei-Faktor-Anmeldung
+                </a>
+
+                <a
                     href="{{ route('user-manual') }}"
                     target="_self"
                     rel="noopener"
