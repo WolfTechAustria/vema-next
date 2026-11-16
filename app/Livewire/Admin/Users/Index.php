@@ -7,6 +7,7 @@ use App\Mail\StaffPasswordResetMail;
 use App\Models\Member;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\EventAttendance;
 use App\Services\ImapSentMailService;
 use App\Services\PlanEntitlements;
 use App\Services\StaffLoginEmail;
@@ -336,6 +337,31 @@ class Index extends Component
         }
     }
 
+    public function toggleAttendance(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+
+        if ($user->hasRole(EventAttendance::ROLE)) {
+            $user->removeRole(EventAttendance::ROLE);
+
+            ActivityLogger::log(
+                'user.attendance_revoked',
+                'Benutzer "'.$user->username.'" wurde das Recht zur Anwesenheitserfassung entzogen.',
+                'User',
+                $user->id
+            );
+        } else {
+            $user->assignRole(Role::findOrCreate(EventAttendance::ROLE, 'web'));
+
+            ActivityLogger::log(
+                'user.attendance_granted',
+                'Benutzer "'.$user->username.'" darf die Anwesenheit bei Terminen erfassen.',
+                'User',
+                $user->id
+            );
+        }
+    }
+
     public function resendInvite(int $userId): void
     {
         $user = User::findOrFail($userId);
@@ -410,6 +436,7 @@ class Index extends Component
             'users' => $users,
             'availableMembers' => $availableMembers,
             'inventoryEnabled' => app(PlanEntitlements::class)->allows(Feature::Inventory),
+            'eventsEnabled' => app(PlanEntitlements::class)->allows(Feature::Events),
         ])->layout('layouts.app', [
             'title' => 'Benutzerverwaltung | VEMA',
             'heading' => 'Benutzerverwaltung',

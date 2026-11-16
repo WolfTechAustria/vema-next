@@ -39,6 +39,8 @@ use App\Livewire\DutyPlan\Absences as DutyPlanAbsences;
 use App\Livewire\DutyPlan\Index as DutyPlanIndex;
 use App\Livewire\DutyPlan\SwapRequests as DutyPlanSwapRequests;
 use App\Livewire\DutyPlan\Volunteers as DutyPlanVolunteers;
+use App\Livewire\Events\Attendance as EventsAttendance;
+use App\Livewire\Events\AttendanceStatistics as EventsAttendanceStatistics;
 use App\Livewire\Events\Index as EventsIndex;
 use App\Livewire\ExternalContacts\Index;
 use App\Livewire\Federation\Clubs as FederationClubs;
@@ -211,6 +213,14 @@ Route::middleware(['auth', 'active.staff'])->group(function () {
     Route::livewire('/events', EventsIndex::class)
         ->middleware('feature:events')
         ->name('events.index');
+
+    Route::livewire('/events/anwesenheit', EventsAttendanceStatistics::class)
+        ->middleware(['feature:events', 'attendance'])
+        ->name('events.attendance-statistics');
+
+    Route::livewire('/events/{event}/anwesenheit', EventsAttendance::class)
+        ->middleware(['feature:events', 'attendance'])
+        ->name('events.attendance');
 
     Route::livewire('/membership-fees', MembershipFeesIndex::class)
         ->name('membership-fees.index');

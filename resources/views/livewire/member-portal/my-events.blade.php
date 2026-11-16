@@ -162,4 +162,35 @@
         @endif
     </section>
 
+    @if($attendanceQuote['total'] > 0)
+        <!-- Meine Anwesenheit -->
+        <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-4">
+                <h3 class="font-semibold text-slate-900">
+                    Meine Anwesenheit {{ $attendanceYear }}
+                </h3>
+
+                <div class="text-sm text-slate-600">
+                    {{ $attendanceQuote['present'] }} von {{ $attendanceQuote['total'] }}
+                    <span class="ml-1 font-semibold text-slate-900">{{ $attendanceQuote['percent'] }} %</span>
+                </div>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+                @foreach($attendanceRecords as $record)
+                    <div wire:key="my-attendance-{{ $record->attendanceID }}" class="flex items-center justify-between gap-4 px-6 py-3 text-sm">
+                        <div class="min-w-0">
+                            <div class="truncate font-medium text-slate-900">{{ $record->event->title }}</div>
+                            <div class="text-xs text-slate-500">{{ $record->event->starts_at->format('d.m.Y') }}</div>
+                        </div>
+
+                        <span class="shrink-0 text-xs font-medium {{ $record->present ? 'text-emerald-700' : 'text-red-700' }}">
+                            {{ $record->present ? 'Anwesend' : 'Nicht anwesend' }}
+                        </span>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
 </div>

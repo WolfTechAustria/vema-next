@@ -10,6 +10,7 @@ use App\Models\ClubEventSource;
 use App\Models\Member;
 use App\Services\ActivityLogger;
 use App\Services\ClubEventSeriesService;
+use App\Services\EventAttendance;
 use App\Services\ExternalCalendarException;
 use App\Services\ExternalCalendarSyncService;
 use App\Services\FederationCalendar;
@@ -913,6 +914,7 @@ class Index extends Component
                 'members',
                 'series' => fn ($query) => $query->withMin('events', 'starts_at'),
             ])
+            ->withCount(['attendances', 'attendances as present_count' => fn ($query) => $query->where('present', true)])
             ->get();
 
         $responseOverview = null;
@@ -942,6 +944,7 @@ class Index extends Component
                 ->get(['memberID', 'name', 'surname']),
             'hiddenEventsCount' => $totalEvents - $events->count(),
             'responseOverview' => $responseOverview,
+            'canManageAttendance' => EventAttendance::canManage(),
             'sources' => ClubEventSource::query()->withCount('events')->orderBy('name')->get(),
             'isFederation' => $this->isFederation(),
             'repeatOptions' => $this->repeatOptions(),
